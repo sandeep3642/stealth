@@ -1,0 +1,36 @@
+import ThemeCustomizer from "../components/ThemeCustomizer";
+import { useTheme } from "../context/ThemeContext";
+
+export default function Dashboard() {
+  const { isDark } = useTheme();
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors">
+      <ThemeCustomizer />
+      <div className="p-10">
+        <h1 className="text-5xl font-bold text-primary mb-6">
+          Welcome to Stealth App
+        </h1>
+        <p className="text-xl text-gray-700 dark:text-gray-300 mb-8">
+          Current Mode:{" "}
+          <span className="font-bold">{isDark ? "Dark" : "Light"}</span>
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+          <div className="bg-primary text-primary-foreground p-8 rounded-xl shadow-lg">
+            <h3 className="text-2xl font-bold">Card 1</h3>
+            <p>Uses primary background</p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border">
+            <h3 className="text-2xl font-bold text-primary">Card 2</h3>
+            <p>Primary text color</p>
+          </div>
+          <div className="bg-gray-100 dark:bg-gray-900 p-8 rounded-xl shadow-lg">
+            <h3 className="text-2xl font-bold">Card 3</h3>
+            <p>Normal card</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

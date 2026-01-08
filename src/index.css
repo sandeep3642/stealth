@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+/* Theme CSS Variables */
+:root {
+  --primary: 239 68% 55%;        /* Default blue */
+  --primary-foreground: 0 0% 100%;
+}
+
+.dark {
+  --primary: 239 84% 67%;        /* Brighter in dark mode */
+  --primary-foreground: 0 0% 98%;
+}
+
+/* Custom utility classes using variables */
+.bg-primary { background-color: hsl(var(--primary)); }
+.text-primary { color: hsl(var(--primary)); }
+.border-primary { border-color: hsl(var(--primary)); }
+.text-primary-foreground { color: hsl(var(--primary-foreground)); }
+.hover\:bg-primary\/90:hover { background-color: hsl(var(--primary) / 0.9); }
