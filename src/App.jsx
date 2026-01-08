@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext";
-import LoginPage from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import { useState } from "react";
+import Auth from "./pages/Auth";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
@@ -13,14 +13,14 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+        <Route path="/" element={<Auth onLogin={handleLogin} />} />
         <Route
           path="/*"
           element={
             isLoggedIn ? (
               <ThemeProvider>
                 <Routes>
-                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
               </ThemeProvider>
