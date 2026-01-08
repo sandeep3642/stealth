@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext";
-import LoginPage from "./pages/LoginPage";
+import LoginPage from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import { useState } from "react";
 
