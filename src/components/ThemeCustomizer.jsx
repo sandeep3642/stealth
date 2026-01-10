@@ -65,26 +65,23 @@ export default function ThemeCustomizer() {
   // Open panel
   return (
     <div
-      className={`fixed top-1/2 right-8 -translate-y-1/2 z-50 w-90 rounded-2xl shadow-2xl border overflow-hidden ${
-        isDark
+      className={`fixed top-1/2 right-8 -translate-y-1/2 z-50 w-90 rounded-2xl shadow-2xl border overflow-hidden ${isDark
           ? "bg-gray-950 text-white border-gray-800"
           : "bg-white text-gray-900 border-gray-200"
-      }`}
+        }`}
     >
       {/* Header */}
       <div
-        className={`flex items-center justify-between px-5 py-4 border-b ${
-          isDark ? "border-gray-800" : "border-gray-200"
-        }`}
+        className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? "border-gray-800" : "border-gray-200"
+          }`}
       >
         <h3 className="text-base font-semibold">Theme Customizer</h3>
         <button
           onClick={() => setIsOpen(false)}
-          className={`transition text-lg ${
-            isDark
+          className={`transition text-lg ${isDark
               ? "text-gray-400 hover:text-white"
               : "text-gray-600 hover:text-gray-900"
-          }`}
+            }`}
         >
           ✕
         </button>
@@ -95,9 +92,8 @@ export default function ThemeCustomizer() {
         {/* Color Palette */}
         <div>
           <label
-            className={`block text-xs font-medium mb-3 ${
-              isDark ? "text-gray-400" : "text-gray-600"
-            }`}
+            className={`block text-xs font-medium mb-3 ${isDark ? "text-gray-400" : "text-gray-600"
+              }`}
           >
             Color
           </label>
@@ -106,37 +102,39 @@ export default function ThemeCustomizer() {
               <button
                 key={color}
                 onClick={() => handlePresetColor(color)}
-                className="w-full h-10 rounded-md transition-all relative"
+                className="w-full h-10 rounded-md transition-all relative flex items-center justify-center"
                 style={{
                   backgroundColor: "#f1f5f980",
                   border:
                     selectedColor === color
                       ? `2px solid ${color}`
-                      : "2px solid transparent", // light gray border for unselected
+                      : "1px solid gray",
                 }}
               >
+                {/* Center color preview (ALWAYS visible) */}
+                <div
+                  className="w-4 h-4 rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+
+                {/* Selected ring */}
                 {selectedColor === color && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div
-                      className="w-3 h-3 bg-white rounded-full"
-                      style={{
-                        backgroundColor:
-                          selectedColor === color ? color : "transparent",
-                      }}
-                    ></div>
-                  </div>
+                  <div
+                    className="absolute w-6 h-6 rounded-full border-2"
+                    style={{ borderColor: color }}
+                  />
                 )}
               </button>
             ))}
           </div>
+
         </div>
 
         {/* Menu Layout */}
         <div>
           <label
-            className={`block text-xs font-medium mb-3 ${
-              isDark ? "text-gray-400" : "text-gray-600"
-            }`}
+            className={`block text-xs font-medium mb-3 ${isDark ? "text-gray-400" : "text-gray-600"
+              }`}
           >
             Menu Layout
           </label>
@@ -145,19 +143,18 @@ export default function ThemeCustomizer() {
             <div className="flex gap-3">
               <button
                 onClick={() => setLayout("sidebar")}
-                className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all border-2 ${
-                  layout === "sidebar"
+                className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all border-2 ${layout === "sidebar"
                     ? "text-primary-foreground border-primary" // White text + primary border
                     : isDark
-                    ? "border-gray-700 text-gray-400 hover:border-gray-600"
-                    : "border-gray-300 text-gray-600 hover:border-gray-400"
-                }`}
+                      ? "border-gray-700 text-gray-400 hover:border-gray-600"
+                      : "border-gray-300 text-gray-600 hover:border-gray-400"
+                  }`}
                 style={
                   layout === "sidebar"
                     ? {
-                        backgroundColor: selectedColor,
-                        borderColor: selectedColor,
-                      }
+                      backgroundColor: selectedColor,
+                      borderColor: selectedColor,
+                    }
                     : {}
                 }
               >
@@ -166,19 +163,18 @@ export default function ThemeCustomizer() {
 
               <button
                 onClick={() => setLayout("topnav")}
-                className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all border-2 ${
-                  layout === "topnav"
+                className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all border-2 ${layout === "topnav"
                     ? "text-primary-foreground border-primary" // White text + primary border
                     : isDark
-                    ? "border-gray-700 text-gray-400 hover:border-gray-600"
-                    : "border-gray-300 text-gray-600 hover:border-gray-400"
-                }`}
+                      ? "border-gray-700 text-gray-400 hover:border-gray-600"
+                      : "border-gray-300 text-gray-600 hover:border-gray-400"
+                  }`}
                 style={
                   layout === "topnav"
                     ? {
-                        backgroundColor: selectedColor,
-                        borderColor: selectedColor,
-                      }
+                      backgroundColor: selectedColor,
+                      borderColor: selectedColor,
+                    }
                     : {}
                 }
               >
@@ -191,16 +187,14 @@ export default function ThemeCustomizer() {
         {/* Color Block Toggle */}
         <div>
           <label
-            className={`block text-xs font-medium mb-3 ${
-              isDark ? "text-gray-400" : "text-gray-600"
-            }`}
+            className={`block text-xs font-medium mb-3 ${isDark ? "text-gray-400" : "text-gray-600"
+              }`}
           >
             Sidebar Style
           </label>
           <div
-            className={`flex items-center justify-between border rounded-lg px-4 py-3 ${
-              isDark ? "border-gray-800" : "border-gray-200"
-            }`}
+            className={`flex items-center justify-between border rounded-lg px-4 py-3 ${isDark ? "border-gray-800" : "border-gray-200"
+              }`}
           >
             <span className="text-sm">Color Block</span>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -211,9 +205,8 @@ export default function ThemeCustomizer() {
                 className="sr-only peer"
               />
               <div
-                className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-md ${
-                  isDark ? "bg-gray-700" : "bg-gray-300"
-                }`}
+                className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-md ${isDark ? "bg-gray-700" : "bg-gray-300"
+                  }`}
                 style={colorBlock ? { backgroundColor: selectedColor } : {}}
               ></div>
             </label>
@@ -223,16 +216,14 @@ export default function ThemeCustomizer() {
         {/* Dark Mode Toggle */}
         <div>
           <label
-            className={`block text-xs font-medium mb-3 ${
-              isDark ? "text-gray-400" : "text-gray-600"
-            }`}
+            className={`block text-xs font-medium mb-3 ${isDark ? "text-gray-400" : "text-gray-600"
+              }`}
           >
             Mode
           </label>
           <div
-            className={`flex items-center justify-between border rounded-lg px-4 py-3 ${
-              isDark ? "border-gray-800" : "border-gray-200"
-            }`}
+            className={`flex items-center justify-between border rounded-lg px-4 py-3 ${isDark ? "border-gray-800" : "border-gray-200"
+              }`}
           >
             <span className="text-sm">Dark Mode</span>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -243,9 +234,8 @@ export default function ThemeCustomizer() {
                 className="sr-only peer"
               />
               <div
-                className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-md ${
-                  isDark ? "bg-gray-700" : "bg-gray-300"
-                }`}
+                className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-md ${isDark ? "bg-gray-700" : "bg-gray-300"
+                  }`}
                 style={isDark ? { backgroundColor: selectedColor } : {}}
               ></div>
             </label>

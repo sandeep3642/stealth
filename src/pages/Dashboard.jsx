@@ -25,10 +25,10 @@ export default function Dashboard() {
             <h3 className="text-2xl font-bold text-primary">Card 2</h3>
             <p>Auto-adjusting card with primary accent</p>
           </div>
-          <div className="bg-primary text-primary-foreground p-8 rounded-xl shadow-lg">
+          {/* <div className="bg-primary text-primary-foreground p-8 rounded-xl shadow-lg">
             <h3 className="text-2xl font-bold">Card 3</h3>
             <p>Normal card - changes with mode</p>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
