@@ -1,35 +1,36 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./context/ThemeContext";
+import { LayoutProvider } from "./context/LayoutContext";
+import { ColorProvider } from "./context/ColorContext"; // Import from correct file
 import Dashboard from "./pages/Dashboard";
 import { useState } from "react";
 import Auth from "./pages/Auth";
+import DualHeaderLayout from "./components/DualHeaderLayout";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(true);
 
-  // Fake login handler
   const handleLogin = () => setIsLoggedIn(true);
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Auth onLogin={handleLogin} />} />
-        <Route
-          path="/*"
-          element={
-            isLoggedIn ? (
-              <ThemeProvider>
-                <Routes>
+      <ThemeProvider>
+        <LayoutProvider>
+          <ColorProvider>
+            <Routes>
+              <Route path="/" element={<Auth onLogin={handleLogin} />} />
+              {isLoggedIn ? (
+                <Route element={<DualHeaderLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="*" element={<Navigate to="/" />} />
-                </Routes>
-              </ThemeProvider>
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
-      </Routes>
+                  <Route path="*" element={<Navigate to="/dashboard" />} />
+                </Route>
+              ) : (
+                <Route path="*" element={<Navigate to="/" />} />
+              )}
+            </Routes>
+          </ColorProvider>
+        </LayoutProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }
