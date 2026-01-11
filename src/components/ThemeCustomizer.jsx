@@ -16,7 +16,7 @@ const presetColors = [
 
 export default function ThemeCustomizer() {
   const { isDark, setIsDark, setPrimaryHsl } = useTheme();
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const { layout, setLayout } = useLayout();
 
   const {
