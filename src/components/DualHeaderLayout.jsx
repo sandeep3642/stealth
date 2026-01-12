@@ -623,7 +623,7 @@ const DualHeaderLayout = () => {
         className={`p-6 ${
           menuLayout === "sidebar" ? (isSidebarOpen ? "ml-64" : "ml-20") : ""
         } ${
-          menuLayout === "sidebar" ? "mt-[57px]" : ""
+          menuLayout === "sidebar" ? "" : ""
         } transition-all duration-300`}
       >
         <Outlet />
