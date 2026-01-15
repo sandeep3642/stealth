@@ -1,21 +1,47 @@
-
 import { useState } from 'react';
 import { AtSign, Lock, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { loginUser } from '../pages/Auth/auth';
 
-// Login Component
 export function LoginComponent({ onSwitchToRegister }) {
- const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-    const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const handleLogin = () => {
-    console.log('Login:', { email, password, rememberMe });
-    // Call onLoginSuccess to trigger navigation
-    navigate("/dashboard")
-   
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError('Please enter email and password');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+      
+      const response = await loginUser(email, password);
+      
+      // Store token in localStorage
+      if (response.token) {
+        localStorage.setItem('authToken', response.token);
+      }
+      
+      // Store user data if needed
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
+      
+      // Navigate to dashboard
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -26,6 +52,12 @@ export function LoginComponent({ onSwitchToRegister }) {
       </div>
 
       <div className="space-y-6">
+        {error && (
+          <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+            {error}
+          </div>
+        )}
+
         <div className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-semibold text-zinc-700">Email or Mobile</label>
@@ -53,6 +85,7 @@ export function LoginComponent({ onSwitchToRegister }) {
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                 className="flex h-11 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-1 pl-10 pr-10 text-sm shadow-sm transition-colors placeholder:text-zinc-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-purple-600 focus:border-purple-600"
                 placeholder="••••••••"
               />
@@ -96,9 +129,10 @@ export function LoginComponent({ onSwitchToRegister }) {
 
         <button
           onClick={handleLogin}
-          className="inline-flex items-center justify-center rounded-md text-base font-semibold transition-colors w-full h-11 bg-purple-600 text-white shadow-md hover:bg-purple-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-purple-600"
+          disabled={loading}
+          className="inline-flex items-center justify-center rounded-md text-base font-semibold transition-colors w-full h-11 bg-purple-600 text-white shadow-md hover:bg-purple-700 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Login
+          {loading ? 'Logging in...' : 'Login'}
         </button>
       </div>
 
