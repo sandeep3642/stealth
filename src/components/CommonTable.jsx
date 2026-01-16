@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Search, ChevronDown, Edit2, Trash2 } from "lucide-react";
+import { useColor } from "../context/ColorContext";
 
 const CommonTable = ({
   columns = [],
@@ -11,6 +12,7 @@ const CommonTable = ({
   rowsPerPageOptions = [10, 25, 50, 100],
   defaultRowsPerPage = 10,
 }) => {
+  const { selectedColor } = useColor();
   const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
   const [searchQuery, setSearchQuery] = useState("");
   const [columnVisibility, setColumnVisibility] = useState(() => {
@@ -70,7 +72,10 @@ const CommonTable = ({
 
     if (column.type === "link") {
       return (
-        <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">
+        <span
+          className={`text-sm font-semibold`}
+          style={{ color: selectedColor }}
+        >
           {value}
         </span>
       );
@@ -168,7 +173,7 @@ const CommonTable = ({
               <div className="relative">
                 <button
                   onClick={() => setShowColumnMenu(!showColumnMenu)}
-                  className="flex items-center gap-2 px-4 py-2 text-sm border border-border rounded-lg bg-card focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="flex items-center gap-2 px-4 py-2 text-sm border border-border rounded-lg bg-card"
                 >
                   <svg
                     className="w-4 h-4 text-foreground opacity-70"
@@ -202,7 +207,10 @@ const CommonTable = ({
                             type="checkbox"
                             checked={columnVisibility[column.key]}
                             onChange={() => toggleColumn(column.key)}
-                            className="w-4 h-4 text-purple-600 border-border rounded focus:ring-2 focus:ring-purple-500 accent-purple-600"
+                            className={`w-4 h-4 `}
+                            style={{
+                              accentColor: selectedColor, // 👈 works!
+                            }}
                           />
                         </div>
                         <span className="text-sm text-foreground">
@@ -217,7 +225,10 @@ const CommonTable = ({
                             type="checkbox"
                             checked={columnVisibility.actions}
                             onChange={() => toggleColumn("actions")}
-                            className="w-4 h-4 text-purple-600 border-border rounded focus:ring-2 focus:ring-purple-500 accent-purple-600"
+                            className={`w-4 h-4 `}
+                            style={{
+                              accentColor: selectedColor, // 👈 works!
+                            }}
                           />
                         </div>
                         <span className="text-sm text-foreground">Actions</span>
@@ -303,10 +314,16 @@ const CommonTable = ({
             {totalRecords} RECORDS
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-purple-600 dark:text-purple-400 font-semibold">
+            <span
+              className="text-sm  font-semibold"
+              style={{ color: selectedColor }}
+            >
               PAGE {currentPage} / {totalPages || 1}
             </span>
-            <button className="w-9 h-9 flex items-center justify-center bg-purple-600 dark:bg-purple-500 text-white text-sm font-semibold rounded-lg shadow-sm">
+            <button
+              className="w-9 h-9 flex items-center justify-center  text-white text-sm font-semibold rounded-lg shadow-sm"
+              style={{ background: selectedColor }}
+            >
               {currentPage}
             </button>
           </div>
