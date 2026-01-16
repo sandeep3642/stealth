@@ -25,7 +25,7 @@ import { useLayout } from "../context/LayoutContext";
 import { useColor } from "../context/ColorContext";
 import { Outlet } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-
+import { Link } from "react-router-dom";
 const DualHeaderLayout = () => {
   const { layout: menuLayout, setLayout: setMenuLayout } = useLayout();
   const { selectedColor, colorBlock } = useColor();
@@ -42,14 +42,21 @@ const DualHeaderLayout = () => {
     {
       title: "OVERVIEW",
       items: [
-        { id: "home", label: "Home", icon: Home, active: false },
+        { id: "home", label: "Home", icon: Home, active: false, path: "/home" },
         {
           id: "dashboard",
           label: "Dashboard",
           icon: LayoutDashboard,
           active: true,
+          path: "/dashboard",
         },
-        { id: "report", label: "Report", icon: FileText, active: false },
+        {
+          id: "report",
+          label: "Report",
+          icon: FileText,
+          active: false,
+          path: "/report",
+        },
       ],
     },
     {
@@ -62,11 +69,36 @@ const DualHeaderLayout = () => {
           active: false,
           expandable: true,
           children: [
-            { id: "account-list", label: "Account List", icon: List },
-            { id: "categories", label: "Categories", icon: Layers },
-            { id: "hierarchy", label: "Hierarchy", icon: GitBranch },
-            { id: "configuration", label: "Configuration", icon: Settings },
-            { id: "white-label", label: "White Label", icon: Tag },
+            {
+              id: "account-list",
+              label: "Account List",
+              icon: List,
+              path: "/accounts",
+            },
+            {
+              id: "categories",
+              label: "Categories",
+              icon: Layers,
+              path: "/accounts/categories",
+            },
+            {
+              id: "hierarchy",
+              label: "Hierarchy",
+              icon: GitBranch,
+              path: "/accounts/hierarchy",
+            },
+            {
+              id: "configuration",
+              label: "Configuration",
+              icon: Settings,
+              path: "/accounts/configuration",
+            },
+            {
+              id: "white-label",
+              label: "White Label",
+              icon: Tag,
+              path: "/accounts/white-label",
+            },
           ],
         },
         {
@@ -76,13 +108,19 @@ const DualHeaderLayout = () => {
           active: false,
           expandable: true,
           children: [
-            { id: "user-list", label: "User List", icon: User },
+            { id: "user-list", label: "User List", icon: User, path: "/users" },
             {
               id: "roles-permissions",
               label: "Roles & Permissions",
               icon: Shield,
+              path: "/users/roles-permissions",
             },
-            { id: "activity-logs", label: "Activity Logs", icon: Activity },
+            {
+              id: "activity-logs",
+              label: "Activity Logs",
+              icon: Activity,
+              path: "/users/activity-logs",
+            },
           ],
         },
         {
@@ -91,13 +129,28 @@ const DualHeaderLayout = () => {
           icon: Package,
           active: false,
           expandable: true,
-          children: [{ id: "asset-list", label: "Asset List", icon: List }],
+          children: [
+            {
+              id: "asset-list",
+              label: "Asset List",
+              icon: List,
+              path: "/assets",
+            },
+          ],
         },
       ],
     },
     {
       title: "SYSTEM SETUP",
-      items: [{ id: "settings", label: "Settings", icon: Cog, active: false }],
+      items: [
+        {
+          id: "settings",
+          label: "Settings",
+          icon: Cog,
+          active: false,
+          path: "/settings",
+        },
+      ],
     },
   ];
 
@@ -188,22 +241,14 @@ const DualHeaderLayout = () => {
                           {item.children.map((child, idx) => {
                             const ChildIcon = child.icon;
                             return (
-                              <a
+                              <Link
                                 key={child.id}
-                                href="#"
-                                className={`flex items-center gap-3 px-4 py-2.5 text-sm ${
-                                  headerClasses.textSecondary
-                                } ${headerClasses.dropdownHover} ${
-                                  idx === 0 ? "rounded-t-lg" : ""
-                                } ${
-                                  idx === item.children.length - 1
-                                    ? "rounded-b-lg"
-                                    : ""
-                                }`}
+                                to={child.path}
+                                className={`flex items-center gap-3 px-4 py-2.5 text-sm ${headerClasses.textSecondary} ${headerClasses.dropdownHover}`}
                               >
                                 <ChildIcon className="w-4 h-4" />
                                 <span>{child.label}</span>
-                              </a>
+                              </Link>
                             );
                           })}
                         </div>
@@ -212,9 +257,9 @@ const DualHeaderLayout = () => {
                   }
 
                   return (
-                    <a
+                    <Link
                       key={item.id}
-                      href="#"
+                      to={item.path}
                       className={`text-sm py-1 ${
                         item.active
                           ? `${headerClasses.text} font-semibold`
@@ -222,7 +267,7 @@ const DualHeaderLayout = () => {
                       }`}
                     >
                       {item.label}
-                    </a>
+                    </Link>
                   );
                 })
               )}
@@ -479,21 +524,6 @@ const DualHeaderLayout = () => {
                 </span>
               )}
             </div>
-            {isSidebarOpen && (
-              <button className={`p-1.5 ${sidebarClasses.gridHover} rounded`}>
-                <svg
-                  className={`w-5 h-5 ${sidebarClasses.gridIcon}`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <rect x="3" y="3" width="7" height="7" rx="1" />
-                  <rect x="14" y="3" width="7" height="7" rx="1" />
-                  <rect x="14" y="14" width="7" height="7" rx="1" />
-                  <rect x="3" y="14" width="7" height="7" rx="1" />
-                </svg>
-              </button>
-            )}
           </div>
 
           {sidebarSections.map((section, index) => (
@@ -555,24 +585,24 @@ const DualHeaderLayout = () => {
                               {item.children.map((child) => {
                                 const ChildIcon = child.icon;
                                 return (
-                                  <a
+                                  <Link
                                     key={child.id}
-                                    href="#"
+                                    to={child.path}
                                     className={`flex items-center gap-3 px-3 py-2 rounded-lg ${sidebarClasses.menuText} ${sidebarClasses.menuHover} text-sm`}
                                   >
                                     <ChildIcon
                                       className={`w-4 h-4 ${sidebarClasses.menuIcon}`}
                                     />
                                     <span>{child.label}</span>
-                                  </a>
+                                  </Link>
                                 );
                               })}
                             </div>
                           )}
                         </>
                       ) : (
-                        <a
-                          href="#"
+                        <Link
+                          to={item.path}
                           className={`flex items-center gap-3 ${
                             isSidebarOpen ? "" : "justify-center"
                           } px-3 py-2.5 rounded-lg ${
@@ -598,7 +628,7 @@ const DualHeaderLayout = () => {
                               {item.label}
                             </span>
                           )}
-                        </a>
+                        </Link>
                       )}
                     </div>
                   );
@@ -622,9 +652,7 @@ const DualHeaderLayout = () => {
       <main
         className={`p-6 ${
           menuLayout === "sidebar" ? (isSidebarOpen ? "ml-64" : "ml-20") : ""
-        } ${
-          menuLayout === "sidebar" ? "" : ""
-        } transition-all duration-300`}
+        } ${menuLayout === "sidebar" ? "" : ""} transition-all duration-300`}
       >
         <Outlet />
       </main>

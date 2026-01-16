@@ -49,7 +49,7 @@ const hexToHsl = (hex) => {
 
 export const ColorProvider = ({ children }) => {
   const [selectedColor, setSelectedColor] = useState("#6366f1"); // Default indigo
-  const [colorBlock, setColorBlock] = useState(true);
+  const [colorBlock, setColorBlock] = useState(false);
 
   const handleColorChange = (hex) => {
     setSelectedColor(hex);

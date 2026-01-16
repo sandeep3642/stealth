@@ -13,12 +13,12 @@ import {
   Cell,
 } from "recharts";
 
-import usersImg from "../assets/customers.png";
-import subscriptionImg from "../assets/activesubscription.png";
-import dealersImg from "../assets/dealers.png";
-import deviceImg from "../assets/devices.png";
-import { useTheme } from "../context/ThemeContext";
-import ThemeCustomizer from "../components/ThemeCustomizer";
+import usersImg from "../../assets/customers.png";
+import subscriptionImg from "../../assets/activesubscription.png";
+import dealersImg from "../../assets/dealers.png";
+import deviceImg from "../../assets/devices.png";
+import { useTheme } from "../../context/ThemeContext";
+import ThemeCustomizer from "../../components/ThemeCustomizer";
 
 const Card = ({ children, className = "", isDark }) => (
   <div
