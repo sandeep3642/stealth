@@ -36,13 +36,12 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
       // Store token
       if (response?.accessToken) {
         localStorage.setItem("authToken", response.accessToken);
+        router.push("/dashboard");
       }
 
       // if (response.user) {
       //   localStorage.setItem("user", JSON.stringify(response.user));
       // }
-
-      router.push("/dashboard");
     } catch (err: any) {
       setError(
         err.response?.data?.message || "Login failed. Please try again.",

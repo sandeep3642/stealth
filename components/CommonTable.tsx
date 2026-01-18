@@ -3,28 +3,7 @@
 import React, { useState } from "react";
 import { Search, ChevronDown, Edit2, Trash2 } from "lucide-react";
 import { useColor } from "@/context/ColorContext";
-
-interface Column {
-  key: string;
-  label: string;
-  visible?: boolean;
-  type?: "badge" | "link" | "icon-text" | "multi-line";
-  icon?: React.ReactNode;
-  mainStyle?: string;
-  subStyle?: string;
-  render?: (value: any, row: any) => React.ReactNode;
-}
-
-interface CommonTableProps {
-  columns?: Column[];
-  data?: any[];
-  onEdit?: (row: any) => void;
-  onDelete?: (row: any) => void;
-  showActions?: boolean;
-  searchPlaceholder?: string;
-  rowsPerPageOptions?: number[];
-  defaultRowsPerPage?: number;
-}
+import { Column, CommonTableProps } from "@/interfaces/table.interface";
 
 const CommonTable: React.FC<CommonTableProps> = ({
   columns = [],

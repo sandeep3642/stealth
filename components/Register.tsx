@@ -3,21 +3,10 @@
 import React, { useState } from "react";
 import { AtSign, Lock, Eye, EyeOff, User, Phone, Gift } from "lucide-react";
 import { registerUser } from "@/services/authService";
-
-interface RegisterComponentProps {
-  onSwitchToLogin: () => void;
-}
-
-interface RegisterForm {
-  firstName: string;
-  lastName: string;
-  email: string;
-  mobileNo: string;
-  countryCode: string;
-  password: string;
-  confirmPassword: string;
-  refferalCode?: string;
-}
+import {
+  RegisterComponentProps,
+  RegisterForm,
+} from "@/interfaces/register.interface";
 
 export const RegisterComponent: React.FC<RegisterComponentProps> = ({
   onSwitchToLogin,

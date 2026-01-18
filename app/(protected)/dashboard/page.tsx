@@ -23,38 +23,12 @@ import deviceImg from "@/assets/devices.png";
 
 import { useTheme } from "@/context/ThemeContext";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
-
-// ==================== Type Definitions ==================== //
-interface CardProps {
-  children: React.ReactNode;
-  className?: string;
-  isDark?: boolean;
-}
-
-interface MetricCardProps {
-  icon: React.ElementType | StaticImageData | string;
-  label: string;
-  value: number;
-  iconBgColor: string;
-  iconColor: string;
-  isDark?: boolean;
-}
-
-interface AlertItemProps {
-  icon: React.ElementType;
-  title: string;
-  time: string;
-  severity: string;
-  iconBg: string;
-  iconColor: string;
-  isDark?: boolean;
-}
-
-interface ServerStatusItemProps {
-  name: string;
-  status: "Operational" | "Outage";
-  isDark?: boolean;
-}
+import {
+  CardProps,
+  AlertItemProps,
+  MetricCardProps,
+  ServerStatusItemProps,
+} from "@/interfaces/dashboard.interface";
 
 // ==================== Reusable Components ==================== //
 const Card: React.FC<CardProps> = ({ children, className = "", isDark }) => (
@@ -239,12 +213,18 @@ const Dashboard: React.FC = () => {
                   />
                   <XAxis
                     dataKey="month"
-                    tick={{ fill: isDark ? "#9ca3af" : "#6b7280", fontSize: 12 }}
+                    tick={{
+                      fill: isDark ? "#9ca3af" : "#6b7280",
+                      fontSize: 12,
+                    }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fill: isDark ? "#9ca3af" : "#6b7280", fontSize: 12 }}
+                    tick={{
+                      fill: isDark ? "#9ca3af" : "#6b7280",
+                      fontSize: 12,
+                    }}
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={(value) => `${value / 1000}k`}

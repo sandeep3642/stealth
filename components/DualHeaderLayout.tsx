@@ -22,71 +22,16 @@ import {
   Shield,
   Activity,
   Package,
-  LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useLayout } from "../context/LayoutContext";
 import { useColor } from "../context/ColorContext";
 import { useTheme } from "../context/ThemeContext";
-
-interface MenuItem {
-  id: string;
-  label: string;
-  icon: LucideIcon;
-  active: boolean;
-  path?: string;
-  expandable?: boolean;
-  children?: {
-    id: string;
-    label: string;
-    icon: LucideIcon;
-    path: string;
-  }[];
-}
-
-interface SidebarSection {
-  title: string;
-  items: MenuItem[];
-}
-
-interface HeaderClasses {
-  header: string;
-  text: string;
-  textSecondary: string;
-  hover: string;
-  inputBg: string;
-  inputBorder: string;
-  inputText: string;
-  hoverBg: string;
-  dropdown: string;
-  dropdownHover: string;
-  useCustomBg: boolean;
-  customBg?: string;
-  inputPlaceholder?: string;
-  logo?: string;
-  logoText?: string;
-  iconColor?: string;
-}
-
-interface SidebarClasses {
-  bg?: string;
-  border: string;
-  logo: string;
-  logoText: string;
-  brandText: string;
-  sectionTitle: string;
-  menuText: string;
-  menuIcon: string;
-  menuHover: string;
-  activeMenuBg: string;
-  activeMenuText: string;
-  activeMenuIcon: string;
-  chevron: string;
-  gridIcon: string;
-  gridHover: string;
-  useCustomBg?: boolean;
-  customBg?: string;
-}
+import {
+  SidebarSection,
+  HeaderClasses,
+  SidebarClasses,
+} from "@/interfaces/navbar.interface";
 
 const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -100,6 +45,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     "assets",
   ]);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [selectedItemId, setSelectedItemId] = useState<string>("");
 
   // Complete menu structure with nested items
   const sidebarSections: SidebarSection[] = [
@@ -111,7 +57,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           id: "dashboard",
           label: "Dashboard",
           icon: LayoutDashboard,
-          active: true,
+          active: false,
           path: "/dashboard",
         },
         {
@@ -222,7 +168,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     setExpandedMenus((prev) =>
       prev.includes(menuId)
         ? prev.filter((id) => id !== menuId)
-        : [...prev, menuId]
+        : [...prev, menuId],
     );
   };
 
@@ -307,6 +253,12 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                 key={child.id}
                                 href={child.path}
                                 className={`flex items-center gap-3 px-4 py-2.5 text-sm ${headerClasses.textSecondary} ${headerClasses.dropdownHover}`}
+                                onClick={() => setSelectedItemId(child.id)}
+                                style={{
+                                  color:
+                                    selectedItemId === child.id &&
+                                    selectedColor,
+                                }}
                               >
                                 <ChildIcon className="w-4 h-4" />
                                 <span>{child.label}</span>
@@ -326,11 +278,15 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                           ? `${headerClasses.text} font-semibold`
                           : `${headerClasses.textSecondary} ${headerClasses.hover}`
                       }`}
+                      onClick={() => setSelectedItemId(item.id)}
+                      style={{
+                        color: selectedItemId === item.id && selectedColor,
+                      }}
                     >
                       {item.label}
                     </Link>
                   );
-                })
+                }),
               )}
             </nav>
           </div>
@@ -356,23 +312,17 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
             <button
               className={`relative p-2 ${headerClasses.hoverBg} rounded-lg`}
             >
-              <Bell
-                className={`w-5 h-5 ${headerClasses.textSecondary}`}
-              />
+              <Bell className={`w-5 h-5 ${headerClasses.textSecondary}`} />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
             <button
               className={`flex items-center gap-2 ${headerClasses.hoverBg} rounded-lg p-2`}
             >
               <div className="text-right hidden xl:block">
-                <div
-                  className={`text-sm font-medium ${headerClasses.text}`}
-                >
+                <div className={`text-sm font-medium ${headerClasses.text}`}>
                   Alex Johnson
                 </div>
-                <div
-                  className={`text-xs ${headerClasses.textSecondary}`}
-                >
+                <div className={`text-xs ${headerClasses.textSecondary}`}>
                   alex@stealth.com
                 </div>
               </div>
@@ -439,9 +389,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className={`p-2 ${headerClasses.hoverBg} rounded-lg`}
           >
-            <Menu
-              className={`w-5 h-5 ${headerClasses.textSecondary}`}
-            />
+            <Menu className={`w-5 h-5 ${headerClasses.textSecondary}`} />
           </button>
         </div>
 
@@ -477,14 +425,10 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               AJ
             </div>
             <div className="text-left hidden lg:block">
-              <div
-                className={`text-sm font-medium ${headerClasses.text}`}
-              >
+              <div className={`text-sm font-medium ${headerClasses.text}`}>
                 Alex Johnson
               </div>
-              <div
-                className={`text-xs ${headerClasses.textSecondary}`}
-              >
+              <div className={`text-xs ${headerClasses.textSecondary}`}>
                 alex@stealth.com
               </div>
             </div>
@@ -620,7 +564,9 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                           <button
                             onClick={() => isSidebarOpen && toggleMenu(item.id)}
                             className={`w-full flex items-center ${
-                              isSidebarOpen ? "justify-between" : "justify-center"
+                              isSidebarOpen
+                                ? "justify-between"
+                                : "justify-center"
                             } px-3 py-2.5 rounded-lg ${
                               sidebarClasses.menuText
                             } ${sidebarClasses.menuHover}`}
@@ -658,6 +604,12 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                   <Link
                                     key={child.id}
                                     href={child.path}
+                                    onClick={() => setSelectedItemId(child.id)}
+                                    style={{
+                                      color:
+                                        selectedItemId === child.id &&
+                                        selectedColor,
+                                    }}
                                     className={`flex items-center gap-3 px-3 py-2 rounded-lg ${sidebarClasses.menuText} ${sidebarClasses.menuHover} text-sm`}
                                   >
                                     <ChildIcon
@@ -681,6 +633,10 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                               : `${sidebarClasses.menuText} ${sidebarClasses.menuHover}`
                           }`}
                           title={!isSidebarOpen ? item.label : ""}
+                          onClick={() => setSelectedItemId(item.id)}
+                          style={{
+                            color: selectedItemId === item.id && selectedColor,
+                          }}
                         >
                           <IconComponent
                             className={`w-5 h-5 ${
@@ -721,11 +677,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
       <main
         className={`p-6 ${
-          menuLayout === "sidebar"
-            ? isSidebarOpen
-              ? "ml-64"
-              : "ml-20"
-            : ""
+          menuLayout === "sidebar" ? (isSidebarOpen ? "ml-64" : "ml-20") : ""
         } ${menuLayout === "sidebar" ? "" : ""} transition-all duration-300`}
       >
         {children}

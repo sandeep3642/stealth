@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 
 // ✅ Adjust these paths as per your project structure
 import { LoginComponent } from "@/components/Login";
@@ -12,12 +11,6 @@ import leftBanner from "@/assets/loginleftbanner.png";
 
 const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const router = useRouter();
-
-  const handleLoginSuccess = () => {
-    // Navigate to dashboard after login
-    router.push("/dashboard");
-  };
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-gray-100">
@@ -36,10 +29,7 @@ const Auth: React.FC = () => {
         {/* Right Panel */}
         <div className="w-full lg:w-1/2 flex items-center justify-center p-6 rounded-r-2xl">
           {isLogin ? (
-            <LoginComponent
-              onSwitchToRegister={() => setIsLogin(false)}
-              onLoginSuccess={handleLoginSuccess}
-            />
+            <LoginComponent onSwitchToRegister={() => setIsLogin(false)} />
           ) : (
             <RegisterComponent onSwitchToLogin={() => setIsLogin(true)} />
           )}

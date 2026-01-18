@@ -6,26 +6,7 @@ import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { useTheme } from "@/context/ThemeContext";
 
 import { getAccounts } from "@/services/accountService";
-
-interface InstanceData {
-  main: string;
-  sub: string;
-}
-
-interface ContactData {
-  main: string;
-  sub: string;
-}
-
-interface AccountData {
-  id: number;
-  no: number;
-  code: string;
-  instance: InstanceData;
-  contact: ContactData;
-  location: string;
-  status: string;
-}
+import { AccountData } from "@/interfaces/account.interface";
 
 const Accounts: React.FC = () => {
   const { isDark } = useTheme();
