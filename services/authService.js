@@ -1,5 +1,5 @@
 // src/features/auth/authService.js
-import api from "../../services/apiService";
+import api from "./apiService";
 
 export const loginUser = async (email, password) => {
   const res = await api.post("/api/auth/login", { email, password });

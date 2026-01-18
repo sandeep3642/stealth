@@ -1,29 +1,35 @@
+"use client";
+
 import React, { useState } from "react";
-import { LoginComponent } from "../../components/Login";
-import { RegisterComponent } from "../../components/Register";
-import { useNavigate } from "react-router-dom";
-import leftBanner from "../../assets/loginleftbanner.PNG";
-const Auth = () => {
-  // Main Auth Component
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+
+// ✅ Adjust these paths as per your project structure
+import { LoginComponent } from "@/components/Login";
+import { RegisterComponent } from "@/components/Register";
+
+import leftBanner from "@/assets/loginleftbanner.png";
+
+const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const navigate = useNavigate();
+  const router = useRouter();
+
   const handleLoginSuccess = () => {
-    if (onLogin) {
-      navigate("/dashboard");
-      onLogin();
-    }
+    // Navigate to dashboard after login
+    router.push("/dashboard");
   };
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-gray-100">
       {/* Card Wrapper */}
-      <div className="flex w-[100%] max-w-6xl h-[85vh] bg-white shadow-xl rounded-2xl overflow-hidden">
+      <div className="flex w-full max-w-6xl h-[85vh] bg-white shadow-xl rounded-2xl overflow-hidden">
         {/* Left Panel */}
         <div className="hidden lg:flex w-1/2 items-center justify-center rounded-l-2xl overflow-hidden">
-          <img
+          <Image
             src={leftBanner}
-            alt="leftbanner"
+            alt="Left Banner"
             className="w-full h-full object-cover"
+            priority
           />
         </div>
 

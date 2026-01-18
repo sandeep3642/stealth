@@ -1,8 +1,32 @@
+"use client";
+
 import React, { useState } from "react";
 import { Search, ChevronDown, Edit2, Trash2 } from "lucide-react";
-import { useColor } from "../context/ColorContext";
+import { useColor } from "@/context/ColorContext";
 
-const CommonTable = ({
+interface Column {
+  key: string;
+  label: string;
+  visible?: boolean;
+  type?: "badge" | "link" | "icon-text" | "multi-line";
+  icon?: React.ReactNode;
+  mainStyle?: string;
+  subStyle?: string;
+  render?: (value: any, row: any) => React.ReactNode;
+}
+
+interface CommonTableProps {
+  columns?: Column[];
+  data?: any[];
+  onEdit?: (row: any) => void;
+  onDelete?: (row: any) => void;
+  showActions?: boolean;
+  searchPlaceholder?: string;
+  rowsPerPageOptions?: number[];
+  defaultRowsPerPage?: number;
+}
+
+const CommonTable: React.FC<CommonTableProps> = ({
   columns = [],
   data = [],
   onEdit,
@@ -13,10 +37,12 @@ const CommonTable = ({
   defaultRowsPerPage = 10,
 }) => {
   const { selectedColor } = useColor();
-  const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [columnVisibility, setColumnVisibility] = useState(() => {
-    const initialVisibility = {};
+  const [rowsPerPage, setRowsPerPage] = useState<number>(defaultRowsPerPage);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [columnVisibility, setColumnVisibility] = useState<
+    Record<string, boolean>
+  >(() => {
+    const initialVisibility: Record<string, boolean> = {};
     columns.forEach((col) => {
       initialVisibility[col.key] = col.visible !== false;
     });
@@ -25,16 +51,16 @@ const CommonTable = ({
     }
     return initialVisibility;
   });
-  const [showColumnMenu, setShowColumnMenu] = useState(false);
+  const [showColumnMenu, setShowColumnMenu] = useState<boolean>(false);
 
-  const toggleColumn = (columnKey) => {
+  const toggleColumn = (columnKey: string) => {
     setColumnVisibility((prev) => ({
       ...prev,
       [columnKey]: !prev[columnKey],
     }));
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status?: string): string => {
     switch (status?.toLowerCase()) {
       case "active":
         return "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
@@ -51,7 +77,7 @@ const CommonTable = ({
     }
   };
 
-  const renderCellContent = (column, row) => {
+  const renderCellContent = (column: Column, row: any): React.ReactNode => {
     const value = row[column.key];
 
     if (column.render) {
@@ -62,7 +88,7 @@ const CommonTable = ({
       return (
         <span
           className={`inline-flex px-3 py-1.5 text-xs font-semibold rounded-md ${getStatusColor(
-            value
+            value,
           )}`}
         >
           {value}
@@ -124,7 +150,7 @@ const CommonTable = ({
       const value = row[column.key];
       if (typeof value === "object" && value !== null) {
         return Object.values(value).some((v) =>
-          String(v).toLowerCase().includes(searchQuery.toLowerCase())
+          String(v).toLowerCase().includes(searchQuery.toLowerCase()),
         );
       }
       return String(value).toLowerCase().includes(searchQuery.toLowerCase());
@@ -207,9 +233,9 @@ const CommonTable = ({
                             type="checkbox"
                             checked={columnVisibility[column.key]}
                             onChange={() => toggleColumn(column.key)}
-                            className={`w-4 h-4 `}
+                            className={`w-4 h-4`}
                             style={{
-                              accentColor: selectedColor, // 👈 works!
+                              accentColor: selectedColor,
                             }}
                           />
                         </div>
@@ -225,9 +251,9 @@ const CommonTable = ({
                             type="checkbox"
                             checked={columnVisibility.actions}
                             onChange={() => toggleColumn("actions")}
-                            className={`w-4 h-4 `}
+                            className={`w-4 h-4`}
                             style={{
-                              accentColor: selectedColor, // 👈 works!
+                              accentColor: selectedColor,
                             }}
                           />
                         </div>
@@ -255,7 +281,7 @@ const CommonTable = ({
                       >
                         {column.label}
                       </th>
-                    )
+                    ),
                 )}
                 {showActions && columnVisibility.actions && (
                   <th className="px-6 py-3.5 text-left text-xs font-bold text-foreground uppercase tracking-wide">
@@ -277,7 +303,7 @@ const CommonTable = ({
                         <td key={column.key} className="px-6 py-4">
                           {renderCellContent(column, row)}
                         </td>
-                      )
+                      ),
                   )}
                   {showActions && columnVisibility.actions && (
                     <td className="px-6 py-4">
@@ -315,13 +341,13 @@ const CommonTable = ({
           </div>
           <div className="flex items-center gap-3">
             <span
-              className="text-sm  font-semibold"
+              className="text-sm font-semibold"
               style={{ color: selectedColor }}
             >
               PAGE {currentPage} / {totalPages || 1}
             </span>
             <button
-              className="w-9 h-9 flex items-center justify-center  text-white text-sm font-semibold rounded-lg shadow-sm"
+              className="w-9 h-9 flex items-center justify-center text-white text-sm font-semibold rounded-lg shadow-sm"
               style={{ background: selectedColor }}
             >
               {currentPage}

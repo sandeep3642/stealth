@@ -1,9 +1,35 @@
-import CommonTable from "../../components/CommonTable";
-import ThemeCustomizer from "../../components/ThemeCustomizer";
-import { useTheme } from "../../context/ThemeContext";
+"use client";
 
-const Accounts = () => {
+import React, { useEffect } from "react";
+import CommonTable from "@/components/CommonTable";
+import ThemeCustomizer from "@/components/ThemeCustomizer";
+import { useTheme } from "@/context/ThemeContext";
+
+import { getAccounts } from "@/services/accountService";
+
+interface InstanceData {
+  main: string;
+  sub: string;
+}
+
+interface ContactData {
+  main: string;
+  sub: string;
+}
+
+interface AccountData {
+  id: number;
+  no: number;
+  code: string;
+  instance: InstanceData;
+  contact: ContactData;
+  location: string;
+  status: string;
+}
+
+const Accounts: React.FC = () => {
   const { isDark } = useTheme();
+
   const columns = [
     {
       key: "no",
@@ -13,25 +39,25 @@ const Accounts = () => {
     {
       key: "code",
       label: "CODE",
-      type: "link",
+      type: "link" as const,
       visible: true,
     },
     {
       key: "instance",
       label: "INSTANCE",
-      type: "multi-line",
+      type: "multi-line" as const,
       visible: true,
     },
     {
       key: "contact",
       label: "CONTACT",
-      type: "multi-line",
+      type: "multi-line" as const,
       visible: true,
     },
     {
       key: "location",
       label: "LOCATION",
-      type: "icon-text",
+      type: "icon-text" as const,
       icon: (
         <svg
           className="w-4 h-4"
@@ -58,24 +84,18 @@ const Accounts = () => {
     {
       key: "status",
       label: "STATUS",
-      type: "badge",
+      type: "badge" as const,
       visible: true,
     },
   ];
 
-  const data = [
+  const data: AccountData[] = [
     {
       id: 1,
       no: 1,
       code: "ACC-001",
-      instance: {
-        main: "Alpha Logistics",
-        sub: "DISTRIBUTOR",
-      },
-      contact: {
-        main: "John Alpha",
-        sub: "contact@alpha.com",
-      },
+      instance: { main: "Alpha Logistics", sub: "DISTRIBUTOR" },
+      contact: { main: "John Alpha", sub: "contact@alpha.com" },
       location: "New York, NY",
       status: "Active",
     },
@@ -83,14 +103,8 @@ const Accounts = () => {
       id: 2,
       no: 2,
       code: "ACC-002",
-      instance: {
-        main: "Beta Fleet Services",
-        sub: "ENTERPRISE",
-      },
-      contact: {
-        main: "Sarah Beta",
-        sub: "admin@beta.com",
-      },
+      instance: { main: "Beta Fleet Services", sub: "ENTERPRISE" },
+      contact: { main: "Sarah Beta", sub: "admin@beta.com" },
       location: "Chicago, IL",
       status: "Active",
     },
@@ -98,14 +112,8 @@ const Accounts = () => {
       id: 3,
       no: 3,
       code: "ACC-003",
-      instance: {
-        main: "Gamma Transport",
-        sub: "RESELLER",
-      },
-      contact: {
-        main: "Mike Gamma",
-        sub: "info@gamma.com",
-      },
+      instance: { main: "Gamma Transport", sub: "RESELLER" },
+      contact: { main: "Mike Gamma", sub: "info@gamma.com" },
       location: "Houston, TX",
       status: "Suspended",
     },
@@ -113,28 +121,29 @@ const Accounts = () => {
       id: 4,
       no: 4,
       code: "ACC-004",
-      instance: {
-        main: "Delta Quick Cabs",
-        sub: "DEALER",
-      },
-      contact: {
-        main: "David Delta",
-        sub: "support@delta.com",
-      },
+      instance: { main: "Delta Quick Cabs", sub: "DEALER" },
+      contact: { main: "David Delta", sub: "support@delta.com" },
       location: "Phoenix, AZ",
       status: "Under Review",
     },
   ];
 
-  const handleEdit = (row) => {
+  const handleEdit = (row: AccountData) => {
     console.log("Edit:", row);
     alert(`Editing ${row.instance.main}`);
   };
 
-  const handleDelete = (row) => {
+  const handleDelete = (row: AccountData) => {
     console.log("Delete:", row);
     alert(`Deleting ${row.instance.main}`);
   };
+  async function getAccountsList() {
+    const response = await getAccounts();
+    console.log("response", response);
+  }
+  useEffect(() => {
+    getAccountsList();
+  }, []);
 
   return (
     <div className={isDark ? "dark" : ""}>

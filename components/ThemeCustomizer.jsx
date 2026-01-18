@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { useLayout } from "../context/LayoutContext";

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import {
   Search,
@@ -20,25 +22,87 @@ import {
   Shield,
   Activity,
   Package,
+  LucideIcon,
 } from "lucide-react";
+import Link from "next/link";
 import { useLayout } from "../context/LayoutContext";
 import { useColor } from "../context/ColorContext";
-import { Outlet } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
-import { Link } from "react-router-dom";
-const DualHeaderLayout = () => {
+
+interface MenuItem {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  active: boolean;
+  path?: string;
+  expandable?: boolean;
+  children?: {
+    id: string;
+    label: string;
+    icon: LucideIcon;
+    path: string;
+  }[];
+}
+
+interface SidebarSection {
+  title: string;
+  items: MenuItem[];
+}
+
+interface HeaderClasses {
+  header: string;
+  text: string;
+  textSecondary: string;
+  hover: string;
+  inputBg: string;
+  inputBorder: string;
+  inputText: string;
+  hoverBg: string;
+  dropdown: string;
+  dropdownHover: string;
+  useCustomBg: boolean;
+  customBg?: string;
+  inputPlaceholder?: string;
+  logo?: string;
+  logoText?: string;
+  iconColor?: string;
+}
+
+interface SidebarClasses {
+  bg?: string;
+  border: string;
+  logo: string;
+  logoText: string;
+  brandText: string;
+  sectionTitle: string;
+  menuText: string;
+  menuIcon: string;
+  menuHover: string;
+  activeMenuBg: string;
+  activeMenuText: string;
+  activeMenuIcon: string;
+  chevron: string;
+  gridIcon: string;
+  gridHover: string;
+  useCustomBg?: boolean;
+  customBg?: string;
+}
+
+const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const { layout: menuLayout, setLayout: setMenuLayout } = useLayout();
   const { selectedColor, colorBlock } = useColor();
   const { isDark } = useTheme();
-  const [expandedMenus, setExpandedMenus] = useState([
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([
     "accounts",
     "users",
     "assets",
   ]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
 
   // Complete menu structure with nested items
-  const sidebarSections = [
+  const sidebarSections: SidebarSection[] = [
     {
       title: "OVERVIEW",
       items: [
@@ -154,7 +218,7 @@ const DualHeaderLayout = () => {
     },
   ];
 
-  const toggleMenu = (menuId) => {
+  const toggleMenu = (menuId: string) => {
     setExpandedMenus((prev) =>
       prev.includes(menuId)
         ? prev.filter((id) => id !== menuId)
@@ -163,7 +227,7 @@ const DualHeaderLayout = () => {
   };
 
   // Header classes for Top Nav - NEVER uses color block
-  const getTopNavHeaderClasses = () => {
+  const getTopNavHeaderClasses = (): HeaderClasses => {
     if (isDark) {
       return {
         header: "bg-card border-border",
@@ -196,9 +260,8 @@ const DualHeaderLayout = () => {
   };
 
   // Header for Top Nav Layout (Horizontal with all menus)
-  const TopNavHeader = () => {
+  const TopNavHeader: React.FC = () => {
     const headerClasses = getTopNavHeaderClasses();
-
     return (
       <header
         className={`${headerClasses.header} border-b`}
@@ -233,17 +296,16 @@ const DualHeaderLayout = () => {
                           <span>{item.label}</span>
                           <ChevronDown className="w-3 h-3" />
                         </button>
-
                         {/* Dropdown */}
                         <div
                           className={`absolute left-0 top-full mt-2 w-56 ${headerClasses.dropdown} border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50`}
                         >
-                          {item.children.map((child, idx) => {
+                          {item.children?.map((child) => {
                             const ChildIcon = child.icon;
                             return (
                               <Link
                                 key={child.id}
-                                to={child.path}
+                                href={child.path}
                                 className={`flex items-center gap-3 px-4 py-2.5 text-sm ${headerClasses.textSecondary} ${headerClasses.dropdownHover}`}
                               >
                                 <ChildIcon className="w-4 h-4" />
@@ -255,11 +317,10 @@ const DualHeaderLayout = () => {
                       </div>
                     );
                   }
-
                   return (
                     <Link
                       key={item.id}
-                      to={item.path}
+                      href={item.path || "#"}
                       className={`text-sm py-1 ${
                         item.active
                           ? `${headerClasses.text} font-semibold`
@@ -286,29 +347,32 @@ const DualHeaderLayout = () => {
                 className={`pl-10 pr-4 py-2 border ${headerClasses.inputBorder} ${headerClasses.inputBg} ${headerClasses.inputText} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64`}
               />
             </div>
-
             <button
               className={`flex items-center gap-2 text-sm ${headerClasses.textSecondary} ${headerClasses.hover}`}
             >
               <Globe className="w-4 h-4" />
               <span className="hidden xl:inline">English</span>
             </button>
-
             <button
               className={`relative p-2 ${headerClasses.hoverBg} rounded-lg`}
             >
-              <Bell className={`w-5 h-5 ${headerClasses.textSecondary}`} />
+              <Bell
+                className={`w-5 h-5 ${headerClasses.textSecondary}`}
+              />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
-
             <button
               className={`flex items-center gap-2 ${headerClasses.hoverBg} rounded-lg p-2`}
             >
               <div className="text-right hidden xl:block">
-                <div className={`text-sm font-medium ${headerClasses.text}`}>
+                <div
+                  className={`text-sm font-medium ${headerClasses.text}`}
+                >
                   Alex Johnson
                 </div>
-                <div className={`text-xs ${headerClasses.textSecondary}`}>
+                <div
+                  className={`text-xs ${headerClasses.textSecondary}`}
+                >
                   alex@stealth.com
                 </div>
               </div>
@@ -325,8 +389,8 @@ const DualHeaderLayout = () => {
   };
 
   // Header for Sidebar Layout (Minimal)
-  const SidebarHeader = () => {
-    const headerClasses = isDark
+  const SidebarHeader: React.FC = () => {
+    const headerClasses: HeaderClasses = isDark
       ? {
           header: "bg-card border-border",
           text: "text-white",
@@ -340,6 +404,9 @@ const DualHeaderLayout = () => {
           logo: "bg-primary",
           logoText: "text-primary-foreground",
           iconColor: "text-white/70",
+          useCustomBg: false,
+          dropdown: "",
+          dropdownHover: "",
         }
       : {
           header: "bg-card border-border",
@@ -354,6 +421,9 @@ const DualHeaderLayout = () => {
           logo: "bg-primary",
           logoText: "text-primary-foreground",
           iconColor: "text-black/70",
+          useCustomBg: false,
+          dropdown: "",
+          dropdownHover: "",
         };
 
     return (
@@ -369,7 +439,9 @@ const DualHeaderLayout = () => {
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className={`p-2 ${headerClasses.hoverBg} rounded-lg`}
           >
-            <Menu className={`w-5 h-5 ${headerClasses.textSecondary}`} />
+            <Menu
+              className={`w-5 h-5 ${headerClasses.textSecondary}`}
+            />
           </button>
         </div>
 
@@ -384,21 +456,18 @@ const DualHeaderLayout = () => {
               className={`pl-10 pr-4 py-2 border ${headerClasses.inputBorder} ${headerClasses.inputBg} ${headerClasses.inputText} ${headerClasses.inputPlaceholder} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-64`}
             />
           </div>
-
           <button
             className={`flex items-center gap-2 text-sm ${headerClasses.textSecondary} ${headerClasses.hover}`}
           >
             <Globe className={`w-4 h-4 ${headerClasses.iconColor}`} />
             <span>English</span>
           </button>
-
           <button
             className={`relative p-2 ${headerClasses.hoverBg} rounded-lg`}
           >
             <Bell className={`w-5 h-5 ${headerClasses.iconColor}`} />
             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
           </button>
-
           <button
             className={`flex items-center gap-2 ${headerClasses.hoverBg} rounded-lg p-2`}
           >
@@ -408,10 +477,14 @@ const DualHeaderLayout = () => {
               AJ
             </div>
             <div className="text-left hidden lg:block">
-              <div className={`text-sm font-medium ${headerClasses.text}`}>
+              <div
+                className={`text-sm font-medium ${headerClasses.text}`}
+              >
                 Alex Johnson
               </div>
-              <div className={`text-xs ${headerClasses.textSecondary}`}>
+              <div
+                className={`text-xs ${headerClasses.textSecondary}`}
+              >
                 alex@stealth.com
               </div>
             </div>
@@ -422,9 +495,9 @@ const DualHeaderLayout = () => {
   };
 
   // Sidebar Menu Component
-  const Sidebar = () => {
+  const Sidebar: React.FC = () => {
     // Sidebar styling - ONLY uses color block for sidebar layout
-    const getSidebarClasses = () => {
+    const getSidebarClasses = (): SidebarClasses => {
       if (colorBlock && selectedColor && menuLayout === "sidebar") {
         // Color block mode ONLY for sidebar layout
         return {
@@ -547,9 +620,7 @@ const DualHeaderLayout = () => {
                           <button
                             onClick={() => isSidebarOpen && toggleMenu(item.id)}
                             className={`w-full flex items-center ${
-                              isSidebarOpen
-                                ? "justify-between"
-                                : "justify-center"
+                              isSidebarOpen ? "justify-between" : "justify-center"
                             } px-3 py-2.5 rounded-lg ${
                               sidebarClasses.menuText
                             } ${sidebarClasses.menuHover}`}
@@ -579,7 +650,6 @@ const DualHeaderLayout = () => {
                               />
                             )}
                           </button>
-
                           {isSidebarOpen && isExpanded && item.children && (
                             <div className="ml-11 mt-1 space-y-1">
                               {item.children.map((child) => {
@@ -587,7 +657,7 @@ const DualHeaderLayout = () => {
                                 return (
                                   <Link
                                     key={child.id}
-                                    to={child.path}
+                                    href={child.path}
                                     className={`flex items-center gap-3 px-3 py-2 rounded-lg ${sidebarClasses.menuText} ${sidebarClasses.menuHover} text-sm`}
                                   >
                                     <ChildIcon
@@ -602,7 +672,7 @@ const DualHeaderLayout = () => {
                         </>
                       ) : (
                         <Link
-                          to={item.path}
+                          href={item.path || "#"}
                           className={`flex items-center gap-3 ${
                             isSidebarOpen ? "" : "justify-center"
                           } px-3 py-2.5 rounded-lg ${
@@ -651,10 +721,14 @@ const DualHeaderLayout = () => {
 
       <main
         className={`p-6 ${
-          menuLayout === "sidebar" ? (isSidebarOpen ? "ml-64" : "ml-20") : ""
+          menuLayout === "sidebar"
+            ? isSidebarOpen
+              ? "ml-64"
+              : "ml-20"
+            : ""
         } ${menuLayout === "sidebar" ? "" : ""} transition-all duration-300`}
       >
-        <Outlet />
+        {children}
       </main>
     </div>
   );

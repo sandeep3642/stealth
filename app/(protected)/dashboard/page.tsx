@@ -1,4 +1,7 @@
+"use client";
+
 import React from "react";
+import Image, { StaticImageData } from "next/image";
 import { AlertTriangle, AlertCircle, Info } from "lucide-react";
 import {
   LineChart,
@@ -13,14 +16,48 @@ import {
   Cell,
 } from "recharts";
 
-import usersImg from "../../assets/customers.png";
-import subscriptionImg from "../../assets/activesubscription.png";
-import dealersImg from "../../assets/dealers.png";
-import deviceImg from "../../assets/devices.png";
-import { useTheme } from "../../context/ThemeContext";
-import ThemeCustomizer from "../../components/ThemeCustomizer";
+import usersImg from "@/assets/customers.png";
+import subscriptionImg from "@/assets/activesubscription.png";
+import dealersImg from "@/assets/dealers.png";
+import deviceImg from "@/assets/devices.png";
 
-const Card = ({ children, className = "", isDark }) => (
+import { useTheme } from "@/context/ThemeContext";
+import ThemeCustomizer from "@/components/ThemeCustomizer";
+
+// ==================== Type Definitions ==================== //
+interface CardProps {
+  children: React.ReactNode;
+  className?: string;
+  isDark?: boolean;
+}
+
+interface MetricCardProps {
+  icon: React.ElementType | StaticImageData | string;
+  label: string;
+  value: number;
+  iconBgColor: string;
+  iconColor: string;
+  isDark?: boolean;
+}
+
+interface AlertItemProps {
+  icon: React.ElementType;
+  title: string;
+  time: string;
+  severity: string;
+  iconBg: string;
+  iconColor: string;
+  isDark?: boolean;
+}
+
+interface ServerStatusItemProps {
+  name: string;
+  status: "Operational" | "Outage";
+  isDark?: boolean;
+}
+
+// ==================== Reusable Components ==================== //
+const Card: React.FC<CardProps> = ({ children, className = "", isDark }) => (
   <div
     className={`${
       isDark ? "bg-card" : "bg-white"
@@ -30,15 +67,28 @@ const Card = ({ children, className = "", isDark }) => (
   </div>
 );
 
-// Metric Card Component
-const MetricCard = ({ icon, label, value, iconBgColor, iconColor, isDark }) => (
+const MetricCard: React.FC<MetricCardProps> = ({
+  icon,
+  label,
+  value,
+  iconBgColor,
+  iconColor,
+  isDark,
+}) => (
   <Card isDark={isDark}>
     <div className="flex items-center gap-4">
       <div
         className={`${iconBgColor} w-12 h-12 rounded-full flex items-center justify-center`}
       >
         {typeof icon === "string" ? (
+          // fallback for string path icons
           <img src={icon} alt={label} className="w-6 h-6 object-contain" />
+        ) : typeof icon === "object" ? (
+          <Image
+            src={icon as StaticImageData}
+            alt={label}
+            className="w-6 h-6 object-contain"
+          />
         ) : (
           React.createElement(icon, { className: `w-6 h-6 ${iconColor}` })
         )}
@@ -60,8 +110,7 @@ const MetricCard = ({ icon, label, value, iconBgColor, iconColor, isDark }) => (
   </Card>
 );
 
-// Alert Item Component
-const AlertItem = ({
+const AlertItem: React.FC<AlertItemProps> = ({
   icon: Icon,
   title,
   time,
@@ -89,8 +138,11 @@ const AlertItem = ({
   </div>
 );
 
-// Server Status Item Component
-const ServerStatusItem = ({ name, status, isDark }) => (
+const ServerStatusItem: React.FC<ServerStatusItemProps> = ({
+  name,
+  status,
+  isDark,
+}) => (
   <div className="flex items-center justify-between py-3">
     <span className={`text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}>
       {name}
@@ -107,10 +159,10 @@ const ServerStatusItem = ({ name, status, isDark }) => (
   </div>
 );
 
-const Dashboard = () => {
+// ==================== Dashboard Component ==================== //
+const Dashboard: React.FC = () => {
   const { isDark } = useTheme();
 
-  // Revenue data
   const revenueData = [
     { month: "Jan", value: 12000 },
     { month: "Feb", value: 15000 },
@@ -121,7 +173,6 @@ const Dashboard = () => {
     { month: "Jul", value: 23000 },
   ];
 
-  // Device status data
   const deviceStatusData = [
     { name: "Installed", value: 15000, color: "#6366f1" },
     { name: "Available", value: 7000, color: "#10b981" },
@@ -131,7 +182,7 @@ const Dashboard = () => {
 
   return (
     <div className={isDark ? "dark" : ""}>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background p-6">
         <div className="mx-auto space-y-6">
           {/* Top Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -188,20 +239,14 @@ const Dashboard = () => {
                   />
                   <XAxis
                     dataKey="month"
+                    tick={{ fill: isDark ? "#9ca3af" : "#6b7280", fontSize: 12 }}
                     axisLine={false}
                     tickLine={false}
-                    tick={{
-                      fill: isDark ? "#9ca3af" : "#6b7280",
-                      fontSize: 12,
-                    }}
                   />
                   <YAxis
+                    tick={{ fill: isDark ? "#9ca3af" : "#6b7280", fontSize: 12 }}
                     axisLine={false}
                     tickLine={false}
-                    tick={{
-                      fill: isDark ? "#9ca3af" : "#6b7280",
-                      fontSize: 12,
-                    }}
                     tickFormatter={(value) => `${value / 1000}k`}
                   />
                   <Tooltip
