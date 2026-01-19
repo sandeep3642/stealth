@@ -17,3 +17,14 @@ export interface AccountData {
   location: string;
   status: string;
 }
+
+export interface FormData {
+  accountName: string;
+  accountCode: string;
+  category: string;
+  primaryDomain: string;
+  fullName: string;
+  emailAddress: string;
+  phoneNumber: string;
+  location: string;
+}

@@ -3,13 +3,25 @@
 import React, { useEffect } from "react";
 import CommonTable from "@/components/CommonTable";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
+import { MetricCard } from "@/components/CommonCard";
 import { useTheme } from "@/context/ThemeContext";
-
 import { getAccounts } from "@/services/accountService";
 import { AccountData } from "@/interfaces/account.interface";
+import {
+  Building2,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Home,
+  MapPin,
+} from "lucide-react";
+import { useColor } from "@/context/ColorContext";
+import { useRouter } from "next/navigation";
 
 const Accounts: React.FC = () => {
   const { isDark } = useTheme();
+  const { selectedColor } = useColor();
+  const router = useRouter();
 
   const columns = [
     {
@@ -39,27 +51,7 @@ const Accounts: React.FC = () => {
       key: "location",
       label: "LOCATION",
       type: "icon-text" as const,
-      icon: (
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-          />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
-      ),
+      icon: <MapPin className="w-4 h-4" />,
       visible: true,
     },
     {
@@ -118,26 +110,104 @@ const Accounts: React.FC = () => {
     console.log("Delete:", row);
     alert(`Deleting ${row.instance.main}`);
   };
+
   async function getAccountsList() {
     const response = await getAccounts();
     console.log("response", response);
   }
+
   useEffect(() => {
     getAccountsList();
   }, []);
 
   return (
     <div className={isDark ? "dark" : ""}>
-      <CommonTable
-        columns={columns}
-        data={data}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        showActions={true}
-        searchPlaceholder="Search across all fields..."
-        rowsPerPageOptions={[10, 25, 50, 100]}
-        defaultRowsPerPage={10}
-      />
+      <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 mb-6 text-sm">
+          <Home
+            className={`w-4 h-4 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+          />
+          <span className={isDark ? "text-gray-400" : "text-gray-500"}>›</span>
+          <span className={isDark ? "text-gray-400" : "text-gray-500"}>
+            Accounts
+          </span>
+          <span className={isDark ? "text-gray-400" : "text-gray-500"}>›</span>
+          <span className={isDark ? "text-foreground" : "text-gray-900"}>
+            Account List
+          </span>
+        </div>
+
+        {/* Header */}
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            <h1
+              className={`text-4xl font-bold mb-2 ${isDark ? "text-foreground" : "text-gray-900"}`}
+            >
+              Account List
+            </h1>
+            <p className={isDark ? "text-gray-400" : "text-gray-500"}>
+              Manage identities, taxonomies, and global parameters.
+            </p>
+          </div>
+          <button
+            onClick={() => router.push("/addAccount")}
+            style={{ background: selectedColor }}
+            className={`cursor-pointer hover:bg-purple-700 text-white px-6 py-3 rounded-lg flex items-center gap-2 font-medium transition-colors`}
+          >
+            <span className="text-xl">+</span>
+            Add Account
+          </button>
+        </div>
+
+        {/* Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <MetricCard
+            icon={Building2}
+            label="TOTAL ACCOUNTS"
+            value={4}
+            iconBgColor="bg-purple-100"
+            iconColor="text-purple-600"
+            isDark={isDark}
+          />
+          <MetricCard
+            icon={CheckCircle}
+            label="ACTIVE"
+            value={2}
+            iconBgColor="bg-green-100"
+            iconColor="text-green-600"
+            isDark={isDark}
+          />
+          <MetricCard
+            icon={Clock}
+            label="PENDING"
+            value={1}
+            iconBgColor="bg-orange-100"
+            iconColor="text-orange-600"
+            isDark={isDark}
+          />
+          <MetricCard
+            icon={XCircle}
+            label="INACTIVE"
+            value={1}
+            iconBgColor="bg-red-100"
+            iconColor="text-red-600"
+            isDark={isDark}
+          />
+        </div>
+
+        {/* Table */}
+        <CommonTable
+          columns={columns}
+          data={data}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          showActions={true}
+          searchPlaceholder="Search across all fields..."
+          rowsPerPageOptions={[10, 25, 50, 100]}
+          defaultRowsPerPage={10}
+        />
+      </div>
       <ThemeCustomizer />
     </div>
   );

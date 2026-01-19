@@ -29,60 +29,7 @@ import {
   MetricCardProps,
   ServerStatusItemProps,
 } from "@/interfaces/dashboard.interface";
-
-// ==================== Reusable Components ==================== //
-const Card: React.FC<CardProps> = ({ children, className = "", isDark }) => (
-  <div
-    className={`${
-      isDark ? "bg-card" : "bg-white"
-    } rounded-xl shadow-sm p-6 ${className}`}
-  >
-    {children}
-  </div>
-);
-
-const MetricCard: React.FC<MetricCardProps> = ({
-  icon,
-  label,
-  value,
-  iconBgColor,
-  iconColor,
-  isDark,
-}) => (
-  <Card isDark={isDark}>
-    <div className="flex items-center gap-4">
-      <div
-        className={`${iconBgColor} w-12 h-12 rounded-full flex items-center justify-center`}
-      >
-        {typeof icon === "string" ? (
-          // fallback for string path icons
-          <img src={icon} alt={label} className="w-6 h-6 object-contain" />
-        ) : typeof icon === "object" ? (
-          <Image
-            src={icon as StaticImageData}
-            alt={label}
-            className="w-6 h-6 object-contain"
-          />
-        ) : (
-          React.createElement(icon, { className: `w-6 h-6 ${iconColor}` })
-        )}
-      </div>
-
-      <div>
-        <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-          {label}
-        </p>
-        <p
-          className={`text-2xl font-bold ${
-            isDark ? "text-foreground" : "text-gray-900"
-          }`}
-        >
-          {value.toLocaleString()}
-        </p>
-      </div>
-    </div>
-  </Card>
-);
+import { Card, MetricCard } from "@/components/CommonCard";
 
 const AlertItem: React.FC<AlertItemProps> = ({
   icon: Icon,
