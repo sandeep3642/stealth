@@ -1,8 +1,10 @@
+// table.interface.ts
+
 export interface Column {
   key: string;
   label: string;
+  type?: "text" | "badge" | "link" | "icon-text" | "multi-line";
   visible?: boolean;
-  type?: "badge" | "link" | "icon-text" | "multi-line";
   icon?: React.ReactNode;
   mainStyle?: string;
   subStyle?: string;
@@ -10,12 +12,33 @@ export interface Column {
 }
 
 export interface CommonTableProps {
-  columns?: Column[];
-  data?: any[];
+  columns: Column[];
+  data: any[];
   onEdit?: (row: any) => void;
   onDelete?: (row: any) => void;
   showActions?: boolean;
   searchPlaceholder?: string;
   rowsPerPageOptions?: number[];
   defaultRowsPerPage?: number;
+  variant?: "default" | "simple"; // Add this line
+}
+
+export interface HierarchyNode {
+  id: string;
+  name: string;
+  type: string;
+  code: string;
+  status: string;
+  managed: string;
+  avatar?: string;
+  avatarColor?: string;
+  children?: HierarchyNode[];
+}
+
+export interface HierarchicalTableProps {
+  title?: string;
+  subtitle?: string;
+  data: HierarchyNode[];
+  onEdit?: (node: HierarchyNode) => void;
+  showSearch?: boolean;
 }
