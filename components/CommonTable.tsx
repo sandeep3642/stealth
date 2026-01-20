@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Search, ChevronDown, Edit2, Trash2 } from "lucide-react";
 import { useColor } from "@/context/ColorContext";
 import { Column, CommonTableProps } from "@/interfaces/table.interface";
+import { useTheme } from "@/context/ThemeContext";
 
 const CommonTable: React.FC<CommonTableProps> = ({
   columns = [],
@@ -17,6 +18,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
   variant = "default", // New prop: "default" or "simple"
 }) => {
   const { selectedColor } = useColor();
+  const { isDark } = useTheme();
   const [rowsPerPage, setRowsPerPage] = useState<number>(defaultRowsPerPage);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [columnVisibility, setColumnVisibility] = useState<
@@ -41,19 +43,36 @@ const CommonTable: React.FC<CommonTableProps> = ({
   };
 
   const getStatusColor = (status?: string): string => {
-    switch (status?.toLowerCase()) {
-      case "active":
-        return "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
-      case "suspended":
-        return "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-      case "under review":
-        return "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-      case "pending":
-        return "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
-      case "inactive":
-        return "bg-gray-50 text-gray-700 dark:bg-gray-800/50 dark:text-gray-400";
-      default:
-        return "bg-gray-50 text-gray-700 dark:bg-gray-800/50 dark:text-gray-400";
+    if (isDark) {
+      switch (status?.toLowerCase()) {
+        case "active":
+          return "bg-emerald-900/30 text-emerald-300 border border-emerald-800";
+        case "suspended":
+          return "bg-rose-900/30 text-rose-300 border border-rose-800";
+        case "under review":
+          return "bg-amber-900/30 text-amber-300 border border-amber-800";
+        case "pending":
+          return "bg-yellow-900/30 text-yellow-300 border border-yellow-800";
+        case "inactive":
+          return "bg-gray-800/50 text-gray-400 border border-gray-700";
+        default:
+          return "bg-gray-800/50 text-gray-400 border border-gray-700";
+      }
+    } else {
+      switch (status?.toLowerCase()) {
+        case "active":
+          return "bg-white text-emerald-700 border border-emerald-400";
+        case "suspended":
+          return "bg-white text-rose-700 border border-rose-400";
+        case "under review":
+          return "bg-white text-amber-700 border border-amber-400";
+        case "pending":
+          return "bg-white text-yellow-700 border border-yellow-400";
+        case "inactive":
+          return "bg-white text-gray-700 border border-gray-300";
+        default:
+          return "bg-white text-gray-700 border border-gray-300";
+      }
     }
   };
 
