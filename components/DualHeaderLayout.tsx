@@ -938,7 +938,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               <span
                 className={`text-lg md:text-xl font-semibold ${headerClasses.text}`}
               >
-                Stealth
+                Agentix
               </span>
             </div>
 
@@ -1127,7 +1127,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               S
             </div>
             <span className={`text-lg font-semibold ${headerClasses.text}`}>
-              Stealth
+              Agentix
             </span>
           </div>
         </div>
@@ -1297,7 +1297,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                 <span
                   className={`text-xl font-semibold ${sidebarClasses.brandText}`}
                 >
-                  Stealth
+                  Agentix
                 </span>
               )}
             </div>

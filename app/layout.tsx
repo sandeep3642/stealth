@@ -7,7 +7,7 @@ import ToastProvider from "@/providers/ToastProvider"; // ✅ Import here
 import type { ReactNode } from "react";
 
 export const metadata = {
-  title: "Stealth App",
+  title: "Agentix",
   description: "Next.js version of your React app",
 };
 
