@@ -14,10 +14,10 @@ const CommonTable: React.FC<CommonTableProps> = ({
   showActions = true,
   searchPlaceholder = "Search across all fields...",
   rowsPerPageOptions = [10, 25, 50, 100],
-  pageNo,
-  pageSize,
-  onPageChange,
-  onPageSizeChange,
+  pageNo = 1, // ✅ default page
+  pageSize = 10, // ✅ default page size
+  onPageChange = () => {}, // ✅ no-op default
+  onPageSizeChange = () => {}, // ✅ no-op default
   variant = "default",
 }) => {
   const { selectedColor } = useColor();

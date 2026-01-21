@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import CommonTable from "@/components/CommonTable";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
@@ -9,7 +9,8 @@ import { getAccounts } from "@/services/accountService";
 
 const Configuration: React.FC = () => {
   const { isDark } = useTheme();
-
+  const [pageNo, setPageNo] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const columns = [
     {
       key: "no",
@@ -88,6 +89,15 @@ const Configuration: React.FC = () => {
     console.log("response", response);
   }
 
+  const handlePageChange = (page: number) => {
+    setPageNo(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setPageNo(1); // Reset to first page when page size changes
+  };
+
   useEffect(() => {
     getAccountsList();
   }, []);
@@ -115,6 +125,10 @@ const Configuration: React.FC = () => {
           rowsPerPageOptions={[10, 25, 50, 100]}
           defaultRowsPerPage={10}
           variant="simple"
+          pageNo={pageNo}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
         />
       </div>
       <ThemeCustomizer />

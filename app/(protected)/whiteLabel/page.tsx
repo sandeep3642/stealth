@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import CommonTable from "@/components/CommonTable";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
@@ -10,7 +10,8 @@ import { useRouter } from "next/navigation";
 const WhiteLabel: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
-
+  const [pageNo, setPageNo] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const columns = [
     {
       key: "account",
@@ -71,6 +72,15 @@ const WhiteLabel: React.FC = () => {
     alert(`Deleting ${row.account}`);
   };
 
+  const handlePageChange = (page: number) => {
+    setPageNo(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setPageNo(1); // Reset to first page when page size changes
+  };
+
   return (
     <div className={isDark ? "dark" : ""}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
@@ -94,6 +104,10 @@ const WhiteLabel: React.FC = () => {
           rowsPerPageOptions={[10, 25, 50, 100]}
           defaultRowsPerPage={10}
           variant="simple"
+          pageNo={pageNo}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
         />
       </div>
       <ThemeCustomizer />
