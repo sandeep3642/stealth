@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 import { AtSign, Lock, Eye, EyeOff, User, Phone, Gift } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { toast } from "react-toastify";
 import { registerUser } from "@/services/authService";
+import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 interface RegisterComponentProps {
   onSwitchToLogin: () => void;
@@ -24,8 +24,6 @@ interface RegisterForm {
 export const RegisterComponent: React.FC<RegisterComponentProps> = ({
   onSwitchToLogin,
 }) => {
-  const router = useRouter();
-
   const [formData, setFormData] = useState<RegisterForm>({
     firstName: "",
     lastName: "",
@@ -40,8 +38,8 @@ export const RegisterComponent: React.FC<RegisterComponentProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  // Common country codes
   const countryCodes = [
     { code: "+91", country: "India" },
     { code: "+1", country: "USA/Canada" },
@@ -51,12 +49,10 @@ export const RegisterComponent: React.FC<RegisterComponentProps> = ({
     { code: "+65", country: "Singapore" },
   ];
 
-  // Handle form field change
   const handleChange = (field: keyof RegisterForm, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Validate inputs
   const validateForm = (): boolean => {
     const { firstName, lastName, email, mobileNo, password, confirmPassword } =
       formData;
@@ -77,6 +73,10 @@ export const RegisterComponent: React.FC<RegisterComponentProps> = ({
       toast.error("Mobile number is required");
       return false;
     }
+     if (mobileNo.length !== 10) {
+      toast.error("Mobile number must be  10 characters");
+      return false;
+    }
     if (!password) {
       toast.error("Password is required");
       return false;
@@ -93,203 +93,226 @@ export const RegisterComponent: React.FC<RegisterComponentProps> = ({
     return true;
   };
 
-  // Submit form
-  const handleRegister = async () => {
-    // debugger
-    if (!validateForm()){
-      // toast.error("fill all fields");
-       return;
-    }
+ const handleRegister = async () => {
+  if (!validateForm()) {
+    return;
+  }
 
-    try {
-      setLoading(true);
-      const { confirmPassword, ...registerData } = formData;
+  try {
+    setLoading(true);
 
-      await registerUser(registerData);
-      toast.success("Registration successful! Redirecting to login...");
+    // optional loader delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
 
-      setTimeout(() => {
+    const res = await registerUser(formData);
+
+    // agar backend success true bheje
+    if (res?.success) {
+      toast.success("Registration successful!");
+       setTimeout(() => {
         onSwitchToLogin();
-        router.push("/");
-      }, 1500);
-    } catch (err: any) {
-      console.error("Registration error:", err);
-      toast.error(
-        err.response?.data?.message || "Registration failed. Please try again.",
-      );
-    } finally {
-      setLoading(false);
+      }, 500);
+    } else {
+      toast.error(res?.Message || "Registration failed");
     }
-  };
+
+  } catch (err: any) {
+    console.error("Registration error:", err);
+
+    // ✅ AXIOS ERROR HANDLING
+    if (err?.response?.data) {
+      toast.error(err.response.data.Message || "Registration failed");
+    } else {
+      toast.error("Network error. Please try again.");
+    }
+
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
-    <div className="w-full max-w-[400px] space-y-2 my-8">
-      <div className="space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight text-zinc-900">
-          Create Your Account
-        </h2>
-        <p className="text-zinc-500">
-          Join us and start managing your system with ease.
-        </p>
-      </div>
+    <div className="w-full h-full overflow-y-auto px-2">
+      <div className="w-full max-w-md mx-auto py-4">
+        <div className="space-y-4">
+          
+          {/* Header */}
+          <div className="text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              Create Your Account
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              Join us and start managing your system with ease
+            </p>
+          </div>
 
-      {/* First Name */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-zinc-700">
-          First Name
-        </label>
-        <div className="relative">
-          <User className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 h-4 w-4" />
-          <input
-            type="text"
-            value={formData.firstName}
-            onChange={(e) => handleChange("firstName", e.target.value)}
-            className="flex h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 pl-10 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-purple-600 focus:border-purple-600"
-            placeholder="John"
-          />
-        </div>
-      </div>
+          {/* First Name */}
+          <div className="space-y-1.5">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700">
+              First Name
+            </label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                value={formData.firstName}
+                onChange={(e) => handleChange("firstName", e.target.value)}
+                className="w-full h-10 pl-9 pr-3 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                placeholder="John"
+              />
+            </div>
+          </div>
 
-      {/* Last Name */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-zinc-700">Last Name</label>
-        <div className="relative">
-          <User className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 h-4 w-4" />
-          <input
-            type="text"
-            value={formData.lastName}
-            onChange={(e) => handleChange("lastName", e.target.value)}
-            className="flex h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 pl-10 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-purple-600 focus:border-purple-600"
-            placeholder="Doe"
-          />
-        </div>
-      </div>
+          {/* Last Name */}
+          <div className="space-y-1.5">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700">
+              Last Name
+            </label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                value={formData.lastName}
+                onChange={(e) => handleChange("lastName", e.target.value)}
+                className="w-full h-10 pl-9 pr-3 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                placeholder="Doe"
+              />
+            </div>
+          </div>
 
-      {/* Email */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-zinc-700">Email</label>
-        <div className="relative">
-          <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 h-4 w-4" />
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => handleChange("email", e.target.value)}
-            className="flex h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 pl-10 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-purple-600 focus:border-purple-600"
-            placeholder="you@example.com"
-          />
-        </div>
-      </div>
+          {/* Email */}
+          <div className="space-y-1.5">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700">
+              Email
+            </label>
+            <div className="relative">
+              <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+                className="w-full h-10 pl-9 pr-3 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                placeholder="you@example.com"
+              />
+            </div>
+          </div>
 
-      {/* Mobile Number */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-zinc-700">
-          Mobile Number
-        </label>
-        <div className="flex gap-2">
-          <select
-            value={formData.countryCode}
-            onChange={(e) => handleChange("countryCode", e.target.value)}
-            className="flex h-10 w-24 rounded-md border border-zinc-200 bg-zinc-50 px-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-purple-600 focus:border-purple-600"
+          {/* Mobile Number */}
+          <div className="space-y-1.5">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700">
+              Mobile Number
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={formData.countryCode}
+                onChange={(e) => handleChange("countryCode", e.target.value)}
+                className="w-20 h-10 px-2 text-xs border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+              >
+                {countryCodes.map((item) => (
+                  <option key={item.code} value={item.code}>
+                    {item.code}
+                  </option>
+                ))}
+              </select>
+              <div className="relative flex-1">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="tel"
+                  value={formData.mobileNo}
+                  onChange={(e) => handleChange("mobileNo", e.target.value)}
+                  className="w-full h-10 pl-9 pr-3 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                  placeholder="1234567890"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Password */}
+          <div className="space-y-1.5">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) => handleChange("password", e.target.value)}
+                className="w-full h-10 pl-9 pr-10 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password */}
+          <div className="space-y-1.5">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                value={formData.confirmPassword}
+                onChange={(e) => handleChange("confirmPassword", e.target.value)}
+                className="w-full h-10 pl-9 pr-10 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+              >
+                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Referral Code */}
+          <div className="space-y-1.5">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700">
+              Referral Code <span className="text-gray-400">(Optional)</span>
+            </label>
+            <div className="relative">
+              <Gift className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                value={formData.refferalCode}
+                onChange={(e) => handleChange("refferalCode", e.target.value)}
+                className="w-full h-10 pl-9 pr-3 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                placeholder="Enter code"
+              />
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <button
+            onClick={handleRegister}
+            disabled={loading}
+            className="w-full h-11 mt-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-98"
           >
-            {countryCodes.map((item) => (
-              <option key={item.code} value={item.code}>
-                {item.code}
-              </option>
-            ))}
-          </select>
-          <div className="relative flex-1">
-            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 h-4 w-4" />
-            <input
-              type="tel"
-              value={formData.mobileNo}
-              onChange={(e) => handleChange("mobileNo", e.target.value)}
-              className="flex h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-1 pl-10 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-purple-600 focus:border-purple-600"
-              placeholder="1234567890"
-            />
+            {loading ? "Creating Account..." : "Create Account"}
+          </button>
+
+          {/* Login Link */}
+          <div className="text-center text-xs sm:text-sm text-gray-600 pt-3 pb-2">
+            Already have an account?{" "}
+            <button
+              onClick={onSwitchToLogin}
+              className="font-semibold text-purple-600 hover:text-purple-700 hover:underline transition"
+            >
+              Log In
+            </button>
           </div>
         </div>
-      </div>
-
-      {/* Password */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-zinc-700">Password</label>
-        <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 h-4 w-4" />
-          <input
-            type={showPassword ? "text" : "password"}
-            value={formData.password}
-            onChange={(e) => handleChange("password", e.target.value)}
-            className="flex h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 pl-10 pr-10 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-purple-600 focus:border-purple-600"
-            placeholder="••••••••"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 focus:outline-none"
-          >
-            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Confirm Password */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-zinc-700">
-          Confirm Password
-        </label>
-        <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 h-4 w-4" />
-          <input
-            type={showConfirmPassword ? "text" : "password"}
-            value={formData.confirmPassword}
-            onChange={(e) => handleChange("confirmPassword", e.target.value)}
-            className="flex h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 pl-10 pr-10 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-purple-600 focus:border-purple-600"
-            placeholder="••••••••"
-          />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 focus:outline-none"
-          >
-            {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Referral Code */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-semibold text-zinc-700">
-          Referral Code (Optional)
-        </label>
-        <div className="relative">
-          <Gift className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 h-4 w-4" />
-          <input
-            type="text"
-            value={formData.refferalCode}
-            onChange={(e) => handleChange("refferalCode", e.target.value)}
-            className="flex h-10 w-full rounded-md border border-zinc-200 bg-zinc-50 pl-10 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-purple-600 focus:border-purple-600"
-            placeholder="Enter code"
-          />
-        </div>
-      </div>
-
-      {/* Submit Button */}
-      <button
-        onClick={handleRegister}
-        disabled={loading}
-        className="inline-flex items-center justify-center rounded-md text-base font-semibold w-full h-11 mt-4 bg-purple-600 text-white shadow-md hover:bg-purple-700 focus-visible:ring-1 focus-visible:ring-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {loading ? "Creating Account..." : "Create Account"}
-      </button>
-
-      <div className="text-center text-sm text-zinc-500">
-        Already have an account?{" "}
-        <button
-          onClick={onSwitchToLogin}
-          className="font-semibold text-purple-600 hover:underline"
-        >
-          Log In
-        </button>
       </div>
     </div>
   );
