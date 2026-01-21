@@ -14,12 +14,14 @@ const CommonTable: React.FC<CommonTableProps> = ({
   showActions = true,
   searchPlaceholder = "Search across all fields...",
   rowsPerPageOptions = [10, 25, 50, 100],
-  defaultRowsPerPage = 10,
-  variant = "default", // New prop: "default" or "simple"
+  pageNo,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  variant = "default",
 }) => {
   const { selectedColor } = useColor();
   const { isDark } = useTheme();
-  const [rowsPerPage, setRowsPerPage] = useState<number>(defaultRowsPerPage);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [columnVisibility, setColumnVisibility] = useState<
     Record<string, boolean>
@@ -42,9 +44,19 @@ const CommonTable: React.FC<CommonTableProps> = ({
     }));
   };
 
-  const getStatusColor = (status?: string): string => {
+  const getStatusColor = (
+    status?: string | boolean,
+    isDark = false,
+  ): string => {
+    const normalized =
+      typeof status === "string"
+        ? status.toLowerCase()
+        : status
+          ? "active"
+          : "inactive";
+
     if (isDark) {
-      switch (status?.toLowerCase()) {
+      switch (normalized) {
         case "active":
           return "bg-emerald-900/30 text-emerald-300 border border-emerald-800";
         case "suspended":
@@ -59,7 +71,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
           return "bg-gray-800/50 text-gray-400 border border-gray-700";
       }
     } else {
-      switch (status?.toLowerCase()) {
+      switch (normalized) {
         case "active":
           return "bg-white text-emerald-700 border border-emerald-400";
         case "suspended":
@@ -76,11 +88,54 @@ const CommonTable: React.FC<CommonTableProps> = ({
     }
   };
 
-  const renderCellContent = (column: Column, row: any): React.ReactNode => {
+  const renderCellContent = (
+    column: Column,
+    row: any,
+    idx: number,
+  ): React.ReactNode => {
     const value = row[column.key];
 
     if (column.render) {
       return column.render(value, row);
+    }
+
+    if (column.key === "no") {
+      return <span className="text-sm text-foreground">{idx + 1}</span>;
+    }
+
+    if (column.key === "status") {
+      if (typeof value === "boolean") {
+        return (
+          <span
+            className={`inline-flex px-3 py-1.5 text-xs font-semibold rounded-md ${getStatusColor(
+              value,
+              isDark,
+            )}`}
+          >
+            {value ? "Active" : "Inactive"}
+          </span>
+        );
+      }
+
+      if (typeof value === "string") {
+        return (
+          <span
+            className={`inline-flex px-3 py-1.5 text-xs font-semibold rounded-md ${getStatusColor(
+              value,
+              isDark,
+            )}`}
+          >
+            {value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()}
+          </span>
+        );
+      }
+
+      // fallback for unexpected values
+      return (
+        <span className="inline-flex px-3 py-1.5 text-xs font-semibold rounded-md bg-gray-700 text-gray-300 border border-gray-600">
+          Unknown
+        </span>
+      );
     }
 
     if (column.type === "badge") {
@@ -125,7 +180,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
               column.mainStyle || "text-sm font-semibold text-foreground"
             }
           >
-            {value.main}
+            {value?.main}
           </span>
           <span
             className={
@@ -133,7 +188,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
               "text-xs font-bold text-foreground opacity-70 uppercase tracking-wide"
             }
           >
-            {value.sub}
+            {value?.sub}
           </span>
         </div>
       );
@@ -157,8 +212,12 @@ const CommonTable: React.FC<CommonTableProps> = ({
   });
 
   const totalRecords = filteredData.length;
-  const totalPages = Math.ceil(totalRecords / rowsPerPage);
-  const currentPage = 1;
+  const totalPages = Math.ceil(totalRecords / pageSize);
+
+  // Calculate start and end index for current page
+  const startIndex = (pageNo - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedData = filteredData.slice(startIndex, endIndex);
 
   // Simple variant (like in the image)
   if (variant === "simple") {
@@ -184,8 +243,11 @@ const CommonTable: React.FC<CommonTableProps> = ({
                   VIEW
                 </span>
                 <select
-                  value={rowsPerPage}
-                  onChange={(e) => setRowsPerPage(Number(e.target.value))}
+                  value={pageSize}
+                  onChange={(e) => {
+                    onPageSizeChange(Number(e.target.value));
+                    onPageChange(1); // Reset to first page when changing page size
+                  }}
                   className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-card text-foreground"
                 >
                   {rowsPerPageOptions.map((option) => (
@@ -292,7 +354,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
             </thead>
 
             <tbody>
-              {filteredData.slice(0, rowsPerPage).map((row, idx) => (
+              {paginatedData.map((row, idx) => (
                 <tr
                   key={row.id || idx}
                   className="border-b border-border hover:bg-background/50 transition-colors"
@@ -301,7 +363,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
                     (column) =>
                       columnVisibility[column.key] && (
                         <td key={column.key} className="px-4 py-4">
-                          {renderCellContent(column, row)}
+                          {renderCellContent(column, row, idx)}
                         </td>
                       ),
                   )}
@@ -336,21 +398,26 @@ const CommonTable: React.FC<CommonTableProps> = ({
         {/* Footer Section */}
         <div className="px-6 py-4 border-t border-border flex items-center justify-between">
           <div className="text-sm text-foreground font-medium opacity-70">
-            SHOWING {Math.min(filteredData.length, rowsPerPage)} OF{" "}
-            {totalRecords} RECORDS
+            SHOWING {Math.min(paginatedData.length, pageSize)} OF {totalRecords}{" "}
+            RECORDS
           </div>
           <div className="flex items-center gap-3">
             <span
               className="text-sm font-semibold"
               style={{ color: selectedColor }}
             >
-              PAGE {currentPage} / {totalPages || 1}
+              PAGE {pageNo} / {totalPages || 1}
             </span>
             <button
               className="w-9 h-9 flex items-center justify-center text-white text-sm font-semibold rounded-lg shadow-sm"
               style={{ background: selectedColor }}
+              onClick={() => {
+                if (pageNo < totalPages) {
+                  onPageChange(pageNo + 1);
+                }
+              }}
             >
-              {currentPage}
+              {pageNo}
             </button>
           </div>
         </div>
@@ -382,8 +449,11 @@ const CommonTable: React.FC<CommonTableProps> = ({
                   VIEW
                 </span>
                 <select
-                  value={rowsPerPage}
-                  onChange={(e) => setRowsPerPage(Number(e.target.value))}
+                  value={pageSize}
+                  onChange={(e) => {
+                    onPageSizeChange(Number(e.target.value));
+                    onPageChange(1); // Reset to first page when changing page size
+                  }}
                   className="px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-card text-foreground"
                 >
                   {rowsPerPageOptions.map((option) => (
@@ -490,7 +560,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
             </thead>
 
             <tbody className="bg-card">
-              {filteredData.slice(0, rowsPerPage).map((row, idx) => (
+              {paginatedData.map((row, idx) => (
                 <tr
                   key={row.id || idx}
                   className="border border-border rounded-lg"
@@ -499,7 +569,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
                     (column) =>
                       columnVisibility[column.key] && (
                         <td key={column.key} className="px-6 py-4">
-                          {renderCellContent(column, row)}
+                          {renderCellContent(column, row, idx)}
                         </td>
                       ),
                   )}
@@ -534,21 +604,26 @@ const CommonTable: React.FC<CommonTableProps> = ({
         {/* Footer Section */}
         <div className="px-6 py-4 border-t border-border flex items-center justify-between">
           <div className="text-sm text-foreground font-medium">
-            SHOWING {Math.min(filteredData.length, rowsPerPage)} OF{" "}
-            {totalRecords} RECORDS
+            SHOWING {Math.min(paginatedData.length, pageSize)} OF {totalRecords}{" "}
+            RECORDS
           </div>
           <div className="flex items-center gap-3">
             <span
               className="text-sm font-semibold"
               style={{ color: selectedColor }}
             >
-              PAGE {currentPage} / {totalPages || 1}
+              PAGE {pageNo} / {totalPages || 1}
             </span>
             <button
               className="w-9 h-9 flex items-center justify-center text-white text-sm font-semibold rounded-lg shadow-sm"
               style={{ background: selectedColor }}
+              onClick={() => {
+                if (pageNo < totalPages) {
+                  onPageChange(pageNo + 1);
+                }
+              }}
             >
-              {currentPage}
+              {pageNo}
             </button>
           </div>
         </div>

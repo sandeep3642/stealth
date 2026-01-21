@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import CommonTable from "@/components/CommonTable";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
@@ -9,10 +9,12 @@ import { useTheme } from "@/context/ThemeContext";
 import { getAccounts } from "@/services/accountService";
 import { AccountData } from "@/interfaces/account.interface";
 import { Building2, CheckCircle, Clock, XCircle, MapPin } from "lucide-react";
+import { toast } from "react-toastify";
 
 const Accounts: React.FC = () => {
   const { isDark } = useTheme();
-
+  const [pageNo, setPageNo] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const columns = [
     {
       key: "no",
@@ -20,7 +22,7 @@ const Accounts: React.FC = () => {
       visible: true,
     },
     {
-      key: "code",
+      key: "accountCode",
       label: "CODE",
       type: "link" as const,
       visible: true,
@@ -52,44 +54,7 @@ const Accounts: React.FC = () => {
     },
   ];
 
-  const data: AccountData[] = [
-    {
-      id: 1,
-      no: 1,
-      code: "ACC-001",
-      instance: { main: "Alpha Logistics", sub: "DISTRIBUTOR" },
-      contact: { main: "John Alpha", sub: "contact@alpha.com" },
-      location: "New York, NY",
-      status: "Active",
-    },
-    {
-      id: 2,
-      no: 2,
-      code: "ACC-002",
-      instance: { main: "Beta Fleet Services", sub: "ENTERPRISE" },
-      contact: { main: "Sarah Beta", sub: "admin@beta.com" },
-      location: "Chicago, IL",
-      status: "Active",
-    },
-    {
-      id: 3,
-      no: 3,
-      code: "ACC-003",
-      instance: { main: "Gamma Transport", sub: "RESELLER" },
-      contact: { main: "Mike Gamma", sub: "info@gamma.com" },
-      location: "Houston, TX",
-      status: "Suspended",
-    },
-    {
-      id: 4,
-      no: 4,
-      code: "ACC-004",
-      instance: { main: "Delta Quick Cabs", sub: "DEALER" },
-      contact: { main: "David Delta", sub: "support@delta.com" },
-      location: "Phoenix, AZ",
-      status: "Under Review",
-    },
-  ];
+  const [data, setData] = useState<AccountData[]>([]);
 
   const handleEdit = (row: AccountData) => {
     console.log("Edit:", row);
@@ -101,9 +66,22 @@ const Accounts: React.FC = () => {
     alert(`Deleting ${row.instance.main}`);
   };
 
+  const handlePageChange = (page: number) => {
+    setPageNo(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setPageNo(1); // Reset to first page when page size changes
+  };
+
   async function getAccountsList() {
-    const response = await getAccounts();
+    const response = await getAccounts(pageNo, pageSize);
     console.log("response", response);
+    if (response && response.statusCode === 200) {
+      toast.success(response.message);
+      setData(response.data.items);
+    }
   }
 
   useEffect(() => {
@@ -168,6 +146,10 @@ const Accounts: React.FC = () => {
           searchPlaceholder="Search across all fields..."
           rowsPerPageOptions={[10, 25, 50, 100]}
           defaultRowsPerPage={10}
+          pageNo={pageNo}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
         />
       </div>
       <ThemeCustomizer />
