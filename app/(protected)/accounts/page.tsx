@@ -28,7 +28,7 @@ const Accounts: React.FC = () => {
       visible: true,
     },
     {
-      key: "instance",
+      key: "accountName",
       label: "INSTANCE",
       type: "multi-line" as const,
       visible: true,
@@ -40,7 +40,7 @@ const Accounts: React.FC = () => {
       visible: true,
     },
     {
-      key: "location",
+      key: "countryName",
       label: "LOCATION",
       type: "icon-text" as const,
       icon: <MapPin className="w-4 h-4" />,
@@ -72,7 +72,7 @@ const Accounts: React.FC = () => {
 
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
-    setPageNo(1); // Reset to first page when page size changes
+    setPageNo(1);
   };
 
   async function getAccountsList() {
@@ -90,67 +90,74 @@ const Accounts: React.FC = () => {
 
   return (
     <div className={isDark ? "dark" : ""}>
-      <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
-        <PageHeader
-          title="Account List"
-          subtitle="Manage identities, taxonomies, and global parameters."
-          breadcrumbs={[{ label: "Accounts" }, { label: "Account List" }]}
-          showButton={true}
-          buttonText="Add Account"
-          buttonRoute="/addAccount"
-        />
+      <div
+        className={`min-h-screen  ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
+      >
+        {/* Page Header - Mobile Optimized */}
+        <div className="mb-4 sm:mb-6">
+          <PageHeader
+            title="Account List"
+            subtitle="Manage identities, taxonomies, and global parameters."
+            breadcrumbs={[{ label: "Accounts" }, { label: "Account List" }]}
+            showButton={true}
+            buttonText="Add Account"
+            buttonRoute="/addAccount"
+          />
+        </div>
 
-        {/* Metric Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Metric Cards - Truly Mobile Responsive */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <MetricCard
             icon={Building2}
-            label="TOTAL ACCOUNTS"
+            label="TOTAL"
             value={4}
-            iconBgColor="bg-purple-100"
-            iconColor="text-purple-600"
+            iconBgColor="bg-purple-100 dark:bg-purple-900/30"
+            iconColor="text-purple-600 dark:text-purple-400"
             isDark={isDark}
           />
           <MetricCard
             icon={CheckCircle}
             label="ACTIVE"
             value={2}
-            iconBgColor="bg-green-100"
-            iconColor="text-green-600"
+            iconBgColor="bg-green-100 dark:bg-green-900/30"
+            iconColor="text-green-600 dark:text-green-400"
             isDark={isDark}
           />
           <MetricCard
             icon={Clock}
             label="PENDING"
             value={1}
-            iconBgColor="bg-orange-100"
-            iconColor="text-orange-600"
+            iconBgColor="bg-orange-100 dark:bg-orange-900/30"
+            iconColor="text-orange-600 dark:text-orange-400"
             isDark={isDark}
           />
           <MetricCard
             icon={XCircle}
             label="INACTIVE"
             value={1}
-            iconBgColor="bg-red-100"
-            iconColor="text-red-600"
+            iconBgColor="bg-red-100 dark:bg-red-900/30"
+            iconColor="text-red-600 dark:text-red-400"
             isDark={isDark}
           />
         </div>
 
-        {/* Table */}
-        <CommonTable
-          columns={columns}
-          data={data}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          showActions={true}
-          searchPlaceholder="Search across all fields..."
-          rowsPerPageOptions={[10, 25, 50, 100]}
-          defaultRowsPerPage={10}
-          pageNo={pageNo}
-          pageSize={pageSize}
-          onPageChange={handlePageChange}
-          onPageSizeChange={handlePageSizeChange}
-        />
+        {/* Table Section - Mobile Optimized */}
+        <div className="w-full">
+          <CommonTable
+            columns={columns}
+            data={data}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            showActions={true}
+            searchPlaceholder="Search..."
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            defaultRowsPerPage={10}
+            pageNo={pageNo}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        </div>
       </div>
       <ThemeCustomizer />
     </div>

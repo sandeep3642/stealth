@@ -22,7 +22,7 @@ interface PageHeaderProps {
   buttonRoute?: string;
 }
 
-const PageHeader: React.FC<PageHeaderProps> = ({
+const TableHeader: React.FC<PageHeaderProps> = ({
   title,
   subtitle,
   breadcrumbs = [],
@@ -118,4 +118,4 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   );
 };
 
-export default PageHeader;
+export default TableHeader;
