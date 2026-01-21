@@ -17,9 +17,13 @@ const Users: React.FC = () => {
     const [pageNo, setPageNo] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+    type OptionType = {
+        label: string;
+        value: string;
+    };
     const [appliedFilters, setAppliedFilters] = useState<{
-        roles: [];
-        statuses: [];
+        roles: OptionType[];
+        statuses: OptionType[];
     }>({
         roles: [],
         statuses: [],
