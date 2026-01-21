@@ -1061,7 +1061,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
 
   // Default variant
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <div className="p-3 sm:p-5 mx-auto bg-card rounded-lg sm:rounded-xl shadow-sm border border-border">
         {/* Header Section - Mobile Responsive */}
         <div className="p-3 sm:p-4 lg:p-6 pb-3 sm:pb-4">

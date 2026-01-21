@@ -21,10 +21,19 @@ export interface AccountData {
 export interface FormData {
   accountName: string;
   accountCode: string;
-  category: string;
+  categoryId: number;
   primaryDomain: string;
   fullName: string;
   emailAddress: string;
   phoneNumber: string;
   location: string;
+}
+
+
+export interface Category {
+  categoryId: number;
+  labelName: string;
+  description?: string;
+  isActive?: boolean;
+  createdAt?: string;
 }

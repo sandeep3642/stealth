@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { useLayout } from "../context/LayoutContext";
 import { useColor } from "../context/ColorContext";
@@ -28,16 +28,27 @@ export default function ThemeCustomizer() {
     hexToHsl,
   } = useColor();
 
+  // ✅ detect screen width for responsive logic
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const handlePresetColor = (hex) => {
     handleColorChange(hex);
     setPrimaryHsl(hexToHsl(hex));
   };
-  // Closed state button
+
+  // Closed state button (floating gear)
   if (!isOpen) {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed top-1/2 right-8 -translate-y-1/2 z-50 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition"
+        className={`fixed z-50 text-white p-4 rounded-full shadow-2xl hover:scale-110 transition
+        ${isMobile ? "bottom-6 right-6" : "top-1/2 right-8 -translate-y-1/2"}`}
         style={{ backgroundColor: selectedColor }}
       >
         <svg
@@ -66,35 +77,41 @@ export default function ThemeCustomizer() {
   // Open panel
   return (
     <div
-      className={`fixed top-1/2 right-8 -translate-y-1/2 z-50 w-90 rounded-2xl shadow-2xl border overflow-hidden ${isDark
-          ? "bg-gray-950 text-white border-gray-800"
-          : "bg-white text-gray-900 border-gray-200"
-        }`}
+      className={`fixed z-50 shadow-2xl border rounded-2xl overflow-hidden transition-all duration-300
+      ${
+        isMobile
+          ? "bottom-0 left-0 right-0 w-full rounded-t-2xl"
+          : "top-1/2 right-8 -translate-y-1/2 w-80"
+      }
+      ${isDark ? "bg-gray-950 text-white border-gray-800" : "bg-white text-gray-900 border-gray-200"}`}
     >
       {/* Header */}
       <div
-        className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? "border-gray-800" : "border-gray-200"
-          }`}
+        className={`flex items-center justify-between px-5 py-4 border-b ${
+          isDark ? "border-gray-800" : "border-gray-200"
+        }`}
       >
         <h3 className="text-base font-semibold">Theme Customizer</h3>
         <button
           onClick={() => setIsOpen(false)}
-          className={`transition text-lg ${isDark
+          className={`transition text-lg ${
+            isDark
               ? "text-gray-400 hover:text-white"
               : "text-gray-600 hover:text-gray-900"
-            }`}
+          }`}
         >
           ✕
         </button>
       </div>
 
       {/* Body */}
-      <div className="p-5 space-y-6">
+      <div className="p-5 space-y-6 max-h-[80vh] overflow-y-auto">
         {/* Color Palette */}
         <div>
           <label
-            className={`block text-xs font-medium mb-3 ${isDark ? "text-gray-400" : "text-gray-600"
-              }`}
+            className={`block text-xs font-medium mb-3 ${
+              isDark ? "text-gray-400" : "text-gray-600"
+            }`}
           >
             Color
           </label>
@@ -112,13 +129,10 @@ export default function ThemeCustomizer() {
                       : "1px solid gray",
                 }}
               >
-                {/* Center color preview (ALWAYS visible) */}
                 <div
                   className="w-4 h-4 rounded-full"
                   style={{ backgroundColor: color }}
                 />
-
-                {/* Selected ring */}
                 {selectedColor === color && (
                   <div
                     className="absolute w-6 h-6 rounded-full border-2"
@@ -128,74 +142,79 @@ export default function ThemeCustomizer() {
               </button>
             ))}
           </div>
-
         </div>
 
         {/* Menu Layout */}
         <div>
           <label
-            className={`block text-xs font-medium mb-3 ${isDark ? "text-gray-400" : "text-gray-600"
-              }`}
+            className={`block text-xs font-medium mb-3 ${
+              isDark ? "text-gray-400" : "text-gray-600"
+            }`}
           >
             Menu Layout
           </label>
-          {/* Menu Layout */}
-          <div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setLayout("sidebar")}
-                className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all border-2 ${layout === "sidebar"
-                    ? "text-primary-foreground border-primary" // White text + primary border
-                    : isDark
-                      ? "border-gray-700 text-gray-400 hover:border-gray-600"
-                      : "border-gray-300 text-gray-600 hover:border-gray-400"
-                  }`}
-                style={
-                  layout === "sidebar"
-                    ? {
+          <div className="flex gap-3">
+            <button
+              onClick={() => setLayout("sidebar")}
+              className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all border-2 ${
+                layout === "sidebar"
+                  ? "text-primary-foreground border-primary"
+                  : isDark
+                    ? "border-gray-700 text-gray-400 hover:border-gray-600"
+                    : "border-gray-300 text-gray-600 hover:border-gray-400"
+              }`}
+              style={
+                layout === "sidebar"
+                  ? {
                       backgroundColor: selectedColor,
                       borderColor: selectedColor,
                     }
-                    : {}
-                }
-              >
-                <span className="mr-1.5">⊞</span> Sidebar
-              </button>
+                  : {}
+              }
+            >
+              <span className="mr-1.5">⊞</span> Sidebar
+            </button>
 
-              <button
-                onClick={() => setLayout("topnav")}
-                className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all border-2 ${layout === "topnav"
-                    ? "text-primary-foreground border-primary" // White text + primary border
+            {/* Top Nav button — disabled on mobile */}
+            <button
+              onClick={() => !isMobile && setLayout("topnav")}
+              disabled={isMobile}
+              className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium border-2 transition-all ${
+                isMobile
+                  ? "opacity-50 cursor-not-allowed"
+                  : layout === "topnav"
+                    ? "text-primary-foreground border-primary"
                     : isDark
                       ? "border-gray-700 text-gray-400 hover:border-gray-600"
                       : "border-gray-300 text-gray-600 hover:border-gray-400"
-                  }`}
-                style={
-                  layout === "topnav"
-                    ? {
+              }`}
+              style={
+                layout === "topnav" && !isMobile
+                  ? {
                       backgroundColor: selectedColor,
                       borderColor: selectedColor,
                     }
-                    : {}
-                }
-              >
-                <span className="mr-1.5">▭</span> Top Nav
-              </button>
-            </div>
+                  : {}
+              }
+            >
+              <span className="mr-1.5">▭</span> Top Nav
+            </button>
           </div>
         </div>
 
-        {/* Color Block Toggle */}
+        {/* Sidebar Style Toggle */}
         <div>
           <label
-            className={`block text-xs font-medium mb-3 ${isDark ? "text-gray-400" : "text-gray-600"
-              }`}
+            className={`block text-xs font-medium mb-3 ${
+              isDark ? "text-gray-400" : "text-gray-600"
+            }`}
           >
             Sidebar Style
           </label>
           <div
-            className={`flex items-center justify-between border rounded-lg px-4 py-3 ${isDark ? "border-gray-800" : "border-gray-200"
-              }`}
+            className={`flex items-center justify-between border rounded-lg px-4 py-3 ${
+              isDark ? "border-gray-800" : "border-gray-200"
+            }`}
           >
             <span className="text-sm">Color Block</span>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -206,8 +225,9 @@ export default function ThemeCustomizer() {
                 className="sr-only peer"
               />
               <div
-                className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-md ${isDark ? "bg-gray-700" : "bg-gray-300"
-                  }`}
+                className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-md ${
+                  isDark ? "bg-gray-700" : "bg-gray-300"
+                }`}
                 style={colorBlock ? { backgroundColor: selectedColor } : {}}
               ></div>
             </label>
@@ -217,14 +237,16 @@ export default function ThemeCustomizer() {
         {/* Dark Mode Toggle */}
         <div>
           <label
-            className={`block text-xs font-medium mb-3 ${isDark ? "text-gray-400" : "text-gray-600"
-              }`}
+            className={`block text-xs font-medium mb-3 ${
+              isDark ? "text-gray-400" : "text-gray-600"
+            }`}
           >
             Mode
           </label>
           <div
-            className={`flex items-center justify-between border rounded-lg px-4 py-3 ${isDark ? "border-gray-800" : "border-gray-200"
-              }`}
+            className={`flex items-center justify-between border rounded-lg px-4 py-3 ${
+              isDark ? "border-gray-800" : "border-gray-200"
+            }`}
           >
             <span className="text-sm">Dark Mode</span>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -235,8 +257,9 @@ export default function ThemeCustomizer() {
                 className="sr-only peer"
               />
               <div
-                className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-md ${isDark ? "bg-gray-700" : "bg-gray-300"
-                  }`}
+                className={`w-11 h-6 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-md ${
+                  isDark ? "bg-gray-700" : "bg-gray-300"
+                }`}
                 style={isDark ? { backgroundColor: selectedColor } : {}}
               ></div>
             </label>

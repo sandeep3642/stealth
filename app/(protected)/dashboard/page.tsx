@@ -102,7 +102,7 @@ const Dashboard: React.FC = () => {
   ];
 
   return (
-    <div className={isDark ? "dark" : ""}>
+    <div className={`${isDark ? "dark" : ""} mt-20`}>
       <div className="min-h-screen bg-background p-6">
         <div className="mx-auto space-y-6">
           {/* Top Metrics */}

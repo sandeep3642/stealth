@@ -29,17 +29,18 @@ const AddCategory: React.FC = () => {
   };
 
   return (
-    <div className={isDark ? "dark" : ""}>
+    <div className={`${isDark ? "dark" : ""} mt-20`}>
       <div className="min-h-screen bg-background flex justify-center p-2">
         <div className="w-full max-w-4xl">
           {/* Header */}
-          <div className="flex items-center justify-between mt-6 mb-6">
-            <h1 className="text-4xl font-bold text-foreground">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mt-20 mb-6 px-4 sm:px-0">
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
               New Classification
             </h1>
+
             <button
               onClick={handleCancel}
-              className="text-foreground hover:text-foreground/70 font-medium transition-colors"
+              className="text-foreground hover:text-foreground/70 font-medium transition-colors w-full sm:w-auto text-center sm:text-right"
             >
               Cancel
             </button>
@@ -153,7 +154,7 @@ const AddCategory: React.FC = () => {
           </div>
         </div>
       </div>
-      <ThemeCustomizer/>
+      <ThemeCustomizer />
     </div>
   );
 };

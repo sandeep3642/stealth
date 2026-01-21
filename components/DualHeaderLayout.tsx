@@ -921,7 +921,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     const headerClasses = getTopNavHeaderClasses();
     return (
       <header
-        className={`${headerClasses.header} border-b`}
+        className={`${headerClasses.header} border-b fixed w-full`}
         style={
           headerClasses.useCustomBg
             ? { background: headerClasses.customBg }
@@ -1098,9 +1098,12 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
     return (
       <header
-        className={`${headerClasses.header} border-b px-4 md:px-6 py-3 flex items-center justify-between ${
-          !isMobile && isSidebarOpen ? "lg:ml-64" : ""
-        } ${!isMobile && !isSidebarOpen ? "lg:ml-20" : ""} transition-all duration-300`}
+        className={`${headerClasses.header}
+    fixed top-0 z-50 border-b px-4 md:px-6 py-3 flex items-center justify-between transition-all duration-300
+    w-full
+    ${!isMobile && isSidebarOpen ? "lg:ml-64 lg:w-[calc(100%-16rem)]" : ""}
+    ${!isMobile && !isSidebarOpen ? "lg:ml-20 lg:w-[calc(100%-5rem)]" : ""}
+  `}
       >
         <div className="flex items-center gap-3">
           <button
@@ -1440,7 +1443,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       {/* Render appropriate header based on layout */}
       {menuLayout === "topnav" ? <TopNavHeader /> : <SidebarHeader />}
 

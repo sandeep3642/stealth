@@ -49,17 +49,18 @@ const ProvisionBranding: React.FC = () => {
   };
 
   return (
-    <div className={isDark ? "dark" : ""}>
+    <div className={`${isDark ? "dark" : ""} mt-20`}>
       <div className="min-h-screen bg-background flex items-start justify-center p-6">
         <div className="w-full max-w-7xl">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <h1 className="text-4xl font-bold text-foreground">
+          <div className="flex items-center justify-between mb-6 px-3 sm:px-0">
+            <h1 className="text-2xl sm:text-4xl font-bold text-foreground">
               Provision Branding
             </h1>
+
             <button
               onClick={handleCancel}
-              className="text-foreground hover:text-foreground/70 font-medium transition-colors"
+              className="text-sm sm:text-base text-foreground hover:text-foreground/70 font-medium transition-colors"
             >
               Cancel
             </button>

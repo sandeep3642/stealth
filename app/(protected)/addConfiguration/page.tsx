@@ -52,18 +52,21 @@ const NewConfiguration: React.FC = () => {
   };
 
   return (
-    <div className={isDark ? "dark" : ""}>
+    <div className={`${isDark ? "dark" : ""} mt-20`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         {/* Header */}
-        <div className="max-w-6xl mx-auto mb-8">
-          <div className="flex justify-between items-start">
+        <div className="max-w-6xl mx-auto mb-8 px-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <h1
-              className={`text-3xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
+              className={`text-2xl sm:text-3xl font-bold ${
+                isDark ? "text-foreground" : "text-gray-900"
+              }`}
             >
               New Configuration
             </h1>
+
             <button
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+              className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors ${
                 isDark
                   ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
                   : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
