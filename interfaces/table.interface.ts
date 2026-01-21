@@ -20,7 +20,11 @@ export interface CommonTableProps {
   searchPlaceholder?: string;
   rowsPerPageOptions?: number[];
   defaultRowsPerPage?: number;
-  variant?: "default" | "simple"; // Add this line
+  variant?: "default" | "simple";
+  pageNo: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
 }
 
 export interface HierarchyNode {
