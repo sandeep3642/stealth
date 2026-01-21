@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+  
 :root {
   --primary: 239 68% 55%;        /* Default blue */
   --primary-foreground: 0 0% 100%; /* White text on primary */

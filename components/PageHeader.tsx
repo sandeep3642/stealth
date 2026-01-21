@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Home } from "lucide-react";
+import { Home, Filter, Download } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useColor } from "@/context/ColorContext";
 import { useRouter } from "next/navigation";
@@ -20,6 +20,12 @@ interface PageHeaderProps {
   buttonIcon?: React.ReactNode;
   onButtonClick?: () => void;
   buttonRoute?: string;
+  showExportButton?: boolean;
+  ExportbuttonText?: string;
+  onExportClick?: () => void;
+  showFilterButton?: boolean;
+  FilterbuttonText?: string;
+  onFilterClick?: () => void;
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({
@@ -31,6 +37,12 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   buttonIcon,
   onButtonClick,
   buttonRoute,
+  showExportButton = false,
+  ExportbuttonText = "Export",
+  onExportClick,
+  showFilterButton = false,
+  FilterbuttonText = "Filters",
+  onFilterClick,
 }) => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
@@ -41,6 +53,18 @@ const PageHeader: React.FC<PageHeaderProps> = ({
       onButtonClick();
     } else if (buttonRoute) {
       router.push(buttonRoute);
+    }
+  };
+
+  const handleExportClick = () => {
+    if (onExportClick) {
+      onExportClick();
+    }
+  };
+
+  const handleFilterClick = () => {
+    if (onFilterClick) {
+      onFilterClick();
     }
   };
 
@@ -102,17 +126,50 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             </p>
           )}
         </div>
-        {showButton && (
-          <button
-            onClick={handleButtonClick}
-            style={{ background: selectedColor }}
-            className="cursor-pointer hover:opacity-90 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg flex items-center justify-center gap-2 font-medium transition-opacity text-sm sm:text-base whitespace-nowrap flex-shrink-0"
-          >
-            {buttonIcon || <span className="text-lg sm:text-xl">+</span>}
-            <span className="hidden xs:inline sm:inline">{buttonText}</span>
-            <span className="inline xs:hidden sm:hidden">Add</span>
-          </button>
-        )}
+        
+        <div className="flex items-center gap-3">
+          {/* Filters Button */}
+          {showFilterButton && (
+            <button
+              onClick={handleFilterClick}
+              className={`cursor-pointer px-4 py-3 rounded-lg flex items-center gap-2 font-medium transition-colors border ${
+                isDark
+                  ? "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
+                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <Filter className="w-4 h-4" />
+              {FilterbuttonText}
+            </button>
+          )}
+
+          {/* Export Button */}
+          {showExportButton && (
+            <button
+              onClick={handleExportClick}
+              className={`cursor-pointer px-4 py-3 rounded-lg flex items-center gap-2 font-medium transition-colors border ${
+                isDark
+                  ? "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
+                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <Download className="w-4 h-4" />
+              {ExportbuttonText}
+            </button>
+          )}
+
+          {/* Primary Action Button */}
+          {showButton && (
+            <button
+              onClick={handleButtonClick}
+              style={{ background: selectedColor }}
+              className="cursor-pointer hover:opacity-90 text-white px-6 py-3 rounded-lg flex items-center gap-2 font-medium transition-opacity"
+            >
+              {buttonIcon || <span className="text-xl">+</span>}
+              {buttonText}
+            </button>
+          )}
+        </div>
       </div>
     </>
   );
