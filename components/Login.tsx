@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { AtSign, Lock, Eye, EyeOff } from "lucide-react";
 import { loginUser } from "@/services/authService";
 import { useRouter } from "next/navigation";
+import Cookies from 'js-cookie';
+
 
 interface LoginComponentProps {
   onSwitchToRegister: () => void;
@@ -30,14 +32,19 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
       setError("");
 
       // Simulated login for demo
-      await new Promise(resolve => setTimeout(resolve, 1000));
       console.log("Login successful");
-      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       // In real implementation:
       const response = await loginUser(email, password);
       if (response.data.token) {
         localStorage.setItem("authToken", response.data.token.accessToken);
         localStorage.setItem("user", JSON.stringify(response.data));
+        // ✅ cookie (middleware use)
+        Cookies.set("authToken", response.data.token.accessToken, {
+          path: "/",
+        });
+
         router.push("/dashboard");
       }
     } catch (err: any) {
@@ -118,11 +125,10 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
               onClick={() => setRememberMe(!rememberMe)}
             >
               <div
-                className={`h-4 w-4 rounded border flex items-center justify-center ${
-                  rememberMe
-                    ? "bg-purple-600 border-purple-600"
-                    : "border-zinc-300 bg-white"
-                }`}
+                className={`h-4 w-4 rounded border flex items-center justify-center ${rememberMe
+                  ? "bg-purple-600 border-purple-600"
+                  : "border-zinc-300 bg-white"
+                  }`}
               >
                 {rememberMe && (
                   <svg
