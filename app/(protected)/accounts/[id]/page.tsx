@@ -1,20 +1,27 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 import { Card } from "@/components/CommonCard";
 import { useTheme } from "@/context/ThemeContext";
-import { Building2, User, Shield } from "lucide-react";
-import { Category, FormData } from "@/interfaces/account.interface";
 import { useColor } from "@/context/ColorContext";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
-import { useRouter } from "next/navigation";
-import { getCategoreis, saveAccount } from "@/services/accountService";
-import { toast } from "react-toastify";
+import { Building2, User, Shield } from "lucide-react";
+import { Category, FormData } from "@/interfaces/account.interface";
+import {
+  getAccountById,
+  getCategoreis,
+  updateAccount,
+} from "@/services/accountService";
 
-const AddAccount: React.FC = () => {
+const EditAccount: React.FC = () => {
+  const router = useRouter();
+  const params = useParams(); // ✅ gives { id: "15" } for /accounts/15
+  const id = params?.id;
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
-  const router = useRouter();
+
   const [formData, setFormData] = useState<FormData>({
     accountName: "",
     accountCode: "",
@@ -28,6 +35,40 @@ const AddAccount: React.FC = () => {
 
   const [categories, setCategories] = useState<Category[]>([]);
 
+  // Fetch categories first
+  const fetchCategories = async () => {
+    const res = await getCategoreis();
+    if (res?.statusCode === 200) setCategories(res.data);
+  };
+
+  // Fetch account details
+  const fetchAccount = async () => {
+    const res = await getAccountById(id);
+    if (res?.statusCode === 200 && res?.data) {
+      const data = res.data;
+      setFormData({
+        accountName: data.accountName,
+        accountCode: data.accountCode,
+        categoryId: data.categoryId,
+        primaryDomain: data.primaryDomain,
+        fullName: data.fullname,
+        emailAddress: data.email,
+        phoneNumber: data.phone,
+        location: data.address,
+      });
+    } else {
+      toast.error("Failed to fetch account details!");
+    }
+  };
+
+  useEffect(() => {
+    console.log("sjkdhkjsdhfsdj", id);
+    if (id) {
+      fetchCategories();
+      fetchAccount();
+    }
+  }, [id]);
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
@@ -39,52 +80,32 @@ const AddAccount: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    try {
-      const payload = {
-        accountName: formData.accountName,
-        accountCode: formData.accountCode,
-        categoryId: formData.categoryId,
-        primaryDomain: formData.primaryDomain,
-        countryId: 1,
-        parentAccountId: 0,
-        userId: 1,
-        hierarchyPath: formData.location || "N/A",
-        taxTypeId: 1,
-        status: true,
-        fullname: formData.fullName,
-        email: formData.emailAddress,
-        phone: formData.phoneNumber,
-        address: formData.location,
-      };
+    const payload = {
+      accountName: formData.accountName,
+      accountCode: formData.accountCode,
+      categoryId: formData.categoryId,
+      primaryDomain: formData.primaryDomain,
+      countryId: 1,
+      parentAccountId: 0,
+      userId: 1,
+      hierarchyPath: formData.location || "N/A",
+      taxTypeId: 1,
+      status: true,
+      fullname: formData.fullName,
+      email: formData.emailAddress,
+      phone: formData.phoneNumber,
+      address: formData.location,
+    };
 
-      const response = await saveAccount(payload);
+    const response = await updateAccount(payload, id);
 
-      if (response && response.statusCode === 200) {
-        toast.success(response.message || "Account created successfully!");
-        router.push("/accounts");
-      } else if (response && response.statusCode === 409) {
-        toast.error(response.message || "Account code already exists!");
-      } else {
-        toast.error(response.message || "Something went wrong!");
-      }
-    } catch (error) {
-      console.error("Error while saving category:", error);
-      toast.error("An error occurred while submitting the form.");
+    if (response?.statusCode === 200) {
+      toast.success(response.message || "Account updated successfully!");
+      router.push("/accounts");
+    } else {
+      toast.error(response?.message || "Failed to update account!");
     }
   };
-
-  async function fetchCategories() {
-    const response = await getCategoreis();
-    console.log("response", response);
-    if (response && response.statusCode === 200) {
-      toast.success(response.message);
-      setCategories(response.data);
-    }
-  }
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
 
   return (
     <div className={`${isDark ? "dark" : ""} mt-20`}>
@@ -96,10 +117,10 @@ const AddAccount: React.FC = () => {
               <h1
                 className={`text-2xl sm:text-4xl font-bold mb-2 ${isDark ? "text-foreground" : "text-gray-900"}`}
               >
-                Create New Account
+                Edit Account
               </h1>
               <p className={isDark ? "text-gray-400" : "text-gray-600"}>
-                Provision organizational identity and master credentials.
+                Update organizational identity and master credentials.
               </p>
             </div>
             <div className="flex gap-3 w-full sm:w-auto">
@@ -119,23 +140,23 @@ const AddAccount: React.FC = () => {
                 onClick={handleSubmit}
               >
                 <Building2 className="w-5 h-5" />
-                <span className="hidden xs:inline">Provision Account</span>
-                <span className="xs:hidden">Provision</span>
+                <span className="hidden xs:inline">Update Account</span>
+                <span className="xs:hidden">Update</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className=" mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Forms */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Identity & Scope Section */}
+            {/* Identity & Scope */}
             <Card isDark={isDark}>
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Building2
-                    className={`w-5 h-5 `}
+                    className="w-5 h-5"
                     style={{ color: selectedColor }}
                   />
                   <h2
@@ -144,9 +165,7 @@ const AddAccount: React.FC = () => {
                     Identity & Scope
                   </h2>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Account Name */}
                   <div>
                     <label
                       className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
@@ -167,7 +186,6 @@ const AddAccount: React.FC = () => {
                     />
                   </div>
 
-                  {/* Account Code */}
                   <div>
                     <label
                       className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
@@ -188,12 +206,9 @@ const AddAccount: React.FC = () => {
                     />
                   </div>
 
-                  {/* Category */}
                   <div>
                     <label
-                      className={`block text-sm font-medium mb-2 ${
-                        isDark ? "text-gray-300" : "text-gray-700"
-                      }`}
+                      className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                     >
                       Category
                     </label>
@@ -208,7 +223,7 @@ const AddAccount: React.FC = () => {
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
                       <option value="">Select Category</option>
-                      {categories.map((cat: Category) => (
+                      {categories.map((cat) => (
                         <option key={cat.categoryId} value={cat.categoryId}>
                           {cat.labelName}
                         </option>
@@ -216,7 +231,6 @@ const AddAccount: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Primary Domain */}
                   <div>
                     <label
                       className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
@@ -240,7 +254,7 @@ const AddAccount: React.FC = () => {
               </div>
             </Card>
 
-            {/* Administrative Contact Section */}
+            {/* Administrative Contact */}
             <Card isDark={isDark}>
               <div>
                 <div className="flex items-center gap-2 mb-4">
@@ -348,9 +362,7 @@ const AddAccount: React.FC = () => {
           <div className="lg:col-span-1">
             <div
               style={{ borderColor: selectedColor }}
-              className={`${
-                isDark ? "bg-card border-gray-800" : "bg-white border-gray-200"
-              } rounded-xl shadow-lg border-t-4 overflow-hidden`}
+              className={`${isDark ? "bg-card border-gray-800" : "bg-white border-gray-200"} rounded-xl shadow-lg border-t-4 overflow-hidden`}
             >
               <div className="p-6">
                 <h3
@@ -361,12 +373,10 @@ const AddAccount: React.FC = () => {
                 <p
                   className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
                 >
-                  Live summary of the new instance.
+                  Live summary of the account.
                 </p>
               </div>
-
               <div className="px-6 pb-6 space-y-4">
-                {/* Account */}
                 <div className="flex justify-between items-center">
                   <span
                     className={`text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}
@@ -377,11 +387,9 @@ const AddAccount: React.FC = () => {
                     className="text-sm font-bold"
                     style={{ color: selectedColor }}
                   >
-                    PENDING
+                    {formData.accountName || "N/A"}
                   </span>
                 </div>
-
-                {/* Code */}
                 <div className="flex justify-between items-center">
                   <span
                     className={`text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}
@@ -391,47 +399,36 @@ const AddAccount: React.FC = () => {
                   <span
                     className={`text-sm font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
                   >
-                    AUTO_GEN
+                    {formData.accountCode || "N/A"}
                   </span>
                 </div>
-
-                {/* Category */}
                 <div className="flex justify-between items-center">
                   <span
-                    className={`text-sm font-medium ${
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    }`}
+                    className={`text-sm font-medium ${isDark ? "text-gray-400" : "text-gray-600"}`}
                   >
                     CATEGORY:
                   </span>
                   <span
-                    className={`text-sm font-bold ${
-                      isDark ? "text-foreground" : "text-gray-900"
-                    }`}
+                    className={`text-sm font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
                   >
                     {categories
                       .find(
-                        (cat: Category) =>
-                          cat.categoryId === Number(formData.categoryId),
+                        (cat) => cat.categoryId === Number(formData.categoryId),
                       )
                       ?.labelName?.toUpperCase() || "N/A"}
                   </span>
                 </div>
-
-                {/* Master User Section */}
                 <div
-                  className={`mt-20 p-4 rounded-lg ${
-                    isDark ? "bg-purple-900/20" : "bg-purple-50"
-                  }`}
+                  className={`mt-20 p-4 rounded-lg ${isDark ? "bg-purple-900/20" : "bg-purple-50"}`}
                 >
                   <div className="flex items-start gap-3">
                     <Shield
                       style={{ color: selectedColor }}
-                      className={`w-5 h-5 mt-0.5 `}
+                      className="w-5 h-5 mt-0.5"
                     />
                     <div>
                       <p
-                        className={`text-xs font-bold mb-1`}
+                        className="text-xs font-bold mb-1"
                         style={{ color: selectedColor }}
                       >
                         MASTER USER
@@ -454,4 +451,4 @@ const AddAccount: React.FC = () => {
   );
 };
 
-export default AddAccount;
+export default EditAccount;

@@ -6,13 +6,15 @@ import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
 import { useTheme } from "@/context/ThemeContext";
-import { getAccounts } from "@/services/accountService";
+import { deleteAccount, getAccounts } from "@/services/accountService";
 import { AccountData } from "@/interfaces/account.interface";
 import { Building2, CheckCircle, Clock, XCircle, MapPin } from "lucide-react";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 const Accounts: React.FC = () => {
   const { isDark } = useTheme();
+  const router = useRouter();
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const columns = [
@@ -34,13 +36,13 @@ const Accounts: React.FC = () => {
       visible: true,
     },
     {
-      key: "contact",
+      key: "phone",
       label: "CONTACT",
-      type: "multi-line" as const,
+      // type: "multi-line" as const,
       visible: true,
     },
     {
-      key: "countryName",
+      key: "address",
       label: "LOCATION",
       type: "icon-text" as const,
       icon: <MapPin className="w-4 h-4" />,
@@ -57,13 +59,18 @@ const Accounts: React.FC = () => {
   const [data, setData] = useState<AccountData[]>([]);
 
   const handleEdit = (row: AccountData) => {
-    console.log("Edit:", row);
-    alert(`Editing ${row.instance.main}`);
+    router.push(`/accounts/${row.accountId}`);
   };
 
-  const handleDelete = (row: AccountData) => {
-    console.log("Delete:", row);
-    alert(`Deleting ${row.instance.main}`);
+  const handleDelete = async (row: AccountData) => {
+    const response = await deleteAccount(row.accountId);
+    if (response && response.statusCode === 200) {
+      toast.success(response.message);
+      if (pageNo > 1) setPageNo(1);
+      else getAccountsList();
+    } else {
+      toast.error(response.message);
+    }
   };
 
   const handlePageChange = (page: number) => {
@@ -77,7 +84,6 @@ const Accounts: React.FC = () => {
 
   async function getAccountsList() {
     const response = await getAccounts(pageNo, pageSize);
-    console.log("response", response);
     if (response && response.statusCode === 200) {
       toast.success(response.message);
       setData(response.data.items);
@@ -86,7 +92,7 @@ const Accounts: React.FC = () => {
 
   useEffect(() => {
     getAccountsList();
-  }, []);
+  }, [pageNo, pageSize]);
 
   return (
     <div className={`${isDark ? "dark" : ""} mt-20`}>

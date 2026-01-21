@@ -9,7 +9,7 @@ export interface ContactData {
 }
 
 export interface AccountData {
-  id: number;
+  accountId: number;
   no: number;
   code: string;
   instance: InstanceData;
@@ -28,7 +28,6 @@ export interface FormData {
   phoneNumber: string;
   location: string;
 }
-
 
 export interface Category {
   categoryId: number;
