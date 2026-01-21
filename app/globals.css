@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
-  
+*{
+   font-family: 'Inter', sans-serif;
+   /* margin: 0;
+   padding: 0; */
+}
+
 :root {
   --primary: 239 68% 55%;        /* Default blue */
   --primary-foreground: 0 0% 100%; /* White text on primary */
