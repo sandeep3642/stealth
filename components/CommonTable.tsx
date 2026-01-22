@@ -19,10 +19,12 @@ const CommonTable: React.FC<CommonTableProps> = ({
   onPageChange = () => {},
   onPageSizeChange = () => {},
   variant = "default",
+  searchQuery,
+  setSearchQuery,
 }) => {
   const { selectedColor } = useColor();
   const { isDark } = useTheme();
-  const [searchQuery, setSearchQuery] = useState<string>("");
+
   const [columnVisibility, setColumnVisibility] = useState<
     Record<string, boolean>
   >(() => {
@@ -227,7 +229,9 @@ const CommonTable: React.FC<CommonTableProps> = ({
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) =>
+                  setSearchQuery && setSearchQuery(e.target.value)
+                }
                 className="w-full pl-10 pr-4 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-background text-foreground placeholder:text-foreground placeholder:opacity-50"
               />
             </div>
@@ -437,7 +441,9 @@ const CommonTable: React.FC<CommonTableProps> = ({
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) =>
+                  setSearchQuery && setSearchQuery(e.target.value)
+                }
                 className="w-full pl-10 pr-4 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-background text-foreground placeholder:text-foreground placeholder:opacity-50"
               />
             </div>

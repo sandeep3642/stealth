@@ -25,6 +25,8 @@ export interface CommonTableProps {
   pageSize: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+  searchQuery?: string;
+  setSearchQuery?: (val: string) => void;
 }
 
 export interface HierarchyNode {

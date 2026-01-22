@@ -17,6 +17,9 @@ const Accounts: React.FC = () => {
   const router = useRouter();
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
+
   const columns = [
     {
       key: "no",
@@ -83,7 +86,7 @@ const Accounts: React.FC = () => {
   };
 
   async function getAccountsList() {
-    const response = await getAccounts(pageNo, pageSize);
+    const response = await getAccounts(pageNo, pageSize, debouncedQuery);
     if (response && response.statusCode === 200) {
       toast.success(response.message);
       setData(response.data.items);
@@ -91,8 +94,16 @@ const Accounts: React.FC = () => {
   }
 
   useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  useEffect(() => {
     getAccountsList();
-  }, [pageNo, pageSize]);
+  }, [pageNo, pageSize, debouncedQuery]);
 
   return (
     <div className={`${isDark ? "dark" : ""} mt-20`}>
@@ -162,6 +173,8 @@ const Accounts: React.FC = () => {
             pageSize={pageSize}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
           />
         </div>
       </div>
