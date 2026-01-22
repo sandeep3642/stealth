@@ -6,20 +6,27 @@ import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "next/navigation";
+import { getWhiteLabels, deleteWhiteLabel } from "@/services/whitelabelService";
+import { WhiteLabel } from "@/interfaces/whitelabel.interface";
 
-const WhiteLabel: React.FC = () => {
+const WhiteLabelPage: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [data, setData] = useState<WhiteLabel[]>([]);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(false);
+
   const columns = [
     {
-      key: "account",
+      key: "accountName",
       label: "ACCOUNT",
       visible: true,
     },
     {
-      key: "domain",
+      key: "customEntryFqdn",
       label: "DOMAIN",
       type: "link" as const,
       visible: true,
@@ -28,48 +35,78 @@ const WhiteLabel: React.FC = () => {
       key: "theme",
       label: "THEME",
       visible: true,
-      render: (value: any) => (
+      render: (value: any, row: WhiteLabel) => (
         <div className="flex items-center gap-2">
           <div
-            className="w-6 h-6 rounded-full"
-            style={{ backgroundColor: value.primary }}
+            className="w-6 h-6 rounded-full border"
+            style={{ backgroundColor: row.primaryColorHex }}
+            title={row.primaryColorHex}
           />
           <div
-            className="w-6 h-6 rounded-full"
-            style={{ backgroundColor: value.secondary }}
+            className="w-6 h-6 rounded-full border"
+            style={{ backgroundColor: row.secondaryColorHex }}
+            title={row.secondaryColorHex}
           />
         </div>
       ),
     },
     {
-      key: "status",
+      key: "isActive",
       label: "STATUS",
       type: "badge" as const,
       visible: true,
+      render: (value: boolean) => (value ? "Active" : "Inactive"),
     },
   ];
 
-  const data = [
-    {
-      id: 1,
-      account: "Alpha Logistics",
-      domain: "https://portal.alpha.com",
-      theme: {
-        primary: "#7C3AED",
-        secondary: "#10B981",
-      },
-      status: "Active",
-    },
-  ];
-
-  const handleEdit = (row: any) => {
-    console.log("Edit:", row);
-    router.push("/provisionBranding");
+  // Fetch White Labels Data
+  const fetchWhiteLabels = async () => {
+    setLoading(true);
+    try {
+      const response = await getWhiteLabels(pageNo, pageSize);
+      
+      if (response.success && response.data) {
+        setData(response.data.items || []);
+        setTotalRecords(response.data.totalRecords || 0);
+        setTotalPages(response.data.totalPages || 0);
+      } else {
+        console.error("Failed to fetch white labels:", response.message);
+        setData([]);
+      }
+    } catch (error) {
+      console.error("Error fetching white labels:", error);
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (row: any) => {
-    console.log("Delete:", row);
-    alert(`Deleting ${row.account}`);
+  // Load data on component mount and when pagination changes
+  useEffect(() => {
+    fetchWhiteLabels();
+  }, [pageNo, pageSize]);
+
+  const handleEdit = (row: WhiteLabel) => {
+    console.log("Edit:", row);
+    router.push(`/provisionBranding?id=${row.whiteLabelId}`);
+  };
+
+  const handleDelete = async (row: WhiteLabel) => {
+    if (confirm(`Are you sure you want to delete white label for ${row.accountName}?`)) {
+      try {
+        const response = await deleteWhiteLabel(row.whiteLabelId);
+        
+        if (response.success) {
+          alert("White label deleted successfully!");
+          fetchWhiteLabels(); // Refresh data
+        } else {
+          alert(`Failed to delete: ${response.message}`);
+        }
+      } catch (error) {
+        console.error("Error deleting white label:", error);
+        alert("An error occurred while deleting.");
+      }
+    }
   };
 
   const handlePageChange = (page: number) => {
@@ -106,8 +143,11 @@ const WhiteLabel: React.FC = () => {
           variant="simple"
           pageNo={pageNo}
           pageSize={pageSize}
+          totalRecords={totalRecords}
+          totalPages={totalPages}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
+          loading={loading}
         />
       </div>
       <ThemeCustomizer />
@@ -115,4 +155,4 @@ const WhiteLabel: React.FC = () => {
   );
 };
 
-export default WhiteLabel;
+export default WhiteLabelPage;

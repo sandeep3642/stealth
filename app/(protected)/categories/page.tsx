@@ -4,24 +4,27 @@ import React, { useEffect, useState } from "react";
 import CommonTable from "@/components/CommonTable";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
-import { MetricCard } from "@/components/CommonCard";
 import { useTheme } from "@/context/ThemeContext";
-import { getAccounts } from "@/services/accountService";
-import { AccountData } from "@/interfaces/account.interface";
+import { getCategories, deleteCategory } from "@/services/categoryService";
+import { Category } from "@/interfaces/category.interface";
+import { useRouter } from "next/navigation";
 
 const Categories: React.FC = () => {
   const { isDark } = useTheme();
-
+  const router = useRouter();
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const columns = [
     {
-      key: "id",
+      key: "categoryId",
       label: "ID",
       visible: true,
     },
     {
-      key: "label",
+      key: "labelName",
       label: "LABEL",
       visible: true,
     },
@@ -31,63 +34,51 @@ const Categories: React.FC = () => {
       visible: true,
     },
     {
-      key: "accounts",
-      label: "ACCOUNTS",
-      visible: true,
-    },
-    {
-      key: "status",
+      key: "isActive",
       label: "STATUS",
       type: "badge" as const,
       visible: true,
+      render: (value: boolean) => (value ? "Active" : "Inactive"),
+    },
+    {
+      key: "createdAt",
+      label: "CREATED AT",
+      visible: true,
+      render: (value: string) => new Date(value).toLocaleDateString(),
     },
   ];
 
-  const data = [
-    {
-      id: "CAT-01",
-      label: "Distributor",
-      description: "Tier 1 high-volume distribution pa...",
-      accounts: "5 Instances",
-      status: "Active",
-    },
-    {
-      id: "CAT-02",
-      label: "Reseller",
-      description: "Regional value-added resellers.",
-      accounts: "12 Instances",
-      status: "Active",
-    },
-    {
-      id: "CAT-03",
-      label: "Enterprise",
-      description: "Direct large-scale corporate fleet...",
-      accounts: "8 Instances",
-      status: "Active",
-    },
-    {
-      id: "CAT-04",
-      label: "Dealer",
-      description: "Independent hardware dealers.",
-      accounts: "20 Instances",
-      status: "Active",
-    },
-  ];
-
-  const handleEdit = (row: any) => {
-    console.log("Edit:", row);
-    alert(`Editing ${row.label}`);
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await getCategories();
+      if (response.success) {
+        setCategories(response.data || []);
+      } else {
+        console.error("Failed to fetch categories:", response.message);
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDelete = (row: any) => {
-    console.log("Delete:", row);
-    alert(`Deleting ${row.label}`);
+  const handleEdit = (row: Category) => {
+   router.push(`/categories/${row.categoryId}`);
   };
 
-  async function getAccountsList() {
-    const response = await getAccounts();
-    console.log("response", response);
-  }
+  const handleDelete = async (row: Category) => {
+    if (confirm(`Are you sure you want to delete "${row.labelName}"?`)) {
+      const response = await deleteCategory(row.categoryId);
+      if (response.success) {
+        alert("Category deleted successfully!");
+        fetchCategories(); // Refresh list
+      } else {
+        alert(`Failed to delete: ${response.message}`);
+      }
+    }
+  };
 
   const handlePageChange = (page: number) => {
     setPageNo(page);
@@ -95,11 +86,11 @@ const Categories: React.FC = () => {
 
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
-    setPageNo(1); // Reset to first page when page size changes
+    setPageNo(1);
   };
 
   useEffect(() => {
-    getAccountsList();
+    fetchCategories();
   }, []);
 
   return (
@@ -110,26 +101,32 @@ const Categories: React.FC = () => {
           subtitle="Manage identities, taxonomies, and global parameters."
           breadcrumbs={[{ label: "Accounts" }, { label: "Categories" }]}
           showButton={true}
-          buttonText="Add Taxonomy"
-          buttonRoute="/addCategory"
+          buttonText="Add Category"
+          buttonRoute="/categories/0"
         />
 
         {/* Table */}
-        <CommonTable
-          columns={columns}
-          data={data}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          showActions={true}
-          searchPlaceholder="Search across all fields..."
-          rowsPerPageOptions={[10, 25, 50, 100]}
-          defaultRowsPerPage={10}
-          variant="simple"
-          pageNo={pageNo}
-          pageSize={pageSize}
-          onPageChange={handlePageChange}
-          onPageSizeChange={handlePageSizeChange}
-        />
+        {loading ? (
+          <div className="flex items-center justify-center p-8">
+            <p>Loading categories...</p>
+          </div>
+        ) : (
+          <CommonTable
+            columns={columns}
+            data={categories}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            showActions={true}
+            searchPlaceholder="Search categories..."
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            defaultRowsPerPage={10}
+            variant="simple"
+            pageNo={pageNo}
+            pageSize={pageSize}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        )}
       </div>
       <ThemeCustomizer />
     </div>

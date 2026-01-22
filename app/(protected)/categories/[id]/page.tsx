@@ -1,32 +1,124 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Layers } from "lucide-react";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
+import {
+  saveCategory,
+  updateCategory,
+  getCategoryById,
+} from "@/services/categoryService";
+import { CategoryFormData } from "@/interfaces/category.interface";
+import { toast } from "react-toastify";
 
-const AddCategory: React.FC = () => {
+const AddEditCategory: React.FC = () => {
   const { selectedColor } = useColor();
   const { isDark } = useTheme();
   const router = useRouter();
+  const params = useParams();
+  
+  // Get ID from route params
+  const categoryId = params?.id ? Number(params.id) : 0;
+  const isEditMode = categoryId > 0;
+
   const [isActive, setIsActive] = useState(true);
   const [labelName, setLabelName] = useState("");
   const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(false);
 
-  const handleSubmit = () => {
-    console.log({
-      labelName,
-      description,
+  // Fetch category data if in edit mode
+  useEffect(() => {
+    if (isEditMode) {
+      fetchCategoryData();
+    }
+  }, [categoryId]);
+
+  const fetchCategoryData = async () => {
+    try {
+      setFetchingData(true);
+      const response = await getCategoryById(categoryId);
+      
+      if (response.success && response.data) {
+        const category = Array.isArray(response.data) 
+          ? response.data[0] 
+          : response.data;
+          
+        setLabelName(category.labelName || "");
+        setDescription(category.description || "");
+        setIsActive(category.isActive ?? true);
+      } else {
+        toast.error("Failed to fetch category data");
+        router.back();
+      }
+    } catch (error) {
+      console.error("Error fetching category:", error);
+      toast.error("Error loading category data");
+      router.back();
+    } finally {
+      setFetchingData(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    // Validation
+    if (!labelName.trim()) {
+      toast.error("Please enter a label name");
+      return;
+    }
+
+    const payload: CategoryFormData = {
+      labelName: labelName.trim(),
+      description: description.trim(),
       isActive,
-    });
-    // Add your submit logic here
+    };
+
+    try {
+      setLoading(true);
+      let response;
+
+      if (isEditMode) {
+        // Update existing category
+        response = await updateCategory(payload, categoryId);
+      } else {
+        // Create new category
+        response = await saveCategory(payload);
+      }
+
+      if (response.success) {
+        toast.success(
+          isEditMode
+            ? "Category updated successfully!"
+            : "Category created successfully!"
+        );
+        router.push("/categories");
+      } else {
+        toast.error(`Failed: ${response.message}`);
+      }
+    } catch (error) {
+      console.error("Error saving category:", error);
+      toast.error("An error occurred while saving the category");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
     router.back();
   };
+
+  if (fetchingData) {
+    return (
+      <div className={`${isDark ? "dark" : ""} mt-20`}>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <p className="text-foreground">Loading category data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`${isDark ? "dark" : ""} mt-20`}>
@@ -35,7 +127,7 @@ const AddCategory: React.FC = () => {
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mt-20 mb-6 px-4 sm:px-0">
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
-              New Classification
+              {isEditMode ? "Edit Classification" : "New Classification"}
             </h1>
 
             <button
@@ -68,7 +160,9 @@ const AddCategory: React.FC = () => {
                     Taxonomy Parameters
                   </h2>
                   <p className="text-sm text-foreground opacity-60">
-                    Create a new grouping for account management and pricing.
+                    {isEditMode
+                      ? "Update the grouping for account management and pricing."
+                      : "Create a new grouping for account management and pricing."}
                   </p>
                 </div>
               </div>
@@ -76,7 +170,7 @@ const AddCategory: React.FC = () => {
               {/* Label Name Field */}
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-foreground mb-2">
-                  Label Name
+                  Label Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -90,6 +184,7 @@ const AddCategory: React.FC = () => {
                   } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   onFocus={(e) => (e.target.style.borderColor = selectedColor)}
                   onBlur={(e) => (e.target.style.borderColor = "")}
+                  disabled={loading}
                 />
               </div>
 
@@ -110,6 +205,7 @@ const AddCategory: React.FC = () => {
                   } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   onFocus={(e) => (e.target.style.borderColor = selectedColor)}
                   onBlur={(e) => (e.target.style.borderColor = "")}
+                  disabled={loading}
                 />
               </div>
 
@@ -126,7 +222,8 @@ const AddCategory: React.FC = () => {
                   </div>
                   <button
                     onClick={() => setIsActive(!isActive)}
-                    className="relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
+                    disabled={loading}
+                    className="relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
                     style={{
                       backgroundColor: isActive ? selectedColor : "#cbd5e1",
                     }}
@@ -141,13 +238,28 @@ const AddCategory: React.FC = () => {
               </div>
 
               {/* Submit Button */}
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={handleCancel}
+                  disabled={loading}
+                  className="px-8 py-3 rounded-lg font-semibold border border-gray-300 text-foreground hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
                 <button
                   onClick={handleSubmit}
-                  className="px-8 py-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity"
+                  disabled={loading}
+                  className="px-8 py-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
                   style={{ backgroundColor: selectedColor }}
                 >
-                  Create Category
+                  {loading ? (
+                    <>
+                      <span className="animate-spin">⏳</span>
+                      {isEditMode ? "Updating..." : "Creating..."}
+                    </>
+                  ) : (
+                    <>{isEditMode ? "Update Category" : "Create Category"}</>
+                  )}
                 </button>
               </div>
             </div>
@@ -159,4 +271,4 @@ const AddCategory: React.FC = () => {
   );
 };
 
-export default AddCategory;
+export default AddEditCategory;
