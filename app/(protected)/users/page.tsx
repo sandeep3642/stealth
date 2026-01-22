@@ -155,7 +155,7 @@ const Users: React.FC = () => {
                     breadcrumbs={[{ label: "Users" }, { label: "User List" }]}
                     showButton={true}
                     buttonText="New User"
-                    buttonRoute="/addUser"
+                    buttonRoute="/users/0"
                     showExportButton={true}
                     ExportbuttonText="Export"
                     onExportClick={handleExport}
