@@ -143,11 +143,11 @@ const WhiteLabelPage: React.FC = () => {
           variant="simple"
           pageNo={pageNo}
           pageSize={pageSize}
-          totalRecords={totalRecords}
-          totalPages={totalPages}
+          // totalRecords={totalRecords}
+          // totalPages={totalPages}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
-          loading={loading}
+          // loading={loading}
         />
       </div>
       <ThemeCustomizer />

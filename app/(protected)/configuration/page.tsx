@@ -6,7 +6,7 @@ import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
 import { useTheme } from "@/context/ThemeContext";
 import { getConfigurations, deleteConfiguration } from "@/services/configurationService";
-import   { Configuration } from "@/interfaces/configuration.interface";
+import   { Configuration } from "@/interfaces/configuartion.interface";
 import { useRouter } from "next/navigation";
 
 const ConfigurationPage: React.FC = () => {

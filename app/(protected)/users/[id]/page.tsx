@@ -4,12 +4,13 @@ import React, { useEffect, useState } from "react";
 import { Card } from "@/components/CommonCard";
 import { useTheme } from "@/context/ThemeContext";
 import { Building2, User, Shield } from "lucide-react";
-import { Category, FormData } from "@/interfaces/account.interface";
+import { FormData } from "@/interfaces/user.interface";
 import { useColor } from "@/context/ColorContext";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { useRouter } from "next/navigation";
-import { getCategoreis, saveAccount } from "@/services/accountService";
+import { getUsers, createUser } from "@/services/userService";
 import { toast } from "react-toastify";
+import { getAllAccounts, getAllRoles } from "@/services/commonServie";
 
 type TabType = "profile" | "access" | "security";
 
@@ -21,7 +22,8 @@ const CreateUser: React.FC = () => {
   const [formData, setFormData] = useState<FormData>({
     accountName: "",
     accountCode: "",
-    categoryId: 0,
+    accountId: 0,
+    roleId: 0,
     primaryDomain: "",
     fullName: "",
     emailAddress: "",
@@ -29,7 +31,8 @@ const CreateUser: React.FC = () => {
     location: "",
   });
 
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [accounts, setAccounts] = useState([]);
+  const [roles, setRoles] = useState([]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -42,51 +45,60 @@ const CreateUser: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    if (
+      !formData.accountName ||
+      !formData.accountCode ||
+      !formData.emailAddress
+    ) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
     try {
+      // ✅ Prepare payload based on backend format
       const payload = {
-        accountName: formData.accountName,
-        accountCode: formData.accountCode,
-        categoryId: formData.categoryId,
-        primaryDomain: formData.primaryDomain,
-        countryId: 1,
-        parentAccountId: 0,
-        userId: 1,
-        hierarchyPath: formData.location || "N/A",
-        taxTypeId: 1,
-        status: true,
-        fullname: formData.fullName,
         email: formData.emailAddress,
-        phone: formData.phoneNumber,
-        address: formData.location,
+        password: "string", // TODO: replace this with actual password input if you have one
+        firstName: formData.accountName,
+        lastName: formData.accountCode,
+        accountId: Number(formData.accountId),
+        roleId: Number(formData.roleId),
       };
 
-      const response = await saveAccount(payload);
-
-      if (response && response.statusCode === 200) {
-        toast.success(response.message || "Account created successfully!");
-        router.push("/accounts");
-      } else if (response && response.statusCode === 409) {
-        toast.error(response.message || "Account code already exists!");
+      // TODO: Replace this with your actual API call, e.g.:
+      const response = await createUser(payload);
+      console.log("response",response)
+      if (response.statusCode === 200) {
+        toast.success(response.message || "User created successfully!");
+        router.push("/users");
       } else {
-        toast.error(response.message || "Something went wrong!");
+        toast.error(response.message || "something went wrong");
       }
     } catch (error) {
-      console.error("Error while saving category:", error);
-      toast.error("An error occurred while submitting the form.");
+      console.error("Error creating user:", error);
+      toast.error("Failed to create user");
     }
   };
 
-  async function fetchCategories() {
-    const response = await getCategoreis();
-    console.log("response", response);
+  async function fetchAllAcounts() {
+    const response = await getAllAccounts();
     if (response && response.statusCode === 200) {
       toast.success(response.message);
-      setCategories(response.data);
+      setAccounts(response.data);
+    }
+  }
+
+  async function fetchAllRoles() {
+    const response = await getAllRoles();
+    if (response && response.statusCode === 200) {
+      toast.success(response.message);
+      setRoles(response.data);
     }
   }
 
   useEffect(() => {
-    fetchCategories();
+    fetchAllAcounts();
+    fetchAllRoles();
   }, []);
 
   const tabs = [
@@ -102,7 +114,7 @@ const CreateUser: React.FC = () => {
       >
         {/* Header */}
         <div className="mx-auto mb-6 sm:mb-8">
-          <div className="flex flex-col gap-4 sm:gap-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
             <div>
               <h1
                 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 ${isDark ? "text-foreground" : "text-gray-900"}`}
@@ -115,7 +127,7 @@ const CreateUser: React.FC = () => {
                 Manage user identity, access scope, and security settings.
               </p>
             </div>
-            <div className="flex gap-2 sm:gap-3">
+            <div className="flex gap-2 sm:gap-3 sm:flex-shrink-0">
               <button
                 className={`flex-1 sm:flex-none px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg text-sm sm:text-base font-medium transition-colors ${
                   isDark
@@ -308,19 +320,21 @@ const CreateUser: React.FC = () => {
                       System Role
                     </label>
                     <select
+                      name="roleId"
+                      value={formData.roleId} // bind to state
+                      onChange={handleInputChange}
                       className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
                         isDark
                           ? "bg-gray-800 border-gray-700 text-foreground focus:border-purple-500"
                           : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
-                      <option>
-                        Super Admin - Full access to all system resources.
-                      </option>
-                      <option>Admin - Manage users and accounts.</option>
-                      <option>
-                        User - Basic access to assigned resources.
-                      </option>
+                      <option value="">Select Role</option>
+                      {roles?.map((role: { id: number; value: string }) => (
+                        <option key={role.id} value={role.id}>
+                          {role.value}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
@@ -334,8 +348,8 @@ const CreateUser: React.FC = () => {
                       Account Association
                     </label>
                     <select
-                      name="categoryId"
-                      value={formData.categoryId}
+                      name="accountId"
+                      value={formData.accountId}
                       onChange={handleInputChange}
                       className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
                         isDark
@@ -344,11 +358,13 @@ const CreateUser: React.FC = () => {
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
                       <option value="">Select Account</option>
-                      {categories.map((cat: Category) => (
-                        <option key={cat.categoryId} value={cat.categoryId}>
-                          {cat.labelName}
-                        </option>
-                      ))}
+                      {accounts.map(
+                        (account: { id: number; value: string }) => (
+                          <option key={account.id} value={account.id}>
+                            {account.value}
+                          </option>
+                        ),
+                      )}
                     </select>
                     <p
                       className={`text-xs sm:text-sm mt-1.5 sm:mt-2 ${isDark ? "text-gray-400" : "text-gray-600"}`}

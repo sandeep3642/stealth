@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Globe, Palette, Upload, ExternalLink } from "lucide-react";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { HexColorPicker } from "react-colorful";
 import {
@@ -21,8 +21,9 @@ const ProvisionBranding: React.FC = () => {
   const { selectedColor } = useColor();
   const { isDark } = useTheme();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const whiteLabelId = searchParams.get("id");
+  // const searchParams = useSearchParams();
+  // const whiteLabelId = searchParams.get("id");
+  const [whiteLabelId, setWhiteLabelId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     accountId: 0,
@@ -39,6 +40,13 @@ const ProvisionBranding: React.FC = () => {
   const [secondaryRgb, setSecondaryRgb] = useState({ r: 16, g: 185, b: 129 });
   const [loading, setLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      setWhiteLabelId(params.get("id"));
+    }
+  }, []);
 
   // Fetch data if editing
   useEffect(() => {
@@ -89,7 +97,7 @@ const ProvisionBranding: React.FC = () => {
   };
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -140,7 +148,7 @@ const ProvisionBranding: React.FC = () => {
 
       if (response.success) {
         alert(
-          `White label ${isEditMode ? "updated" : "created"} successfully!`
+          `White label ${isEditMode ? "updated" : "created"} successfully!`,
         );
         router.push("/whiteLabel");
       } else {
@@ -370,7 +378,10 @@ const ProvisionBranding: React.FC = () => {
                                     max="255"
                                     value={primaryRgb[c]}
                                     onChange={(e) =>
-                                      updatePrimaryRgb(c, Number(e.target.value))
+                                      updatePrimaryRgb(
+                                        c,
+                                        Number(e.target.value),
+                                      )
                                     }
                                     className={`w-full px-3 py-2 text-center rounded-lg border transition-colors ${
                                       isDark
@@ -436,7 +447,7 @@ const ProvisionBranding: React.FC = () => {
                                     onChange={(e) =>
                                       updateSecondaryRgb(
                                         c,
-                                        Number(e.target.value)
+                                        Number(e.target.value),
                                       )
                                     }
                                     className={`w-full px-3 py-2 text-center rounded-lg border transition-colors ${

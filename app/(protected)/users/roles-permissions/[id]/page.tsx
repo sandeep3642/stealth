@@ -8,22 +8,10 @@ import { useColor } from "@/context/ColorContext";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
-
-interface Permission {
-  resource: string;
-  read: boolean;
-  write: boolean;
-  delete: boolean;
-  export: boolean;
-}
-
-interface RoleFormData {
-  account: string;
-  roleName: string;
-  description: string;
-  permissions: Permission[];
-}
-
+import { getAllAccounts } from "@/services/commonServie";
+import { getAllForms } from "@/services/formService";
+import { Permission, RoleFormData } from "@/interfaces/permission.interface";
+import { createRole } from "@/services/rolesService";
 const AddRole: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
@@ -33,57 +21,10 @@ const AddRole: React.FC = () => {
     account: "",
     roleName: "",
     description: "",
-    permissions: [
-      {
-        resource: "User Management",
-        read: false,
-        write: false,
-        delete: false,
-        export: false,
-      },
-      {
-        resource: "Account Management",
-        read: false,
-        write: false,
-        delete: false,
-        export: false,
-      },
-      {
-        resource: "Asset/Device Registry",
-        read: false,
-        write: false,
-        delete: false,
-        export: false,
-      },
-      {
-        resource: "Analytics & Dashboards",
-        read: false,
-        write: false,
-        delete: false,
-        export: false,
-      },
-      {
-        resource: "Reporting Module",
-        read: false,
-        write: false,
-        delete: false,
-        export: false,
-      },
-      {
-        resource: "System Settings",
-        read: false,
-        write: false,
-        delete: false,
-        export: false,
-      },
-    ],
+    permissions: [],
   });
 
-  const [accounts, setAccounts] = useState([
-    { id: 1, name: "Acme Corporation" },
-    { id: 2, name: "Global Logistics Ltd" },
-    { id: 3, name: "Tech Solutions Inc" },
-  ]);
+  const [accounts, setAccounts] = useState([]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -98,18 +39,14 @@ const AddRole: React.FC = () => {
   };
 
   const handlePermissionChange = (index: number, field: keyof Permission) => {
-    setFormData((prev) => {
-      const newPermissions = [...prev.permissions];
-      if (
-        field === "read" ||
-        field === "write" ||
-        field === "delete" ||
-        field === "export"
-      ) {
-        newPermissions[index][field] = !newPermissions[index][field];
-      }
-      return { ...prev, permissions: newPermissions };
-    });
+    if (!["read", "write", "delete", "export"].includes(field)) return;
+
+    setFormData((prev) => ({
+      ...prev,
+      permissions: prev.permissions.map((perm, i) =>
+        i === index ? { ...perm, [field]: !perm[field] } : perm,
+      ),
+    }));
   };
 
   const handleSelectAll = (field: keyof Permission) => {
@@ -130,6 +67,22 @@ const AddRole: React.FC = () => {
     }
   };
 
+  // Helper function to check if all permissions for a field are checked
+  const areAllChecked = (field: keyof Permission): boolean => {
+    if (
+      field === "read" ||
+      field === "write" ||
+      field === "delete" ||
+      field === "export"
+    ) {
+      return (
+        formData.permissions.length > 0 &&
+        formData.permissions.every((p) => p[field])
+      );
+    }
+    return false;
+  };
+
   const handleSubmit = async () => {
     if (!formData.account || !formData.roleName) {
       toast.error("Please fill in all required fields");
@@ -137,22 +90,92 @@ const AddRole: React.FC = () => {
     }
 
     try {
-      // Simulate API call
-      console.log("Submitting role:", formData);
-      toast.success("Role created successfully!");
-      router.push("/users/roles");
+      // Transform formData → API payload
+      const payload = {
+        accountId: Number(formData.account), // ensure it's number
+        roleName: formData.roleName,
+        description: formData.description,
+        roleCode: formData.roleName.toUpperCase().replace(/\s+/g, "_"), // auto generate code
+        isActive: true,
+        rights: formData.permissions.map((p) => ({
+          formId: p.formId,
+          canRead: p.read,
+          canWrite: p.write,
+          canUpdate: p.write, // assuming write includes update
+          canDelete: p.delete,
+          canExport: p.export,
+          canAll: p.read && p.write && p.delete && p.export, // true if all are checked
+        })),
+      };
+
+      // TODO: Replace with your API call
+      const response = await createRole(payload);
+      if (response.statusCode === 200) {
+        toast.success(response?.message || "Role created successfully!");
+        router.push("/users/roles-permissions");
+      } else toast.error(response?.message || "Role creation failure!");
+      // router.push("/users/roles");
     } catch (error) {
       console.error("Error creating role:", error);
       toast.error("Failed to create role");
     }
   };
 
+  async function fetchAllAcounts() {
+    const response = await getAllAccounts();
+    if (response && response.statusCode === 200) {
+      toast.success(response.message);
+      setAccounts(response.data);
+    }
+  }
+
+  async function fetchAllAForms() {
+    try {
+      const response = await getAllForms(0, 0);
+
+      if (response && response.statusCode === 200) {
+        toast.success(response.message);
+
+        // Transform API data into permissions format
+        const permissionsFromApi = response.data.items.map((item: any) => ({
+          formId: item.formId,
+          formCode: item.formCode,
+          formName: item.formName,
+          moduleName: item.moduleName,
+          pageUrl: item.pageUrl,
+          isActive: item.isActive,
+          resource: item.formName, // keep for easy UI label
+          read: false,
+          write: false,
+          delete: false,
+          export: false,
+        }));
+
+        // Update formData state
+        setFormData((prev) => ({
+          ...prev,
+          permissions: permissionsFromApi,
+        }));
+      } else {
+        toast.error("Failed to fetch forms");
+      }
+    } catch (error) {
+      console.error("Error fetching forms:", error);
+      toast.error("Something went wrong while fetching forms");
+    }
+  }
+
+  useEffect(() => {
+    fetchAllAcounts();
+    fetchAllAForms();
+  }, []);
+
   return (
     <div className={`${isDark ? "dark" : ""} mt-20`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         {/* Header */}
         <div className="mx-auto mb-6 sm:mb-8">
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
             <div>
               <h1
                 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 ${isDark ? "text-foreground" : "text-gray-900"}`}
@@ -165,7 +188,7 @@ const AddRole: React.FC = () => {
                 Define access levels and capabilities for specific accounts.
               </p>
             </div>
-            <div className="flex gap-2 sm:gap-3">
+            <div className="flex gap-2 sm:gap-3 sm:flex-shrink-0">
               <button
                 className={`flex-1 sm:flex-none px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg text-sm sm:text-base font-medium transition-colors ${
                   isDark
@@ -221,6 +244,7 @@ const AddRole: React.FC = () => {
                     name="account"
                     value={formData.account}
                     onChange={handleInputChange}
+                    required
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                       isDark
                         ? "bg-gray-800 border-gray-700 text-foreground focus:border-purple-500"
@@ -228,11 +252,12 @@ const AddRole: React.FC = () => {
                     } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
                     <option value="">Select Account</option>
-                    {accounts.map((account) => (
-                      <option key={account.id} value={account.id}>
-                        {account.name}
-                      </option>
-                    ))}
+                    {accounts &&
+                      accounts.map((account: { id: number; value: string }) => (
+                        <option key={account.id} value={account.id}>
+                          {account.value}
+                        </option>
+                      ))}
                   </select>
                 </div>
 
@@ -247,6 +272,7 @@ const AddRole: React.FC = () => {
                     type="text"
                     name="roleName"
                     value={formData.roleName}
+                    required
                     onChange={handleInputChange}
                     placeholder="e.g. Regional Manager"
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
@@ -323,6 +349,7 @@ const AddRole: React.FC = () => {
                           </span>
                           <input
                             type="checkbox"
+                            checked={areAllChecked("read")}
                             onChange={() => handleSelectAll("read")}
                             className="w-4 h-4 rounded border-gray-300 cursor-pointer"
                             style={{ accentColor: selectedColor }}
@@ -340,6 +367,7 @@ const AddRole: React.FC = () => {
                           </span>
                           <input
                             type="checkbox"
+                            checked={areAllChecked("write")}
                             onChange={() => handleSelectAll("write")}
                             className="w-4 h-4 rounded border-gray-300 cursor-pointer"
                             style={{ accentColor: selectedColor }}
@@ -357,6 +385,7 @@ const AddRole: React.FC = () => {
                           </span>
                           <input
                             type="checkbox"
+                            checked={areAllChecked("delete")}
                             onChange={() => handleSelectAll("delete")}
                             className="w-4 h-4 rounded border-gray-300 cursor-pointer"
                             style={{ accentColor: selectedColor }}
@@ -374,6 +403,7 @@ const AddRole: React.FC = () => {
                           </span>
                           <input
                             type="checkbox"
+                            checked={areAllChecked("export")}
                             onChange={() => handleSelectAll("export")}
                             className="w-4 h-4 rounded border-gray-300 cursor-pointer"
                             style={{ accentColor: selectedColor }}
