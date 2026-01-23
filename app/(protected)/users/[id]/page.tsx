@@ -13,7 +13,7 @@ import { toast } from "react-toastify";
 
 type TabType = "profile" | "access" | "security";
 
-const AddAccount: React.FC = () => {
+const CreateUser: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
   const router = useRouter();
@@ -91,29 +91,33 @@ const AddAccount: React.FC = () => {
 
   const tabs = [
     { id: "profile" as TabType, label: "Profile" },
-    { id: "access" as TabType, label: "Access & Roles" },
+    { id: "access" as TabType, label: "Access" },
     { id: "security" as TabType, label: "Security" },
   ];
 
   return (
-    <div className={`${isDark ? "dark" : ""} mt-20`}>
-      <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
+    <div className={`${isDark ? "dark" : ""} mt-16 sm:mt-20`}>
+      <div
+        className={`min-h-screen ${isDark ? "bg-background" : ""} p-3 sm:p-4 md:p-6`}
+      >
         {/* Header */}
-        <div className="mx-auto mb-8">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+        <div className="mx-auto mb-6 sm:mb-8">
+          <div className="flex flex-col gap-4 sm:gap-4">
             <div>
               <h1
-                className={`text-2xl sm:text-4xl font-bold mb-2 ${isDark ? "text-foreground" : "text-gray-900"}`}
+                className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 ${isDark ? "text-foreground" : "text-gray-900"}`}
               >
                 Create New User
               </h1>
-              <p className={isDark ? "text-gray-400" : "text-gray-600"}>
+              <p
+                className={`text-xs sm:text-sm md:text-base ${isDark ? "text-gray-400" : "text-gray-600"}`}
+              >
                 Manage user identity, access scope, and security settings.
               </p>
             </div>
-            <div className="flex gap-3 w-full sm:w-auto">
+            <div className="flex gap-2 sm:gap-3">
               <button
-                className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 rounded-lg font-medium transition-colors ${
+                className={`flex-1 sm:flex-none px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg text-sm sm:text-base font-medium transition-colors ${
                   isDark
                     ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
                     : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
@@ -123,21 +127,20 @@ const AddAccount: React.FC = () => {
                 Cancel
               </button>
               <button
-                className="flex-1 sm:flex-none text-white px-4 sm:px-6 py-3 rounded-lg flex items-center justify-center gap-2 font-medium transition-colors cursor-pointer"
+                className="flex-1 sm:flex-none text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base font-medium transition-colors cursor-pointer"
                 style={{ background: selectedColor }}
                 onClick={handleSubmit}
               >
-                <span className="hidden xs:inline">Create User</span>
-                <span className="xs:hidden">Create User</span>
+                <span className="whitespace-nowrap">Create User</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="mx-auto mb-6">
+        {/* Tabs - Scrollable on mobile */}
+        <div className="mx-auto mb-4 sm:mb-6 overflow-x-auto scrollbar-hide">
           <div
-            className={`inline-flex rounded-lg p-1 ${
+            className={`inline-flex rounded-lg p-1 min-w-max ${
               isDark ? "bg-gray-800" : "bg-gray-100"
             }`}
           >
@@ -145,7 +148,7 @@ const AddAccount: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
+                className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium transition-all whitespace-nowrap ${
                   activeTab === tab.id
                     ? isDark
                       ? "bg-gray-700 text-white"
@@ -162,310 +165,316 @@ const AddAccount: React.FC = () => {
         </div>
 
         {/* Main Content */}
-        <div className="mx-auto grid grid-cols-3 lg:grid-cols-2 gap-6">
-          {/* Left Column - Forms */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Profile Tab */}
-            {activeTab === "profile" && (
-              <>
-                {/* Identity & Scope Section */}
-                <Card isDark={isDark}>
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Building2
-                        className={`w-5 h-5 `}
-                        style={{ color: selectedColor }}
-                      />
-                      <h2
-                        className={`text-xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
-                      >
-                        Personal Information
-                      </h2>
-                    </div>
-                    <p
-                      className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}
-                    >
-                      Basic identity details used for login and display.
-                    </p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Account Name */}
-                      <div>
-                        <label
-                          className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                        >
-                          First Name
-                        </label>
-                        <input
-                          type="text"
-                          name="accountName"
-                          value={formData.accountName}
-                          onChange={handleInputChange}
-                          placeholder="Jane"
-                          className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                            isDark
-                              ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500 focus:border-purple-500"
-                              : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500"
-                          } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                        />
-                      </div>
-
-                      {/* Account Code */}
-                      <div>
-                        <label
-                          className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                        >
-                          Last Name
-                        </label>
-                        <input
-                          type="text"
-                          name="accountCode"
-                          value={formData.accountCode}
-                          onChange={handleInputChange}
-                          placeholder="Doe"
-                          className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                            isDark
-                              ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500 focus:border-purple-500"
-                              : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500"
-                          } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                        />
-                      </div>
-
-                      {/* Email Address */}
-                      <div>
-                        <label
-                          className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                        >
-                          Email Address
-                        </label>
-                        <input
-                          type="email"
-                          name="emailAddress"
-                          value={formData.emailAddress}
-                          onChange={handleInputChange}
-                          placeholder="jane@company.com"
-                          className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                            isDark
-                              ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500 focus:border-purple-500"
-                              : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500"
-                          } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                        />
-                      </div>
-
-                      {/* Phone Number */}
-                      <div>
-                        <label
-                          className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                        >
-                          Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          name="phoneNumber"
-                          value={formData.phoneNumber}
-                          onChange={handleInputChange}
-                          placeholder="+1 (555) 000-0000"
-                          className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                            isDark
-                              ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500 focus:border-purple-500"
-                              : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500"
-                          } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </>
-            )}
-
-            {/* Access & Roles Tab */}
-            {activeTab === "access" && (
-              <Card isDark={isDark}>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <User className={`w-5 h-5`} style={{ color: selectedColor }} />
-                    <h2
-                      className={`text-xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
-                    >
-                      Role & Scope
-                    </h2>
-                  </div>
-                  <p
-                    className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}
+        <div className="mx-auto">
+          {/* Profile Tab */}
+          {activeTab === "profile" && (
+            <Card isDark={isDark}>
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <Building2
+                    className={`w-4 h-4 sm:w-5 sm:h-5`}
+                    style={{ color: selectedColor }}
+                  />
+                  <h2
+                    className={`text-lg sm:text-xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
                   >
-                    Define what this user can do and which data they can see.
-                  </p>
+                    Personal Information
+                  </h2>
+                </div>
+                <p
+                  className={`text-xs sm:text-sm mb-4 sm:mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                >
+                  Basic identity details used for login and display.
+                </p>
 
-                  <div className="space-y-6">
-                    {/* System Role */}
-                    <div>
-                      <label
-                        className={`block text-sm font-medium mb-2 ${
-                          isDark ? "text-gray-300" : "text-gray-700"
-                        }`}
-                      >
-                        System Role
-                      </label>
-                      <select
-                        className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                          isDark
-                            ? "bg-gray-800 border-gray-700 text-foreground focus:border-purple-500"
-                            : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
-                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                      >
-                        <option>Super Admin - Full access to all system resources.</option>
-                        <option>Admin - Manage users and accounts.</option>
-                        <option>User - Basic access to assigned resources.</option>
-                      </select>
-                    </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  {/* First Name */}
+                  <div>
+                    <label
+                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                    >
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      name="accountName"
+                      value={formData.accountName}
+                      onChange={handleInputChange}
+                      placeholder="Jane"
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
+                        isDark
+                          ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500 focus:border-purple-500"
+                          : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500"
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                    />
+                  </div>
 
-                    {/* Account Association */}
-                    <div>
-                      <label
-                        className={`block text-sm font-medium mb-2 ${
-                          isDark ? "text-gray-300" : "text-gray-700"
-                        }`}
+                  {/* Last Name */}
+                  <div>
+                    <label
+                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                    >
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      name="accountCode"
+                      value={formData.accountCode}
+                      onChange={handleInputChange}
+                      placeholder="Doe"
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
+                        isDark
+                          ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500 focus:border-purple-500"
+                          : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500"
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                    />
+                  </div>
+
+                  {/* Email Address */}
+                  <div>
+                    <label
+                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                    >
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      name="emailAddress"
+                      value={formData.emailAddress}
+                      onChange={handleInputChange}
+                      placeholder="jane@company.com"
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
+                        isDark
+                          ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500 focus:border-purple-500"
+                          : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500"
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                    />
+                  </div>
+
+                  {/* Phone Number */}
+                  <div>
+                    <label
+                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                    >
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      name="phoneNumber"
+                      value={formData.phoneNumber}
+                      onChange={handleInputChange}
+                      placeholder="+1 (555) 000-0000"
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
+                        isDark
+                          ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500 focus:border-purple-500"
+                          : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500"
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                    />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Access & Roles Tab */}
+          {activeTab === "access" && (
+            <Card isDark={isDark}>
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <User
+                    className={`w-4 h-4 sm:w-5 sm:h-5`}
+                    style={{ color: selectedColor }}
+                  />
+                  <h2
+                    className={`text-lg sm:text-xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
+                  >
+                    Role & Scope
+                  </h2>
+                </div>
+                <p
+                  className={`text-xs sm:text-sm mb-4 sm:mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                >
+                  Define what this user can do and which data they can see.
+                </p>
+
+                <div className="space-y-4 sm:space-y-6">
+                  {/* System Role */}
+                  <div>
+                    <label
+                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${
+                        isDark ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      System Role
+                    </label>
+                    <select
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
+                        isDark
+                          ? "bg-gray-800 border-gray-700 text-foreground focus:border-purple-500"
+                          : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                    >
+                      <option>
+                        Super Admin - Full access to all system resources.
+                      </option>
+                      <option>Admin - Manage users and accounts.</option>
+                      <option>
+                        User - Basic access to assigned resources.
+                      </option>
+                    </select>
+                  </div>
+
+                  {/* Account Association */}
+                  <div>
+                    <label
+                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${
+                        isDark ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      Account Association
+                    </label>
+                    <select
+                      name="categoryId"
+                      value={formData.categoryId}
+                      onChange={handleInputChange}
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
+                        isDark
+                          ? "bg-gray-800 border-gray-700 text-foreground focus:border-purple-500"
+                          : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                    >
+                      <option value="">Select Account</option>
+                      {categories.map((cat: Category) => (
+                        <option key={cat.categoryId} value={cat.categoryId}>
+                          {cat.labelName}
+                        </option>
+                      ))}
+                    </select>
+                    <p
+                      className={`text-xs sm:text-sm mt-1.5 sm:mt-2 ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                    >
+                      The user will primarily belong to this account.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Security Tab */}
+          {activeTab === "security" && (
+            <Card isDark={isDark}>
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center gap-2 mb-1">
+                  <Shield
+                    className={`w-4 h-4 sm:w-5 sm:h-5`}
+                    style={{ color: selectedColor }}
+                  />
+                  <h2
+                    className={`text-lg sm:text-xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
+                  >
+                    Security Settings
+                  </h2>
+                </div>
+                <p
+                  className={`text-xs sm:text-sm mb-4 sm:mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                >
+                  Manage authentication security and account status.
+                </p>
+
+                <div className="space-y-4 sm:space-y-6">
+                  {/* Account Status */}
+                  <div
+                    className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 sm:py-4 border-b ${
+                      isDark ? "border-gray-700" : "border-gray-200"
+                    }`}
+                  >
+                    <div className="flex-1">
+                      <h3
+                        className={`text-sm sm:text-base font-medium mb-1 ${isDark ? "text-foreground" : "text-gray-900"}`}
                       >
-                        Account Association
-                      </label>
-                      <select
-                        name="categoryId"
-                        value={formData.categoryId}
-                        onChange={handleInputChange}
-                        className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                          isDark
-                            ? "bg-gray-800 border-gray-700 text-foreground focus:border-purple-500"
-                            : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
-                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                      >
-                        <option value="">Select Account</option>
-                        {categories.map((cat: Category) => (
-                          <option key={cat.categoryId} value={cat.categoryId}>
-                            {cat.labelName}
-                          </option>
-                        ))}
-                      </select>
+                        Account Status
+                      </h3>
                       <p
-                        className={`text-sm mt-2 ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                        className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
                       >
-                        The user will primarily belong to this account.
+                        Disable user access without deleting data.
                       </p>
                     </div>
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {/* Security Tab */}
-            {activeTab === "security" && (
-              <Card isDark={isDark}>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Shield className={`w-5 h-5`} style={{ color: selectedColor }} />
-                    <h2
-                      className={`text-xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
-                    >
-                      Security Settings
-                    </h2>
-                  </div>
-                  <p
-                    className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}
-                  >
-                    Manage authentication security and account status.
-                  </p>
-
-                  <div className="space-y-6">
-                    {/* Account Status */}
-                    <div
-                      className={`flex items-center justify-between py-4 border-b ${
-                        isDark ? "border-gray-700" : "border-gray-200"
-                      }`}
-                    >
-                      <div>
-                        <h3
-                          className={`font-medium ${isDark ? "text-foreground" : "text-gray-900"}`}
-                        >
-                          Account Status
-                        </h3>
-                        <p
-                          className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
-                        >
-                          Disable user access without deleting data.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span
-                          className="text-sm font-medium px-3 py-1 rounded-full"
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="text-xs sm:text-sm font-medium px-2.5 sm:px-3 py-1 rounded-full"
+                        style={{
+                          backgroundColor: `${selectedColor}20`,
+                          color: selectedColor,
+                        }}
+                      >
+                        Active
+                      </span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          defaultChecked
+                        />
+                        <div
+                          className="w-11 h-6 rounded-full peer peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
                           style={{
-                            backgroundColor: `${selectedColor}20`,
-                            color: selectedColor,
+                            backgroundColor: selectedColor,
                           }}
-                        >
-                          Active
-                        </span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" className="sr-only peer" defaultChecked />
-                          <div
-                            className="w-11 h-6 rounded-full peer peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all"
-                            style={{
-                              backgroundColor: selectedColor,
-                            }}
-                          ></div>
-                        </label>
-                      </div>
+                        ></div>
+                      </label>
                     </div>
+                  </div>
 
-                    {/* Multi-Factor Authentication */}
-                    <div
-                      className={`py-4 border-b ${
-                        isDark ? "border-gray-700" : "border-gray-200"
-                      }`}
+                  {/* Multi-Factor Authentication */}
+                  <div
+                    className={`py-3 sm:py-4 border-b ${
+                      isDark ? "border-gray-700" : "border-gray-200"
+                    }`}
+                  >
+                    <h3
+                      className={`text-sm sm:text-base font-medium mb-1 ${isDark ? "text-foreground" : "text-gray-900"}`}
                     >
-                      <div>
+                      Multi-Factor Authentication
+                    </h3>
+                    <p
+                      className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                    >
+                      Require 2FA for login.
+                    </p>
+                  </div>
+
+                  {/* Password Reset */}
+                  <div className="py-3 sm:py-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex-1">
                         <h3
-                          className={`font-medium ${isDark ? "text-foreground" : "text-gray-900"}`}
+                          className={`text-sm sm:text-base font-medium mb-1 ${isDark ? "text-foreground" : "text-gray-900"}`}
                         >
-                          Multi-Factor Authentication
+                          Password Reset
                         </h3>
                         <p
-                          className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                          className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
                         >
-                          Require 2FA for login.
+                          Send a password reset email to the user.
                         </p>
                       </div>
-                    </div>
-
-                    {/* Password Reset */}
-                    <div className="py-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3
-                            className={`font-medium ${isDark ? "text-foreground" : "text-gray-900"}`}
-                          >
-                            Password Reset
-                          </h3>
-                          <p
-                            className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
-                          >
-                            Send a password reset email to the user.
-                          </p>
-                        </div>
-                        <button
-                          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                            isDark
-                              ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
-                              : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
-                          }`}
-                        >
-                          Send Link
-                        </button>
-                      </div>
+                      <button
+                        className={`w-full sm:w-auto px-3 sm:px-4 py-2 text-sm sm:text-base rounded-lg font-medium transition-colors ${
+                          isDark
+                            ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
+                            : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                        }`}
+                      >
+                        Send Link
+                      </button>
                     </div>
                   </div>
                 </div>
-              </Card>
-            )}
-          </div>
+              </div>
+            </Card>
+          )}
         </div>
       </div>
       <ThemeCustomizer />
@@ -473,4 +482,4 @@ const AddAccount: React.FC = () => {
   );
 };
 
-export default AddAccount;
+export default CreateUser;

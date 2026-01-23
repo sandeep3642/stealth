@@ -5,28 +5,7 @@ import { Home, Filter, Download } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useColor } from "@/context/ColorContext";
 import { useRouter } from "next/navigation";
-
-interface BreadcrumbItem {
-  label: string;
-  href?: string;
-}
-
-interface PageHeaderProps {
-  title: string;
-  subtitle?: string;
-  breadcrumbs?: BreadcrumbItem[];
-  showButton?: boolean;
-  buttonText?: string;
-  buttonIcon?: React.ReactNode;
-  onButtonClick?: () => void;
-  buttonRoute?: string;
-  showExportButton?: boolean;
-  ExportbuttonText?: string;
-  onExportClick?: () => void;
-  showFilterButton?: boolean;
-  FilterbuttonText?: string;
-  onFilterClick?: () => void;
-}
+import { PageHeaderProps } from "@/interfaces/header.interface";
 
 const PageHeader: React.FC<PageHeaderProps> = ({
   title,
@@ -72,7 +51,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
     <>
       {/* Breadcrumb */}
       {breadcrumbs.length > 0 && (
-        <div className="flex items-center gap-1.5 sm:gap-2 mb-4 sm:mb-6 text-xs sm:text-sm overflow-x-auto">
+        <div className="flex items-center gap-1.5 sm:gap-2 mb-3 sm:mb-4 md:mb-6 text-xs sm:text-sm overflow-x-auto scrollbar-hide pb-1">
           <Home
             className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 ${isDark ? "text-gray-400" : "text-gray-500"}`}
           />
@@ -111,65 +90,69 @@ const PageHeader: React.FC<PageHeaderProps> = ({
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 sm:gap-6 mb-6 sm:mb-8">
+      <div className="flex flex-col gap-4 mb-4 sm:mb-6 md:mb-8">
+        {/* Title Section */}
         <div className="flex-1 min-w-0">
           <h1
-            className={`text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 ${isDark ? "text-foreground" : "text-gray-900"}`}
+            className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 ${isDark ? "text-foreground" : "text-gray-900"}`}
           >
             {title}
           </h1>
           {subtitle && (
             <p
-              className={`text-sm sm:text-base ${isDark ? "text-gray-400" : "text-gray-500"}`}
+              className={`text-xs sm:text-sm md:text-base ${isDark ? "text-gray-400" : "text-gray-500"}`}
             >
               {subtitle}
             </p>
           )}
         </div>
-        
-        <div className="flex items-center gap-3">
-          {/* Filters Button */}
-          {showFilterButton && (
-            <button
-              onClick={handleFilterClick}
-              className={`cursor-pointer px-4 py-3 rounded-lg flex items-center gap-2 font-medium transition-colors border ${
-                isDark
-                  ? "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
-                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              <Filter className="w-4 h-4" />
-              {FilterbuttonText}
-            </button>
-          )}
 
-          {/* Export Button */}
-          {showExportButton && (
-            <button
-              onClick={handleExportClick}
-              className={`cursor-pointer px-4 py-3 rounded-lg flex items-center gap-2 font-medium transition-colors border ${
-                isDark
-                  ? "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
-                  : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              <Download className="w-4 h-4" />
-              {ExportbuttonText}
-            </button>
-          )}
+        {/* Action Buttons */}
+        {(showFilterButton || showExportButton || showButton) && (
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            {/* Filters Button */}
+            {showFilterButton && (
+              <button
+                onClick={handleFilterClick}
+                className={`cursor-pointer px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium transition-colors border ${
+                  isDark
+                    ? "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
+                    : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden xs:inline">{FilterbuttonText}</span>
+              </button>
+            )}
 
-          {/* Primary Action Button */}
-          {showButton && (
-            <button
-              onClick={handleButtonClick}
-              style={{ background: selectedColor }}
-              className="cursor-pointer hover:opacity-90 text-white px-6 py-3 rounded-lg flex items-center gap-2 font-medium transition-opacity"
-            >
-              {buttonIcon || <span className="text-xl">+</span>}
-              {buttonText}
-            </button>
-          )}
-        </div>
+            {/* Export Button */}
+            {showExportButton && (
+              <button
+                onClick={handleExportClick}
+                className={`cursor-pointer px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium transition-colors border ${
+                  isDark
+                    ? "bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700"
+                    : "bg-white border-gray-300 text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden xs:inline">{ExportbuttonText}</span>
+              </button>
+            )}
+
+            {/* Primary Action Button */}
+            {showButton && (
+              <button
+                onClick={handleButtonClick}
+                style={{ background: selectedColor }}
+                className="cursor-pointer hover:opacity-90 text-white px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium transition-opacity ml-auto"
+              >
+                {buttonIcon || <span className="text-lg sm:text-xl">+</span>}
+                <span className="whitespace-nowrap">{buttonText}</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </>
   );

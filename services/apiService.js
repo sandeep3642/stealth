@@ -2,8 +2,8 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 const api = axios.create({
-  // baseURL: "http://fleetbharat.com:8080/",
-  baseURL: "http://13.60.242.137:8080",
+  baseURL: "http://fleetbharat.com:8080/",
+  // baseURL: "http://13.60.242.137:8080",
   headers: {
     "Content-Type": "application/json",
   },

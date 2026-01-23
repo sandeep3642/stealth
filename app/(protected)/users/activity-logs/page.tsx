@@ -129,7 +129,7 @@ const ActivityLogs: React.FC = () => {
   };
 
   return (
-    <div className={isDark ? "dark" : ""}>
+    <div className={`${isDark ? "dark" : ""} mt-16 sm:mt-20`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
           title="Activity Logs"
