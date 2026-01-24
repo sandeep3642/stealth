@@ -2,17 +2,20 @@
 
 import { LoginComponent } from "@/components/Login";
 import { RegisterComponent } from "@/components/Register";
+import { ForgetPassword } from "@/components/ForgetPassword";
 import { useState } from "react";
 
-const Auth = () => {  
-  const [isLogin, setIsLogin] = useState(true);
+type ViewType = "login" | "register" | "forgot-password";
+
+const Auth = () => {
+  const [currentView, setCurrentView] = useState<ViewType>("login");
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
-      {/* Card Wrapper - Removed fixed height constraint */}
+      {/* Card Wrapper */}
       <div className="flex flex-col lg:flex-row w-full max-w-6xl bg-white shadow-2xl rounded-2xl overflow-hidden">
-        
-        {/* Left Panel - Better image handling */}
+
+        {/* Left Panel */}
         <div className="hidden lg:flex lg:w-1/2 relative min-h-[600px] bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500">
           <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-white">
             <div className="space-y-6 text-center">
@@ -31,13 +34,20 @@ const Auth = () => {
           </div>
         </div>
 
-        {/* Right Panel - Improved scrolling */}
+        {/* Right Panel */}
         <div className="w-full lg:w-1/2 flex items-start justify-center p-6 lg:p-8">
           <div className="w-full max-w-md">
-            {isLogin ? (
-              <LoginComponent onSwitchToRegister={() => setIsLogin(false)} />
-            ) : (
-              <RegisterComponent onSwitchToLogin={() => setIsLogin(true)} />
+            {currentView === "login" && (
+              <LoginComponent
+                onSwitchToRegister={() => setCurrentView("register")}
+                onSwitchToForgotPassword={() => setCurrentView("forgot-password")}
+              />
+            )}
+            {currentView === "register" && (
+              <RegisterComponent onSwitchToLogin={() => setCurrentView("login")} />
+            )}
+            {currentView === "forgot-password" && (
+              <ForgetPassword onBackToLogin={() => setCurrentView("login")} />
             )}
           </div>
         </div>

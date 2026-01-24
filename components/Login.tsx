@@ -1,18 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AtSign, Lock, Eye, EyeOff } from "lucide-react";
 import { loginUser } from "@/services/authService";
 import { useRouter } from "next/navigation";
 import Cookies from 'js-cookie';
 
-
 interface LoginComponentProps {
   onSwitchToRegister: () => void;
+  onSwitchToForgotPassword: () => void;
 }
 
 export const LoginComponent: React.FC<LoginComponentProps> = ({
   onSwitchToRegister,
+  onSwitchToForgotPassword,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -21,6 +22,19 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  // Load saved credentials on component mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem("rememberedEmail");
+    const savedPassword = localStorage.getItem("rememberedPassword");
+    
+    if (savedEmail && savedPassword) {
+      setEmail(savedEmail);
+      setPassword(savedPassword);
+      setRememberMe(true);
+    }
+  }, []);
+
   const handleLogin = async () => {
     if (!email || !password) {
       setError("Please enter email and password");
@@ -31,16 +45,22 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
       setLoading(true);
       setError("");
 
-      // Simulated login for demo
-      console.log("Login successful");
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Handle remember me functionality
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", email);
+        localStorage.setItem("rememberedPassword", password);
+      } else {
+        localStorage.removeItem("rememberedEmail");
+        localStorage.removeItem("rememberedPassword");
+      }
 
-      // In real implementation:
       const response = await loginUser(email, password);
+      
       if (response.data.token) {
         localStorage.setItem("authToken", response.data.token.accessToken);
         localStorage.setItem("user", JSON.stringify(response.data));
-        // ✅ cookie (middleware use)
+        
+        // Set cookie for middleware use
         Cookies.set("authToken", response.data.token.accessToken, {
           path: "/",
         });
@@ -118,17 +138,18 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
             </div>
           </div>
 
-          {/* Remember me */}
+          {/* Remember me & Forgot Password */}
           <div className="flex items-center justify-between pt-1 sm:pt-2">
             <div
               className="flex items-center space-x-2 cursor-pointer"
               onClick={() => setRememberMe(!rememberMe)}
             >
               <div
-                className={`h-4 w-4 rounded border flex items-center justify-center ${rememberMe
-                  ? "bg-purple-600 border-purple-600"
-                  : "border-zinc-300 bg-white"
-                  }`}
+                className={`h-4 w-4 rounded border flex items-center justify-center ${
+                  rememberMe
+                    ? "bg-purple-600 border-purple-600"
+                    : "border-zinc-300 bg-white"
+                }`}
               >
                 {rememberMe && (
                   <svg
@@ -150,7 +171,10 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
                 Remember me
               </label>
             </div>
-            <button className="text-xs sm:text-sm font-medium text-purple-600 hover:text-purple-700">
+            <button 
+              onClick={onSwitchToForgotPassword}
+              className="text-xs sm:text-sm font-medium text-purple-600 hover:text-purple-700"
+            >
               Forgot password?
             </button>
           </div>

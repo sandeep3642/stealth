@@ -26,7 +26,14 @@ import {
 const useTheme = () => ({ isDark: false });
 const useColor = () => ({ selectedColor: "#8B5CF6" });
 
-const Card = ({ children, isDark }) => (
+interface CardProps {
+    children: React.ReactNode;
+    isDark: boolean;
+}
+type EntitlementKey = keyof typeof entitlements;
+
+
+const Card = ({ children, isDark }: CardProps) => (
     <div
         className={`${isDark ? "bg-gray-900" : "bg-white"} rounded-xl shadow-lg p-6 border ${isDark ? "border-gray-800" : "border-gray-200"
             }`}
@@ -114,7 +121,7 @@ const PlansManagement = () => {
         }, 500);
     };
 
-    const handleInputChange = (e) => {
+    const handleInputChange = (e:any) => {
         const { name, value, type, checked } = e.target;
         setFormData((prev) => ({
             ...prev,
@@ -122,12 +129,13 @@ const PlansManagement = () => {
         }));
     };
 
-    const handleEntitlementChange = (key) => {
-        setEntitlements((prev) => ({
-            ...prev,
-            [key]: !prev[key],
-        }));
-    };
+  const handleEntitlementChange = (key: EntitlementKey) => {
+  setEntitlements((prev) => ({
+    ...prev,
+    [key]: !prev[key],
+  }));
+};
+
 
     const handleSubmit = async () => {
         const payload = {
@@ -167,8 +175,8 @@ const PlansManagement = () => {
                         <div className="flex gap-3 w-full sm:w-auto">
                             <button
                                 className={`flex-1 sm:flex-none px-6 py-3 rounded-lg font-medium transition-colors ${isDark
-                                        ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                                        : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+                                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
                                     }`}
                                 onClick={() => router.back()}
                             >
@@ -212,8 +220,8 @@ const PlansManagement = () => {
                                             onChange={handleInputChange}
                                             placeholder="e.g. Premium Distributor Hub"
                                             className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                                                    ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                                                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                                                ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                                                : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                                                 } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                                         />
                                     </div>
@@ -227,8 +235,8 @@ const PlansManagement = () => {
                                             value={formData.tenantCategory}
                                             onChange={handleInputChange}
                                             className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                                                    ? "bg-gray-800 border-gray-700 text-white"
-                                                    : "bg-white border-gray-300 text-gray-900"
+                                                ? "bg-gray-800 border-gray-700 text-white"
+                                                : "bg-white border-gray-300 text-gray-900"
                                                 } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                                         >
                                             {tenantCategories.map((cat) => (
@@ -246,8 +254,8 @@ const PlansManagement = () => {
                                             value={formData.settlementCurrency}
                                             onChange={handleInputChange}
                                             className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                                                    ? "bg-gray-800 border-gray-700 text-white"
-                                                    : "bg-white border-gray-300 text-gray-900"
+                                                ? "bg-gray-800 border-gray-700 text-white"
+                                                : "bg-white border-gray-300 text-gray-900"
                                                 } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                                         >
                                             {currencies.map((curr) => (
@@ -265,8 +273,8 @@ const PlansManagement = () => {
                                             value={formData.billingInterval}
                                             onChange={handleInputChange}
                                             className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                                                    ? "bg-gray-800 border-gray-700 text-white"
-                                                    : "bg-white border-gray-300 text-gray-900"
+                                                ? "bg-gray-800 border-gray-700 text-white"
+                                                : "bg-white border-gray-300 text-gray-900"
                                                 } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                                         >
                                             {billingIntervals.map((interval) => (
@@ -284,8 +292,8 @@ const PlansManagement = () => {
                                             value={formData.contractValidity}
                                             onChange={handleInputChange}
                                             className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                                                    ? "bg-gray-800 border-gray-700 text-white"
-                                                    : "bg-white border-gray-300 text-gray-900"
+                                                ? "bg-gray-800 border-gray-700 text-white"
+                                                : "bg-white border-gray-300 text-gray-900"
                                                 } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                                         >
                                             {contractValidities.map((validity) => (
@@ -303,8 +311,8 @@ const PlansManagement = () => {
                                             value={formData.pricingModel}
                                             onChange={handleInputChange}
                                             className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                                                    ? "bg-gray-800 border-gray-700 text-white"
-                                                    : "bg-white border-gray-300 text-gray-900"
+                                                ? "bg-gray-800 border-gray-700 text-white"
+                                                : "bg-white border-gray-300 text-gray-900"
                                                 } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                                         >
                                             {pricingModels.map((model) => (
@@ -337,8 +345,8 @@ const PlansManagement = () => {
                                         onChange={handleInputChange}
                                         placeholder="0"
                                         className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                                                ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                                                : "bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-400"
+                                            ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                                            : "bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-400"
                                             } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                                     />
                                 </div>
@@ -367,8 +375,8 @@ const PlansManagement = () => {
                                             onChange={handleInputChange}
                                             placeholder="0"
                                             className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                                                    ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                                                    : "bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-400"
+                                                ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                                                : "bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-400"
                                                 } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                                         />
                                     </div>
@@ -383,8 +391,8 @@ const PlansManagement = () => {
                                             onChange={handleInputChange}
                                             placeholder="0"
                                             className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                                                    ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                                                    : "bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-400"
+                                                ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                                                : "bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-400"
                                                 } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                                         />
                                     </div>
@@ -407,8 +415,8 @@ const PlansManagement = () => {
                                         key={key}
                                         onClick={() => handleEntitlementChange(key)}
                                         className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${entitlements[key]
-                                                ? `border-purple-500 ${isDark ? "bg-purple-900/20" : "bg-purple-50"}`
-                                                : `border-gray-200 ${isDark ? "bg-gray-800/50" : "bg-white"}`
+                                            ? `border-purple-500 ${isDark ? "bg-purple-900/20" : "bg-purple-50"}`
+                                            : `border-gray-200 ${isDark ? "bg-gray-800/50" : "bg-white"}`
                                             }`}
                                     >
                                         <div className="flex items-start gap-3">
@@ -486,8 +494,8 @@ const PlansManagement = () => {
                                         onChange={handleInputChange}
                                         placeholder="0"
                                         className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                                                ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                                                : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                                            ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                                            : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                                             } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                                     />
                                     <p className={`text-xs mt-2 italic ${isDark ? "text-gray-500" : "text-gray-500"}`}>
@@ -523,8 +531,8 @@ const PlansManagement = () => {
                                             onChange={handleInputChange}
                                             placeholder="+1-XXX-XXX-XXXX"
                                             className={`w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors ${isDark
-                                                    ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                                                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                                                ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                                                : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                                                 } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                                         />
                                     </div>
@@ -543,8 +551,8 @@ const PlansManagement = () => {
                                             onChange={handleInputChange}
                                             placeholder="support@domain.com"
                                             className={`w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors ${isDark
-                                                    ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                                                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                                                ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                                                : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                                                 } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                                         />
                                     </div>
@@ -561,8 +569,8 @@ const PlansManagement = () => {
                                         placeholder="Describe specific Support Level Agreements, priority response times, or dedicated communication channels..."
                                         rows={4}
                                         className={`w-full px-4 py-2.5 rounded-lg border transition-colors resize-none ${isDark
-                                                ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                                                : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                                            ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                                            : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                                             } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                                     />
                                 </div>
