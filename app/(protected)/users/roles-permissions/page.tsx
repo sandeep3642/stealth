@@ -8,7 +8,7 @@ import { MetricCard } from "@/components/CommonCard";
 import { useTheme } from "@/context/ThemeContext";
 import { Shield, Lock, Users as UsersIcon } from "lucide-react";
 import { toast } from "react-toastify";
-import { deleteRole, getRoles } from "@/services/rolesService";
+import { deleteRole, exportRoles, getRoles } from "@/services/rolesService";
 import { RoleAccount } from "@/interfaces/permission.interface";
 import { useRouter } from "next/navigation";
 
@@ -60,7 +60,10 @@ const Roles: React.FC = () => {
   const [data, setData] = useState<RoleAccount[]>([]);
 
   const handleEdit = (row: RoleAccount) => {
-    router.push(`/users/roles-permissions/${row.roleId}`);
+    localStorage.setItem("accountId", String(row.accountId));
+    setTimeout(() => {
+      router.push(`/users/roles-permissions/${row.roleId}`);
+    }, 500);
   };
 
   async function handleDelete(row: RoleAccount) {
@@ -80,10 +83,15 @@ const Roles: React.FC = () => {
     setPageNo(1);
   };
 
-  const handleExport = () => {
-    console.log("Exporting data...");
-    toast.info("Export functionality coming soon!");
-  };
+  const handleExport = async () => {
+  try {
+    await exportRoles(); // optionally pass accountId or search term
+    toast.success("Roles exported successfully!");
+  } catch {
+    toast.error("Failed to export roles");
+  }
+};
+
 
   async function fetchRoles() {
     const response = await getRoles(pageNo, pageSize);

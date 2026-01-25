@@ -11,9 +11,14 @@ import { AccountData } from "@/interfaces/account.interface";
 import { Users as UsersIcon, CheckCircle, Lock, Shield } from "lucide-react";
 import { toast } from "react-toastify";
 import MultiSelect from "@/components/MultiSelect";
+import { getUsers, deleteUser } from "@/services/userService";
+import { UserItem } from "@/interfaces/user.interface";
+
+import { useRouter } from "next/navigation";
 
 const Users: React.FC = () => {
   const { isDark } = useTheme();
+  const router = useRouter();
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -31,44 +36,36 @@ const Users: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<"role" | "status" | null>(
     null,
   );
+  const [summaryData, setSummaryData] = useState({
+    totalUsers: 0,
+    active: 0,
+    suspendedOrLocked: 0,
+    twoFactorEnabled: 0,
+  });
+  const [totalReconrds, setTotalRecords] = useState(0);
 
   const columns = [
+    { key: "fullName", label: "Full Name", visible: true },
+    { key: "email", label: "Email", visible: true },
+    { key: "roleName", label: "Role", visible: true },
+    { key: "accountName", label: "Account", visible: true },
+    { key: "status", label: "Status", type: "badge" as const, visible: true },
     {
-      key: "no",
-      label: "NO",
+      key: "twoFactorEnabled",
+      label: "2FA",
       visible: true,
+      render: (value: boolean) => {
+        return value ? "Enabled" : "Disabled";
+      },
     },
     {
-      key: "accountCode",
-      label: "CODE",
-      type: "link" as const,
+      key: "lastLoginAt",
+      label: "Last Login",
       visible: true,
-    },
-    {
-      key: "instance",
-      label: "INSTANCE",
-      type: "multi-line" as const,
-      visible: true,
-    },
-    {
-      key: "contact",
-      label: "CONTACT",
-      type: "multi-line" as const,
-      visible: true,
-    },
-    {
-      key: "location",
-      label: "LOCATION",
-      type: "icon-text" as const,
-      visible: true,
-    },
-    {
-      key: "status",
-      label: "STATUS",
-      type: "badge" as const,
-      visible: true,
+      type: "date" as const,
     },
   ];
+
   const roleOptions = [
     { label: "Super Admin", value: "SUPER_ADMIN" },
     { label: "Account Manager", value: "ACCOUNT_MANAGER" },
@@ -82,16 +79,21 @@ const Users: React.FC = () => {
     { label: "Suspended", value: "SUSPENDED" },
   ];
 
-  const [data, setData] = useState<AccountData[]>([]);
+  const [data, setData] = useState<UserItem[]>([]);
 
-  const handleEdit = (row: AccountData) => {
-    console.log("Edit:", row);
-    alert(`Editing ${row.instance.main}`);
+  const handleEdit = (row: UserItem) => {
+    router.push(`/users/${row.userId}`);
   };
 
-  const handleDelete = (row: AccountData) => {
-    console.log("Delete:", row);
-    alert(`Deleting ${row.instance.main}`);
+  const handleDelete = async (row: UserItem) => {
+    const response = await deleteUser(row.userId);
+
+    if (response && response.statusCode === 200) {
+      toast.success(response.message);
+      fetchUsers();
+    } else {
+      toast.error(response.message);
+    }
   };
 
   const handlePageChange = (page: number) => {
@@ -132,21 +134,23 @@ const Users: React.FC = () => {
     toast.success("Filters applied!");
   };
 
-  async function getAccountsList() {
-    const response = await getAccounts(pageNo, pageSize);
-    console.log("response", response);
+  async function fetchUsers() {
+    const response = await getUsers(pageNo, pageSize);
+
     if (response && response.statusCode === 200) {
       toast.success(response.message);
-      setData(response.data.items);
+      setSummaryData(response.data.summary);
+      setTotalRecords(response.data.users.totalRecords || 0);
+      setData(response.data.users.items || []);
     }
   }
 
   useEffect(() => {
-    getAccountsList();
+    fetchUsers();
   }, [pageNo, pageSize]);
 
   return (
-   <div className={`${isDark ? "dark" : ""} mt-16 sm:mt-20`}>
+    <div className={`${isDark ? "dark" : ""} mt-16 sm:mt-20`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
           title="User List"
@@ -217,7 +221,7 @@ const Users: React.FC = () => {
           <MetricCard
             icon={UsersIcon}
             label="Total Users"
-            value={5}
+            value={summaryData.totalUsers}
             iconBgColor="bg-purple-100"
             iconColor="text-purple-600"
             isDark={isDark}
@@ -225,7 +229,7 @@ const Users: React.FC = () => {
           <MetricCard
             icon={CheckCircle}
             label="Active"
-            value={3}
+            value={summaryData.active}
             iconBgColor="bg-green-100"
             iconColor="text-green-600"
             isDark={isDark}
@@ -233,7 +237,7 @@ const Users: React.FC = () => {
           <MetricCard
             icon={Lock}
             label="Suspended/Locked"
-            value={1}
+            value={summaryData.suspendedOrLocked}
             iconBgColor="bg-orange-100"
             iconColor="text-orange-600"
             isDark={isDark}
@@ -241,7 +245,7 @@ const Users: React.FC = () => {
           <MetricCard
             icon={Shield}
             label="2FA Enabled"
-            value={3}
+            value={summaryData.twoFactorEnabled}
             iconBgColor="bg-blue-100"
             iconColor="text-blue-600"
             isDark={isDark}
@@ -261,6 +265,7 @@ const Users: React.FC = () => {
           pageNo={pageNo}
           pageSize={pageSize}
           onPageChange={handlePageChange}
+          totalRecords={totalReconrds}
           onPageSizeChange={handlePageSizeChange}
         />
       </div>

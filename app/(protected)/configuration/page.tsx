@@ -47,12 +47,7 @@ const ConfigurationPage: React.FC = () => {
       label: "LANGUAGE",
       visible: true,
       // render: (value: string) => {
-      //   const langMap: Record<string, string> = {
-      //     en: "English",
-      //     es: "Spanish",
-      //     fr: "French",
-      //     de: "German",
-      //   };
+     
       //   return langMap[value] || value;
       // },
     },

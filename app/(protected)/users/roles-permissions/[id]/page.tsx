@@ -6,17 +6,27 @@ import { useTheme } from "@/context/ThemeContext";
 import { Shield, Users, Lock } from "lucide-react";
 import { useColor } from "@/context/ColorContext";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { getAllAccounts } from "@/services/commonServie";
 import { getAllForms } from "@/services/formService";
 import { Permission, RoleFormData } from "@/interfaces/permission.interface";
-import { createRole } from "@/services/rolesService";
+import {
+  createRole,
+  getRoleById,
+  updateRights,
+  updateRole,
+} from "@/services/rolesService";
+
 const AddRole: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
   const router = useRouter();
+  const params = useParams();
+  const roleId = params?.id;
 
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<RoleFormData>({
     account: "",
     roleName: "",
@@ -83,6 +93,67 @@ const AddRole: React.FC = () => {
     return false;
   };
 
+  const fetchRoleData = async (id: string) => {
+    try {
+      setLoading(true);
+
+      // Get accountId from localStorage
+      const accountId = localStorage.getItem("accountId");
+      if (!accountId) {
+        toast.error("Account ID not found in localStorage");
+        return;
+      }
+
+      const response = await getRoleById(id, accountId);
+
+      if (response && response.statusCode === 200) {
+        const roleData = response.data;
+
+        // Set form data from API response
+        setFormData((prev) => ({
+          ...prev,
+          account: roleData.accountId?.toString() || accountId,
+          roleName: roleData.roleName || "",
+          description: roleData.description || "",
+        }));
+
+        // Merge existing permissions with API rights
+        setFormData((prev) => {
+          const updatedPermissions = prev.permissions.map((perm) => {
+            const right = roleData.rights?.find(
+              (r: any) => r.formId === perm.formId,
+            );
+
+            if (right) {
+              return {
+                ...perm,
+                read: right.canRead || false,
+                write: right.canWrite || false,
+                delete: right.canDelete || false,
+                export: right.canExport || false,
+              };
+            }
+            return perm;
+          });
+
+          return {
+            ...prev,
+            permissions: updatedPermissions,
+          };
+        });
+
+        setIsEditMode(true);
+      } else {
+        toast.error(response?.message || "Failed to fetch role data");
+      }
+    } catch (error) {
+      console.error("Error fetching role:", error);
+      toast.error("Failed to load role data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!formData.account || !formData.roleName) {
       toast.error("Please fill in all required fields");
@@ -90,41 +161,82 @@ const AddRole: React.FC = () => {
     }
 
     try {
-      // Transform formData → API payload
-      const payload = {
-        accountId: Number(formData.account), // ensure it's number
-        roleName: formData.roleName,
-        description: formData.description,
-        roleCode: formData.roleName.toUpperCase().replace(/\s+/g, "_"), // auto generate code
-        isActive: true,
-        rights: formData.permissions.map((p) => ({
-          formId: p.formId,
-          canRead: p.read,
-          canWrite: p.write,
-          canUpdate: p.write, // assuming write includes update
-          canDelete: p.delete,
-          canExport: p.export,
-          canAll: p.read && p.write && p.delete && p.export, // true if all are checked
-        })),
-      };
+      setLoading(true);
 
-      // TODO: Replace with your API call
-      const response = await createRole(payload);
-      if (response.statusCode === 200) {
-        toast.success(response?.message || "Role created successfully!");
-        router.push("/users/roles-permissions");
-      } else toast.error(response?.message || "Role creation failure!");
-      // router.push("/users/roles");
+      // Prepare rights payload
+      const rightsPayload = formData.permissions.map((p) => ({
+        formId: p.formId,
+        canRead: p.read,
+        canWrite: p.write,
+        canUpdate: p.write,
+        canDelete: p.delete,
+        canExport: p.export,
+        canAll: p.read && p.write && p.delete && p.export,
+      }));
+
+      let response;
+      if (isEditMode && roleId) {
+        // Update existing role - role info payload (without rights)
+        const rolePayload = {
+          accountId: Number(formData.account),
+          roleName: formData.roleName,
+          description: formData.description,
+          roleCode: formData.roleName.toUpperCase().replace(/\s+/g, "_"),
+          isActive: true,
+        };
+
+        // Update role basic info
+        response = await updateRole(roleId, rolePayload);
+
+        if (response.statusCode === 200) {
+          // Update rights separately
+          const rightsResponse = await updateRights(roleId, rightsPayload);
+
+          if (rightsResponse.statusCode === 200) {
+            toast.success("Role and permissions updated successfully!");
+            router.push("/users/roles-permissions");
+          } else {
+            toast.error(
+              rightsResponse?.message || "Failed to update permissions",
+            );
+          }
+        } else {
+          toast.error(response?.message || "Failed to update role");
+        }
+      } else {
+        // Create new role - include rights in payload
+        const payload = {
+          accountId: Number(formData.account),
+          roleName: formData.roleName,
+          description: formData.description,
+          roleCode: formData.roleName.toUpperCase().replace(/\s+/g, "_"),
+          isActive: true,
+          rights: rightsPayload,
+        };
+
+        response = await createRole(payload);
+
+        if (response.statusCode === 200) {
+          toast.success(response?.message || "Role created successfully!");
+          router.push("/users/roles-permissions");
+        } else {
+          toast.error(response?.message || "Role creation failure!");
+        }
+      }
     } catch (error) {
-      console.error("Error creating role:", error);
-      toast.error("Failed to create role");
+      console.error(
+        `Error ${isEditMode ? "updating" : "creating"} role:`,
+        error,
+      );
+      toast.error(`Failed to ${isEditMode ? "update" : "create"} role`);
+    } finally {
+      setLoading(false);
     }
   };
 
   async function fetchAllAcounts() {
     const response = await getAllAccounts();
     if (response && response.statusCode === 200) {
-      toast.success(response.message);
       setAccounts(response.data);
     }
   }
@@ -134,8 +246,6 @@ const AddRole: React.FC = () => {
       const response = await getAllForms(0, 0);
 
       if (response && response.statusCode === 200) {
-        toast.success(response.message);
-
         // Transform API data into permissions format
         const permissionsFromApi = response.data.items.map((item: any) => ({
           formId: item.formId,
@@ -144,7 +254,7 @@ const AddRole: React.FC = () => {
           moduleName: item.moduleName,
           pageUrl: item.pageUrl,
           isActive: item.isActive,
-          resource: item.formName, // keep for easy UI label
+          resource: item.formName,
           read: false,
           write: false,
           delete: false,
@@ -156,6 +266,11 @@ const AddRole: React.FC = () => {
           ...prev,
           permissions: permissionsFromApi,
         }));
+
+        // If in edit mode, fetch role data after forms are loaded
+        if (roleId) {
+          await fetchRoleData(roleId as string);
+        }
       } else {
         toast.error("Failed to fetch forms");
       }
@@ -170,6 +285,26 @@ const AddRole: React.FC = () => {
     fetchAllAForms();
   }, []);
 
+  if (loading && isEditMode && formData.permissions.length === 0) {
+    return (
+      <div className={`${isDark ? "dark" : ""} mt-20`}>
+        <div
+          className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 flex items-center justify-center`}
+        >
+          <div className="text-center">
+            <div
+              className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
+              style={{ borderColor: selectedColor }}
+            ></div>
+            <p className={isDark ? "text-gray-400" : "text-gray-600"}>
+              Loading role data...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`${isDark ? "dark" : ""} mt-20`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
@@ -180,7 +315,7 @@ const AddRole: React.FC = () => {
               <h1
                 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 ${isDark ? "text-foreground" : "text-gray-900"}`}
               >
-                Create New Role
+                {isEditMode ? "Update Role" : "Create New Role"}
               </h1>
               <p
                 className={`text-xs sm:text-sm md:text-base ${isDark ? "text-gray-400" : "text-gray-600"}`}
@@ -196,15 +331,28 @@ const AddRole: React.FC = () => {
                     : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
                 }`}
                 onClick={() => router.back()}
+                disabled={loading}
               >
                 Cancel
               </button>
               <button
-                className="flex-1 sm:flex-none text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base font-medium transition-colors cursor-pointer"
+                className="flex-1 sm:flex-none text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: selectedColor }}
                 onClick={handleSubmit}
+                disabled={loading}
               >
-                <span className="whitespace-nowrap">Save Role</span>
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span className="whitespace-nowrap">
+                      {isEditMode ? "Updating..." : "Saving..."}
+                    </span>
+                  </>
+                ) : (
+                  <span className="whitespace-nowrap">
+                    {isEditMode ? "Update Role" : "Save Role"}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -245,11 +393,14 @@ const AddRole: React.FC = () => {
                     value={formData.account}
                     onChange={handleInputChange}
                     required
+                    disabled={isEditMode}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                       isDark
                         ? "bg-gray-800 border-gray-700 text-foreground focus:border-purple-500"
                         : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
-                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20 ${
+                      isEditMode ? "opacity-60 cursor-not-allowed" : ""
+                    }`}
                   >
                     <option value="">Select Account</option>
                     {accounts &&

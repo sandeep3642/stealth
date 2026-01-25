@@ -39,13 +39,13 @@ const ManagePlans: React.FC = () => {
       visible: true,
     },
     {
-      key: "category",
+      key: "tenantCategory",
       label: "CATEGORY",
       type: "badge" as const,
       visible: true,
     },
     {
-      key: "pricing",
+      key: "basePrice",
       label: "PRICING",
       type: "icon-text" as const,
       icon: <DollarSign className="w-4 h-4" />,
@@ -133,7 +133,7 @@ const ManagePlans: React.FC = () => {
             breadcrumbs={[{ label: "Billing" }, { label: "Manage Plans" }]}
             showButton={true}
             buttonText="Create Plan"
-            buttonRoute="/billing/manage-plans/create"
+            buttonRoute="/manage-plans/0"
           />
         </div>
 

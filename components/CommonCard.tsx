@@ -11,7 +11,7 @@ interface CardProps {
 interface MetricCardProps {
   icon: React.ComponentType<{ className?: string }> | StaticImageData | string;
   label: string;
-  value: number;
+  value: number | string;
   iconBgColor: string;
   iconColor: string;
   isDark: boolean;
