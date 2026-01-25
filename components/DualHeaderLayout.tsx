@@ -441,7 +441,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
             }}
             className={`p-2 ${headerClasses.hoverBg} rounded-lg`}
           >
-            <Menu className={`w-5 h-5 ${headerClasses.textSecondary}`} />
+            <Menu className={`w-5 h-5 ${headerClasses.textSecondary} cursor-pointer`} />
           </button>
 
           {/* Logo - visible on mobile when sidebar is closed */}

@@ -8,6 +8,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "next/navigation";
 import { getWhiteLabels, deleteWhiteLabel } from "@/services/whitelabelService";
 import { WhiteLabel } from "@/interfaces/whitelabel.interface";
+import { toast } from "react-toastify";
 
 const WhiteLabelPage: React.FC = () => {
   const { isDark } = useTheme();
@@ -16,8 +17,6 @@ const WhiteLabelPage: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [data, setData] = useState<WhiteLabel[]>([]);
   const [totalRecords, setTotalRecords] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [loading, setLoading] = useState(false);
 
   const columns = [
     {
@@ -55,20 +54,20 @@ const WhiteLabelPage: React.FC = () => {
       label: "STATUS",
       type: "badge" as const,
       visible: true,
-      render: (value: boolean) => (value ? "Active" : "Inactive"),
+      // render: (value: boolean) => (value ? "Active" : "Inactive"),
     },
   ];
 
   // Fetch White Labels Data
   const fetchWhiteLabels = async () => {
-    setLoading(true);
+    // setLoading(true);
     try {
       const response = await getWhiteLabels(pageNo, pageSize);
-      
+
       if (response.success && response.data) {
         setData(response.data.items || []);
         setTotalRecords(response.data.totalRecords || 0);
-        setTotalPages(response.data.totalPages || 0);
+        // setTotalPages(response.data.totalPages || 0);
       } else {
         console.error("Failed to fetch white labels:", response.message);
         setData([]);
@@ -77,7 +76,7 @@ const WhiteLabelPage: React.FC = () => {
       console.error("Error fetching white labels:", error);
       setData([]);
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -87,24 +86,23 @@ const WhiteLabelPage: React.FC = () => {
   }, [pageNo, pageSize]);
 
   const handleEdit = (row: WhiteLabel) => {
-    console.log("Edit:", row);
     router.push(`/provisionBranding?id=${row.whiteLabelId}`);
   };
 
   const handleDelete = async (row: WhiteLabel) => {
-    if (confirm(`Are you sure you want to delete white label for ${row.accountName}?`)) {
+    {
       try {
         const response = await deleteWhiteLabel(row.whiteLabelId);
-        
+
         if (response.success) {
-          alert("White label deleted successfully!");
+          toast.success("White label deleted successfully!");
           fetchWhiteLabels(); // Refresh data
         } else {
-          alert(`Failed to delete: ${response.message}`);
+          toast.error(` ${response.message}`);
         }
       } catch (error) {
         console.error("Error deleting white label:", error);
-        alert("An error occurred while deleting.");
+        toast.error("An error occurred while deleting.");
       }
     }
   };
@@ -143,7 +141,7 @@ const WhiteLabelPage: React.FC = () => {
           variant="simple"
           pageNo={pageNo}
           pageSize={pageSize}
-          // totalRecords={totalRecords}
+          totalRecords={totalRecords}
           // totalPages={totalPages}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}

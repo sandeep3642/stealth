@@ -19,7 +19,7 @@ const Accounts: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
-
+  const [totalRecords, setTotalRecords] = useState(0);
   const columns = [
     {
       key: "no",
@@ -90,6 +90,7 @@ const Accounts: React.FC = () => {
     if (response && response.statusCode === 200) {
       toast.success(response.message);
       setData(response.data.items);
+      setTotalRecords(response.data.totalRecords);
     }
   }
 
@@ -167,7 +168,7 @@ const Accounts: React.FC = () => {
             onDelete={handleDelete}
             showActions={true}
             searchPlaceholder="Search..."
-            rowsPerPageOptions={[10, 25, 50, 100]}
+            rowsPerPageOptions={[2, 4, 5, 10, 25, 50, 100]}
             defaultRowsPerPage={10}
             pageNo={pageNo}
             pageSize={pageSize}
@@ -175,6 +176,7 @@ const Accounts: React.FC = () => {
             onPageSizeChange={handlePageSizeChange}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
+            totalRecords={totalRecords}
           />
         </div>
       </div>

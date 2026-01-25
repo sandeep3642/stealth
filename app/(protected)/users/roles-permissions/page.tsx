@@ -6,16 +6,25 @@ import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
 import { useTheme } from "@/context/ThemeContext";
-import { getAccounts } from "@/services/accountService";
-import { AccountData } from "@/interfaces/account.interface";
 import { Shield, Lock, Users as UsersIcon } from "lucide-react";
 import { toast } from "react-toastify";
-import { getRoles } from "@/services/rolesService";
+import { deleteRole, getRoles } from "@/services/rolesService";
+import { RoleAccount } from "@/interfaces/permission.interface";
+import { useRouter } from "next/navigation";
 
 const Roles: React.FC = () => {
   const { isDark } = useTheme();
+  const router = useRouter();
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const [summary, setSummary] = useState({
+    totalRoles: 0,
+    systemRoles: 0,
+    customRoles: 0,
+  });
+
+  const [totalRecords, setTotalRecords] = useState(0);
 
   const columns = [
     {
@@ -24,48 +33,43 @@ const Roles: React.FC = () => {
       visible: true,
     },
     {
-      key: "accountCode",
-      label: "CODE",
+      key: "accountName",
+      label: "Account",
+      // type: "link" as const,
+      visible: true,
+    },
+    {
+      key: "roleName",
+      label: "Role",
       type: "link" as const,
       visible: true,
     },
     {
-      key: "instance",
-      label: "INSTANCE",
-      type: "multi-line" as const,
+      key: "description",
+      label: "Description",
       visible: true,
     },
     {
-      key: "contact",
-      label: "CONTACT",
-      type: "multi-line" as const,
+      key: "createdOn",
+      label: "Created At",
       visible: true,
-    },
-    {
-      key: "location",
-      label: "LOCATION",
-      type: "icon-text" as const,
-      visible: true,
-    },
-    {
-      key: "status",
-      label: "STATUS",
-      type: "badge" as const,
-      visible: true,
+      type: "date" as const,
     },
   ];
 
-  const [data, setData] = useState<AccountData[]>([]);
+  const [data, setData] = useState<RoleAccount[]>([]);
 
-  const handleEdit = (row: AccountData) => {
-    console.log("Edit:", row);
-    alert(`Editing ${row.instance.main}`);
+  const handleEdit = (row: RoleAccount) => {
+    router.push(`/users/roles-permissions/${row.roleId}`);
   };
 
-  const handleDelete = (row: AccountData) => {
-    console.log("Delete:", row);
-    alert(`Deleting ${row.instance.main}`);
-  };
+  async function handleDelete(row: RoleAccount) {
+    const response = await deleteRole(row.roleId);
+    if (response && response.statusCode === 200) {
+      toast.success(response.message);
+      fetchRoles();
+    } else toast.error(response.message);
+  }
 
   const handlePageChange = (page: number) => {
     setPageNo(page);
@@ -83,11 +87,12 @@ const Roles: React.FC = () => {
 
   async function fetchRoles() {
     const response = await getRoles(pageNo, pageSize);
-    console.log("response", response);
     if (response && response.statusCode === 200) {
       toast.success(response.message);
-      setData(response.data.items);
-    }
+      setSummary(response.data.summary);
+      setData(response.data.roles.items);
+      setTotalRecords(response.data.roles.totalRecords);
+    } else toast.error(response.message);
   }
 
   useEffect(() => {
@@ -114,7 +119,7 @@ const Roles: React.FC = () => {
           <MetricCard
             icon={Shield}
             label="Total Roles"
-            value={3}
+            value={summary.totalRoles}
             iconBgColor="bg-purple-100"
             iconColor="text-purple-600"
             isDark={isDark}
@@ -122,7 +127,7 @@ const Roles: React.FC = () => {
           <MetricCard
             icon={Lock}
             label="System Roles"
-            value={1}
+            value={summary.systemRoles}
             iconBgColor="bg-purple-100"
             iconColor="text-purple-600"
             isDark={isDark}
@@ -130,7 +135,7 @@ const Roles: React.FC = () => {
           <MetricCard
             icon={UsersIcon}
             label="Custom Roles"
-            value={2}
+            value={summary.customRoles}
             iconBgColor="bg-pink-100"
             iconColor="text-pink-600"
             isDark={isDark}
@@ -145,12 +150,14 @@ const Roles: React.FC = () => {
           onDelete={handleDelete}
           showActions={true}
           searchPlaceholder="Search across all fields..."
-          rowsPerPageOptions={[10, 25, 50, 100]}
+          rowsPerPageOptions={[2, 10, 25, 50, 100]}
           defaultRowsPerPage={10}
           pageNo={pageNo}
           pageSize={pageSize}
           onPageChange={handlePageChange}
+          totalRecords={totalRecords}
           onPageSizeChange={handlePageSizeChange}
+          isServerSide={true}
         />
       </div>
       <ThemeCustomizer />

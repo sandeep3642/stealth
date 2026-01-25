@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Globe, Palette, Upload, ExternalLink } from "lucide-react";
+import { Globe, Palette } from "lucide-react";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "next/navigation";
@@ -16,13 +16,14 @@ import {
   WhiteLabelFormData,
   WhiteLabelUpdateData,
 } from "@/interfaces/whitelabel.interface";
+import { getAllAccounts } from "@/services/commonServie";
+import { toast } from "react-toastify";
 
 const ProvisionBranding: React.FC = () => {
   const { selectedColor } = useColor();
   const { isDark } = useTheme();
   const router = useRouter();
-  // const searchParams = useSearchParams();
-  // const whiteLabelId = searchParams.get("id");
+
   const [whiteLabelId, setWhiteLabelId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -40,10 +41,12 @@ const ProvisionBranding: React.FC = () => {
   const [secondaryRgb, setSecondaryRgb] = useState({ r: 16, g: 185, b: 129 });
   const [loading, setLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [accounts, setAccounts] = useState<{ id: number; value: string }[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
+      console.log("params", params);
       setWhiteLabelId(params.get("id"));
     }
   }, []);
@@ -90,7 +93,7 @@ const ProvisionBranding: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching white label:", error);
-      alert("Failed to load white label data");
+      toast.error("Failed to load white label data");
     } finally {
       setLoading(false);
     }
@@ -110,12 +113,12 @@ const ProvisionBranding: React.FC = () => {
 
   const handleActivate = async () => {
     if (!formData.accountId) {
-      alert("Please select a target account");
+      toast.error("Please select a target account");
       return;
     }
 
     if (!formData.customEntryFqdn) {
-      alert("Please enter custom FQDN");
+      toast.error("Please enter custom FQDN");
       return;
     }
 
@@ -147,16 +150,16 @@ const ProvisionBranding: React.FC = () => {
       }
 
       if (response.success) {
-        alert(
+        toast.success(
           `White label ${isEditMode ? "updated" : "created"} successfully!`,
         );
         router.push("/whiteLabel");
       } else {
-        alert(`Failed: ${response.message}`);
+        toast.error(`Failed: ${response.message}`);
       }
     } catch (error) {
       console.error("Error saving white label:", error);
-      alert("An error occurred while saving");
+      toast.error("An error occurred while saving");
     } finally {
       setLoading(false);
     }
@@ -206,6 +209,18 @@ const ProvisionBranding: React.FC = () => {
     setFormData((prev) => ({ ...prev, secondaryColorHex: hex }));
   };
 
+  async function fetchAllAcounts() {
+    const response = await getAllAccounts();
+    if (response && response.statusCode === 200) {
+      toast.success(response.message);
+      setAccounts(response.data);
+    }
+  }
+
+  useEffect(() => {
+    fetchAllAcounts();
+  }, []);
+
   if (loading && isEditMode) {
     return (
       <div className={`${isDark ? "dark" : ""} mt-20`}>
@@ -249,29 +264,32 @@ const ProvisionBranding: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">
-                      Target Account ID
+                    <label
+                      className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                    >
+                      Account
                     </label>
-                    <input
-                      type="number"
+                    <select
                       name="accountId"
-                      value={formData.accountId || ""}
+                      value={formData.accountId}
                       onChange={handleInputChange}
-                      disabled={isEditMode}
-                      placeholder="Enter Account ID"
+                      required
                       className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                         isDark
-                          ? "bg-gray-800 border-gray-700 text-foreground"
-                          : "bg-white border-gray-300 text-gray-900"
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20 ${
-                        isEditMode ? "opacity-60 cursor-not-allowed" : ""
-                      }`}
-                    />
-                    {isEditMode && (
-                      <p className="text-xs text-foreground/50 mt-1">
-                        Account ID cannot be changed
-                      </p>
-                    )}
+                          ? "bg-gray-800 border-gray-700 text-foreground focus:border-purple-500"
+                          : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                    >
+                      <option value="">Select Account</option>
+                      {accounts &&
+                        accounts.map(
+                          (account: { id: number; value: string }) => (
+                            <option key={account.id} value={account.id}>
+                              {account.value}
+                            </option>
+                          ),
+                        )}
+                    </select>
                   </div>
 
                   <div>
@@ -529,7 +547,11 @@ const ProvisionBranding: React.FC = () => {
                       ACCOUNT:
                     </span>
                     <span className="text-sm font-bold text-foreground">
-                      {formData.accountId || "Not set"}
+                      {accounts?.length > 0 &&
+                        accounts.find(
+                          (val: { id: number; value: string }) =>
+                            val.id === formData.accountId,
+                        )?.value}
                     </span>
                   </div>
 

@@ -2,7 +2,7 @@ import api from "./apiService";
 
 export const getRoles = async (page, pageSize, searchQuery) => {
   const res = await api.get(
-    `/api/roles?page=${page}&pageSize=${pageSize}&search=${searchQuery}`,
+    `/api/roles/GetAllRole?page=${page}&pageSize=${pageSize}`,
   );
   return res.data;
 };
@@ -24,4 +24,9 @@ export const createRole = async (payload) => {
       }
     );
   }
+};
+
+export const deleteRole = async (id) => {
+  const res = await api.delete(`/api/roles/${id}`);
+  return res.data;
 };

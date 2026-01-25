@@ -3,7 +3,7 @@
 export interface Column {
   key: string;
   label: string;
-  type?: "text" | "badge" | "link" | "icon-text" | "multi-line";
+  type?: "text" | "badge" | "link" | "icon-text" | "multi-line" | "date";
   visible?: boolean;
   icon?: React.ReactNode;
   mainStyle?: string;
@@ -27,6 +27,8 @@ export interface CommonTableProps {
   onPageSizeChange: (size: number) => void;
   searchQuery?: string;
   setSearchQuery?: (val: string) => void;
+  totalRecords?: number;
+  isServerSide?: boolean;
 }
 
 export interface HierarchyNode {

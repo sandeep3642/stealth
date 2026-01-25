@@ -6,21 +6,17 @@ import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
 import { useTheme } from "@/context/ThemeContext";
-import { CreditCard, CheckCircle, Clock, XCircle, DollarSign } from "lucide-react";
+import {
+  CreditCard,
+  CheckCircle,
+  Clock,
+  XCircle,
+  DollarSign,
+} from "lucide-react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
-
-// Plan Interface
-interface PlanData {
-  planId: string;
-  no: number;
-  planName: string;
-  duration: string;
-  category: string;
-  pricing: string;
-  userLimit: string;
-  status: string;
-}
+import { PlanData } from "@/interfaces/plan.interface";
+import { deletePlan, getPlans } from "@/services/planService";
 
 const ManagePlans: React.FC = () => {
   const { isDark } = useTheme();
@@ -69,60 +65,21 @@ const ManagePlans: React.FC = () => {
   ];
 
   // Mock data based on the screenshot
-  const [data, setData] = useState<PlanData[]>([
-    {
-      planId: "1",
-      no: 1,
-      planName: "Standard End User\n1 YEAR",
-      duration: "1 YEAR",
-      category: "End User",
-      pricing: "USD 29.99",
-      userLimit: "5 Users",
-      status: "Active",
-    },
-    {
-      planId: "2",
-      no: 2,
-      planName: "Enterprise Fleet Hub\nLIFETIME",
-      duration: "LIFETIME",
-      category: "End User",
-      pricing: "License Modules (2)\nFleet Pro: USD 15",
-      userLimit: "Unlimited",
-      status: "Active",
-    },
-    {
-      planId: "3",
-      no: 3,
-      planName: "Reseller Gold Pack\n2 YEARS",
-      duration: "2 YEARS",
-      category: "Reseller",
-      pricing: "USD 999",
-      userLimit: "25 Users",
-      status: "Active",
-    },
-    {
-      planId: "4",
-      no: 4,
-      planName: "Dealer Starter\n30 DAYS TRIAL",
-      duration: "30 DAYS TRIAL",
-      category: "Dealer",
-      pricing: "USD 0",
-      userLimit: "2 Users",
-      status: "Active",
-    },
-  ]);
+  const [data, setData] = useState<PlanData[]>([]);
 
   const handleEdit = (row: PlanData) => {
     router.push(`/billing/manage-plans/${row.planId}`);
   };
 
   const handleDelete = async (row: PlanData) => {
-    // API call simulation
     try {
-      // const response = await deletePlan(row.planId);
-      toast.success("Plan deleted successfully");
-      if (pageNo > 1) setPageNo(1);
-      else getPlansList();
+      const response = await deletePlan(row.planId);
+      if (response && response.statusCode === 200) {
+        toast.success(response.message);
+        setData(response.data.items);
+      } else {
+        toast.error(response.message || "Something went wrong.");
+      }
     } catch (error) {
       toast.error("Failed to delete plan");
     }
@@ -139,14 +96,13 @@ const ManagePlans: React.FC = () => {
 
   async function getPlansList() {
     try {
-      // const response = await getPlans(pageNo, pageSize, debouncedQuery);
-      // if (response && response.statusCode === 200) {
-      //   toast.success(response.message);
-      //   setData(response.data.items);
-      // }
-      
+      const response = await getPlans(pageNo, pageSize, debouncedQuery);
+      if (response && response.statusCode === 200) {
+        toast.success(response.message);
+        setData(response.data.items);
+      }
+
       // Mock data for now
-      console.log("Fetching plans...", { pageNo, pageSize, debouncedQuery });
     } catch (error) {
       toast.error("Failed to fetch plans");
     }
@@ -174,10 +130,7 @@ const ManagePlans: React.FC = () => {
           <PageHeader
             title="Manage Plans"
             subtitle="Design global pricing blueprints for multi-tenant account categories."
-            breadcrumbs={[
-              { label: "Billing" },
-              { label: "Manage Plans" }
-            ]}
+            breadcrumbs={[{ label: "Billing" }, { label: "Manage Plans" }]}
             showButton={true}
             buttonText="Create Plan"
             buttonRoute="/billing/manage-plans/create"

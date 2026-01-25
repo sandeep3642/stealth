@@ -16,6 +16,7 @@ const Categories: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalRecords, setTotalRecords] = useState(0);
 
   const columns = [
     {
@@ -120,11 +121,12 @@ const Categories: React.FC = () => {
             searchPlaceholder="Search categories..."
             rowsPerPageOptions={[10, 25, 50, 100]}
             defaultRowsPerPage={10}
-            variant="simple"
+            // variant="simple"
             pageNo={pageNo}
             pageSize={pageSize}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
+            isServerSide={false}
           />
         )}
       </div>

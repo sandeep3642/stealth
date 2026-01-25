@@ -5,8 +5,11 @@ import CommonTable from "@/components/CommonTable";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
 import { useTheme } from "@/context/ThemeContext";
-import { getConfigurations, deleteConfiguration } from "@/services/configurationService";
-import   { Configuration } from "@/interfaces/configuartion.interface";
+import {
+  getConfigurations,
+  deleteConfiguration,
+} from "@/services/configurationService";
+import { Configuration } from "@/interfaces/configuartion.interface";
 import { useRouter } from "next/navigation";
 
 const ConfigurationPage: React.FC = () => {
@@ -43,33 +46,21 @@ const ConfigurationPage: React.FC = () => {
       key: "defaultLanguage",
       label: "LANGUAGE",
       visible: true,
-      render: (value: string) => {
-        const langMap: Record<string, string> = {
-          en: "English",
-          es: "Spanish",
-          fr: "French",
-          de: "German",
-        };
-        return langMap[value] || value;
-      },
+      // render: (value: string) => {
+      //   const langMap: Record<string, string> = {
+      //     en: "English",
+      //     es: "Spanish",
+      //     fr: "French",
+      //     de: "German",
+      //   };
+      //   return langMap[value] || value;
+      // },
     },
     {
       key: "updatedOn",
       label: "LAST UPDATED",
       visible: true,
-      render: (value: string) => {
-        if (!value) return "Never";
-        const date = new Date(value);
-        const now = new Date();
-        const diffTime = Math.abs(now.getTime() - date.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diffDays === 0) return "Today";
-        if (diffDays === 1) return "Yesterday";
-        if (diffDays < 7) return `${diffDays} days ago`;
-        if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-        return date.toLocaleDateString();
-      },
+      type: "date" as const ,
     },
   ];
 
@@ -95,7 +86,11 @@ const ConfigurationPage: React.FC = () => {
   };
 
   const handleDelete = async (row: Configuration) => {
-    if (confirm(`Are you sure you want to delete configuration for "${row.accountName}"?`)) {
+    if (
+      confirm(
+        `Are you sure you want to delete configuration for "${row.accountName}"?`,
+      )
+    ) {
       const response = await deleteConfiguration(row.accountConfigurationId);
       if (response.success) {
         alert("Configuration deleted successfully!");
@@ -147,11 +142,12 @@ const ConfigurationPage: React.FC = () => {
             searchPlaceholder="Search across all fields..."
             rowsPerPageOptions={[10, 25, 50, 100]}
             defaultRowsPerPage={10}
-            variant="simple"
+            // variant="simple"
             pageNo={pageNo}
             pageSize={pageSize}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
+            totalRecords={totalRecords}
           />
         )}
       </div>

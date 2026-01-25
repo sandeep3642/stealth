@@ -18,3 +18,14 @@ export interface RoleFormData {
   description: string;
   permissions: Permission[];
 }
+
+export interface RoleAccount {
+  roleId: number;
+  accountId: number;
+  accountName: string;
+  roleName: string;
+  description: string;
+  isSystemRole: boolean;
+  assignedUsers: number;
+  createdOn: Date;
+}
