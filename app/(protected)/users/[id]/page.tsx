@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from "react";
 import { Card } from "@/components/CommonCard";
 import { useTheme } from "@/context/ThemeContext";
-import { Building2, User, Shield } from "lucide-react";
-import { FormData } from "@/interfaces/user.interface";
+import { Building2, User, Shield, Camera, Upload, X } from "lucide-react";
+import { UserFormData } from "@/interfaces/user.interface";
 import { useColor } from "@/context/ColorContext";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { useParams, useRouter } from "next/navigation";
@@ -28,7 +28,7 @@ const CreateUser: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   const [isEditMode, setIsEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<UserFormData>({
     accountName: "",
     accountCode: "",
     accountId: 0,
@@ -39,6 +39,11 @@ const CreateUser: React.FC = () => {
     phoneNumber: "",
     location: "",
   });
+
+  // Avatar state
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>("");
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   const [accounts, setAccounts] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -53,6 +58,46 @@ const CreateUser: React.FC = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  // Avatar upload handler
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Please upload a valid image file (JPG, PNG, GIF, or WebP)");
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB in bytes
+      if (file.size > maxSize) {
+        toast.error("Image size should be less than 5MB");
+        return;
+      }
+
+      setAvatarFile(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      
+      setShowAvatarModal(false);
+      toast.success("Avatar uploaded successfully!");
+    }
+  };
+
+  // Remove avatar
+  const handleRemoveAvatar = () => {
+    setAvatarFile(null);
+    setAvatarPreview("");
+    setShowAvatarModal(false);
+    toast.info("Avatar removed");
   };
 
   const fetchUserData = async (userId: string) => {
@@ -75,6 +120,12 @@ const CreateUser: React.FC = () => {
         });
         setUserStatus(userData.status ?? true);
         setTwoFactorEnabled(userData.twoFactorEnabled ?? false);
+        
+        // Set avatar if exists
+        if (userData.avatar) {
+          setAvatarPreview(userData.avatar);
+        }
+        
         setIsEditMode(true);
       } else {
         toast.error(response?.message || "Failed to fetch user data");
@@ -100,21 +151,27 @@ const CreateUser: React.FC = () => {
     try {
       setLoading(true);
 
+      // Create FormData for file upload
+      const submitData = new FormData();
+
       if (isEditMode && id) {
         // Update existing user
-        const payload = {
-          userId: id,
-          email: formData.emailAddress,
-          firstName: formData.accountName,
-          lastName: formData.accountCode,
-          mobileNo: formData.phoneNumber,
-          accountId: Number(formData.accountId),
-          roleId: Number(formData.roleId),
-          status: userStatus,
-          twoFactorEnabled: twoFactorEnabled,
-        };
+        submitData.append("userId", id as string);
+        submitData.append("email", formData.emailAddress);
+        submitData.append("firstName", formData.accountName);
+        submitData.append("lastName", formData.accountCode);
+        submitData.append("mobileNo", formData.phoneNumber);
+        submitData.append("accountId", formData.accountId.toString());
+        submitData.append("roleId", formData.roleId.toString());
+        submitData.append("status", userStatus.toString());
+        submitData.append("twoFactorEnabled", twoFactorEnabled.toString());
 
-        const response = await updateUser(id, payload);
+        // Add avatar file if exists
+        if (avatarFile) {
+          submitData.append("avatar", avatarFile);
+        }
+
+        const response = await updateUser(id, submitData);
         if (response.statusCode === 200) {
           toast.success(response.message || "User updated successfully!");
           router.push("/users");
@@ -123,18 +180,21 @@ const CreateUser: React.FC = () => {
         }
       } else {
         // Create new user
-        const payload = {
-          email: formData.emailAddress,
-          password: "string", // TODO: replace this with actual password input if you have one
-          firstName: formData.accountName,
-          lastName: formData.accountCode,
-          accountId: Number(formData.accountId),
-          roleId: Number(formData.roleId),
-          twoFactorEnabled: twoFactorEnabled,
-          status: userStatus,
-        };
+        submitData.append("email", formData.emailAddress);
+        submitData.append("password", "string"); // TODO: replace this with actual password input
+        submitData.append("firstName", formData.accountName);
+        submitData.append("lastName", formData.accountCode);
+        submitData.append("accountId", formData.accountId.toString());
+        submitData.append("roleId", formData.roleId.toString());
+        submitData.append("twoFactorEnabled", twoFactorEnabled.toString());
+        submitData.append("status", userStatus.toString());
 
-        const response = await createUser(payload);
+        // Add avatar file if exists
+        if (avatarFile) {
+          submitData.append("avatar", avatarFile);
+        }
+
+        const response = await createUser(submitData);
         if (response.statusCode === 200) {
           toast.success(response.message || "User created successfully!");
           router.push("/users");
@@ -178,7 +238,7 @@ const CreateUser: React.FC = () => {
 
   const tabs = [
     { id: "profile" as TabType, label: "Profile" },
-    { id: "access" as TabType, label: "Access" },
+    { id: "access" as TabType, label: "Access & Roles" },
     { id: "security" as TabType, label: "Security" },
   ];
 
@@ -208,75 +268,68 @@ const CreateUser: React.FC = () => {
         className={`min-h-screen ${isDark ? "bg-background" : ""} p-3 sm:p-4 md:p-6`}
       >
         {/* Header */}
-        <div className="mx-auto mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+        <div className="mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
             <div>
               <h1
-                className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 ${isDark ? "text-foreground" : "text-gray-900"}`}
+                className={`text-xl sm:text-2xl md:text-3xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
               >
-                {isEditMode ? "Update User" : "Create New User"}
+                {isEditMode ? "Edit User" : "Create User"}
               </h1>
               <p
-                className={`text-xs sm:text-sm md:text-base ${isDark ? "text-gray-400" : "text-gray-600"}`}
+                className={`text-xs sm:text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}
               >
                 Manage user identity, access scope, and security settings.
               </p>
             </div>
-            <div className="flex gap-2 sm:gap-3 sm:flex-shrink-0">
+            <div className="flex gap-2 sm:gap-3">
               <button
-                className={`flex-1 sm:flex-none px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg text-sm sm:text-base font-medium transition-colors ${
+                onClick={() => router.push("/users")}
+                className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm sm:text-base rounded-lg font-medium transition-colors ${
                   isDark
-                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
+                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
                 }`}
-                onClick={() => router.back()}
-                disabled={loading}
               >
                 Cancel
               </button>
               <button
-                className="flex-1 sm:flex-none text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: selectedColor }}
                 onClick={handleSubmit}
                 disabled={loading}
+                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm sm:text-base rounded-lg font-medium text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: selectedColor }}
               >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span className="whitespace-nowrap">
-                      {isEditMode ? "Updating..." : "Creating..."}
-                    </span>
-                  </>
-                ) : (
-                  <span className="whitespace-nowrap">
-                    {isEditMode ? "Update User" : "Create User"}
-                  </span>
-                )}
+                {loading
+                  ? "Saving..."
+                  : isEditMode
+                    ? "Update User"
+                    : "Create User"}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Tabs - Scrollable on mobile */}
-        <div className="mx-auto mb-4 sm:mb-6 overflow-x-auto scrollbar-hide">
-          <div
-            className={`inline-flex rounded-lg p-1 min-w-max ${
-              isDark ? "bg-gray-800" : "bg-gray-100"
-            }`}
-          >
+        {/* Tabs */}
+        <div
+          className={`border-b ${isDark ? "border-gray-700" : "border-gray-200"} mb-4 sm:mb-6`}
+        >
+          <div className="flex gap-1 sm:gap-2 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium transition-all whitespace-nowrap ${
+                className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
                   activeTab === tab.id
-                    ? isDark
-                      ? "bg-gray-700 text-white"
-                      : "bg-white text-gray-900 shadow-sm"
+                    ? `text-[${selectedColor}]`
                     : isDark
-                      ? "text-gray-400 hover:text-gray-300"
-                      : "text-gray-600 hover:text-gray-900"
+                      ? "text-gray-400 border-transparent hover:text-gray-300"
+                      : "text-gray-600 border-transparent hover:text-gray-900"
                 }`}
+                style={{
+                  borderBottomColor:
+                    activeTab === tab.id ? selectedColor : "transparent",
+                  color: activeTab === tab.id ? selectedColor : undefined,
+                }}
               >
                 {tab.label}
               </button>
@@ -284,14 +337,14 @@ const CreateUser: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="mx-auto">
+        {/* Tab Content */}
+        <div>
           {/* Profile Tab */}
           {activeTab === "profile" && (
             <Card isDark={isDark}>
               <div className="p-4 sm:p-6">
                 <div className="flex items-center gap-2 mb-1">
-                  <Building2
+                  <User
                     className={`w-4 h-4 sm:w-5 sm:h-5`}
                     style={{ color: selectedColor }}
                   />
@@ -307,11 +360,88 @@ const CreateUser: React.FC = () => {
                   Basic identity details used for login and display.
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                {/* Avatar Upload Section */}
+                <div className="mb-6">
+                  <label
+                    className={`block text-xs sm:text-sm font-medium mb-3 ${
+                      isDark ? "text-gray-300" : "text-gray-700"
+                    }`}
+                  >
+                    Profile Picture
+                  </label>
+                  <div className="flex items-center gap-4">
+                    {/* Avatar Preview */}
+                    <div className="relative">
+                      <div
+                        className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center overflow-hidden ${
+                          isDark
+                            ? "bg-gray-800 border-2 border-gray-700"
+                            : "bg-gray-100 border-2 border-gray-300"
+                        }`}
+                      >
+                        {avatarPreview ? (
+                          <img
+                            src={avatarPreview}
+                            alt="Avatar preview"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <User
+                            className={`w-10 h-10 sm:w-12 sm:h-12 ${
+                              isDark ? "text-gray-600" : "text-gray-400"
+                            }`}
+                          />
+                        )}
+                      </div>
+                      {avatarPreview && (
+                        <button
+                          onClick={handleRemoveAvatar}
+                          className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition-colors"
+                          title="Remove avatar"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Upload Button */}
+                    <div className="flex-1">
+                      <label
+                        htmlFor="avatar-upload"
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium cursor-pointer transition-colors ${
+                          isDark
+                            ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
+                            : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                        }`}
+                      >
+                        <Upload className="w-4 h-4" />
+                        <span className="text-sm">Change Avatar</span>
+                      </label>
+                      <input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                      <p
+                        className={`text-xs mt-2 ${
+                          isDark ? "text-gray-400" : "text-gray-600"
+                        }`}
+                      >
+                        JPG, PNG, GIF or WebP. Max size 5MB.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {/* First Name */}
                   <div>
                     <label
-                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${
+                        isDark ? "text-gray-300" : "text-gray-700"
+                      }`}
                     >
                       First Name
                     </label>
@@ -332,7 +462,9 @@ const CreateUser: React.FC = () => {
                   {/* Last Name */}
                   <div>
                     <label
-                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${
+                        isDark ? "text-gray-300" : "text-gray-700"
+                      }`}
                     >
                       Last Name
                     </label>
@@ -353,7 +485,9 @@ const CreateUser: React.FC = () => {
                   {/* Email Address */}
                   <div>
                     <label
-                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${
+                        isDark ? "text-gray-300" : "text-gray-700"
+                      }`}
                     >
                       Email Address
                     </label>
@@ -374,7 +508,9 @@ const CreateUser: React.FC = () => {
                   {/* Phone Number */}
                   <div>
                     <label
-                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${
+                        isDark ? "text-gray-300" : "text-gray-700"
+                      }`}
                     >
                       Phone Number
                     </label>
@@ -401,31 +537,31 @@ const CreateUser: React.FC = () => {
             <Card isDark={isDark}>
               <div className="p-4 sm:p-6">
                 <div className="flex items-center gap-2 mb-1">
-                  <User
+                  <Building2
                     className={`w-4 h-4 sm:w-5 sm:h-5`}
                     style={{ color: selectedColor }}
                   />
                   <h2
                     className={`text-lg sm:text-xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
                   >
-                    Role & Scope
+                    Access & Roles
                   </h2>
                 </div>
                 <p
                   className={`text-xs sm:text-sm mb-4 sm:mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}
                 >
-                  Define what this user can do and which data they can see.
+                  Define user permissions and account associations.
                 </p>
 
                 <div className="space-y-4 sm:space-y-6">
-                  {/* System Role */}
+                  {/* Role Assignment */}
                   <div>
                     <label
                       className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${
                         isDark ? "text-gray-300" : "text-gray-700"
                       }`}
                     >
-                      System Role
+                      Role Assignment
                     </label>
                     <select
                       name="roleId"

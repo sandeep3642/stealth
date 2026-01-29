@@ -1,4 +1,4 @@
-export interface FormData {
+export interface UserFormData {
   accountName: string;
   accountCode: string;
   accountId: number;
@@ -8,6 +8,8 @@ export interface FormData {
   phoneNumber: string;
   location: string;
   roleId: number;
+  avatar?: string; // Avatar URL or base64 string
+  avatarFile?: File | null; // Avatar file for upload
 }
 
 export interface UserItem {
@@ -21,4 +23,5 @@ export interface UserItem {
   status: boolean;
   twoFactorEnabled: boolean;
   lastLoginAt: string | null;
+  avatar?: string; // Avatar URL for display
 }
