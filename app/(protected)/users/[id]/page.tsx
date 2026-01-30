@@ -24,6 +24,7 @@ const CreateUser: React.FC = () => {
   const { selectedColor } = useColor();
   const params = useParams();
   const id = params?.id;
+  const normalizedId = Array.isArray(id) ? id[0] : id;
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   const [isEditMode, setIsEditMode] = useState(false);
@@ -65,9 +66,17 @@ const CreateUser: React.FC = () => {
     const file = e.target.files?.[0];
     if (file) {
       // Validate file type
-      const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+      const validTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+      ];
       if (!validTypes.includes(file.type)) {
-        toast.error("Please upload a valid image file (JPG, PNG, GIF, or WebP)");
+        toast.error(
+          "Please upload a valid image file (JPG, PNG, GIF, or WebP)",
+        );
         return;
       }
 
@@ -86,7 +95,7 @@ const CreateUser: React.FC = () => {
         setAvatarPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-      
+
       setShowAvatarModal(false);
       toast.success("Avatar uploaded successfully!");
     }
@@ -120,12 +129,12 @@ const CreateUser: React.FC = () => {
         });
         setUserStatus(userData.status ?? true);
         setTwoFactorEnabled(userData.twoFactorEnabled ?? false);
-        
+
         // Set avatar if exists
         if (userData.avatar) {
           setAvatarPreview(userData.avatar);
         }
-        
+
         setIsEditMode(true);
       } else {
         toast.error(response?.message || "Failed to fetch user data");
@@ -139,12 +148,34 @@ const CreateUser: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (
-      !formData.accountName ||
-      !formData.accountCode ||
-      !formData.emailAddress
-    ) {
-      toast.error("Please fill all required fields");
+    // Validation
+    const validationErrors = [];
+
+    if (!formData.accountName?.trim()) {
+      validationErrors.push("First Name is required");
+    }
+
+    if (!formData.accountCode?.trim()) {
+      validationErrors.push("Last Name is required");
+    }
+
+    if (!formData.emailAddress?.trim()) {
+      validationErrors.push("Email Address is required");
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.emailAddress)) {
+      validationErrors.push("Please enter a valid email address");
+    }
+
+    if (!formData.accountId || formData.accountId <= 0) {
+      validationErrors.push("Account Association is required");
+    }
+
+    if (!formData.roleId || formData.roleId <= 0) {
+      validationErrors.push("System Role is required");
+    }
+
+    // Show all validation errors
+    if (validationErrors.length > 0) {
+      validationErrors.forEach((error) => toast.error(error));
       return;
     }
 
@@ -154,64 +185,74 @@ const CreateUser: React.FC = () => {
       // Create FormData for file upload
       const submitData = new FormData();
 
-      if (isEditMode && id) {
-        // Update existing user
-        submitData.append("userId", id as string);
-        submitData.append("email", formData.emailAddress);
-        submitData.append("firstName", formData.accountName);
-        submitData.append("lastName", formData.accountCode);
-        submitData.append("mobileNo", formData.phoneNumber);
-        submitData.append("accountId", formData.accountId.toString());
-        submitData.append("roleId", formData.roleId.toString());
-        submitData.append("status", userStatus.toString());
-        submitData.append("twoFactorEnabled", twoFactorEnabled.toString());
+      // Common fields
+      submitData.append("email", formData.emailAddress.trim());
+      submitData.append("firstName", formData.accountName.trim());
+      submitData.append("lastName", formData.accountCode.trim());
+      submitData.append("accountId", formData.accountId.toString());
+      submitData.append("roleId", formData.roleId.toString());
+      submitData.append("status", userStatus.toString());
+      submitData.append("twoFactorEnabled", twoFactorEnabled.toString());
 
-        // Add avatar file if exists
-        if (avatarFile) {
-          submitData.append("avatar", avatarFile);
-        }
-
-        const response = await updateUser(id, submitData);
-        if (response.statusCode === 200) {
-          toast.success(response.message || "User updated successfully!");
-          router.push("/users");
-        } else {
-          toast.error(response.message || "Failed to update user");
-        }
-      } else {
-        // Create new user
-        submitData.append("email", formData.emailAddress);
-        submitData.append("password", "string"); // TODO: replace this with actual password input
-        submitData.append("firstName", formData.accountName);
-        submitData.append("lastName", formData.accountCode);
-        submitData.append("accountId", formData.accountId.toString());
-        submitData.append("roleId", formData.roleId.toString());
-        submitData.append("twoFactorEnabled", twoFactorEnabled.toString());
-        submitData.append("status", userStatus.toString());
-
-        // Add avatar file if exists
-        if (avatarFile) {
-          submitData.append("avatar", avatarFile);
-        }
-
-        const response = await createUser(submitData);
-        if (response.statusCode === 200) {
-          toast.success(response.message || "User created successfully!");
-          router.push("/users");
-        } else {
-          toast.error(response.message || "Failed to create user");
-        }
+      // Add phone number if provided
+      if (formData.phoneNumber?.trim()) {
+        submitData.append("mobileNo", formData.phoneNumber.trim());
       }
-    } catch (error) {
+
+      // Add avatar file if exists
+      if (avatarFile) {
+        submitData.append("avatar", avatarFile);
+      }
+
+      let response;
+
+      if (isEditMode && normalizedId) {
+        // Update existing user
+        submitData.append("userId", normalizedId);
+        response = await updateUser(normalizedId, submitData);
+      } else {
+        // Create new user - add default password
+        // TODO: Implement proper password generation or collection
+        submitData.append("password", "TempPassword@123");
+        response = await createUser(submitData);
+      }
+
+      // Handle response
+      if (response?.statusCode === 200) {
+        toast.success(
+          response.message ||
+            `User ${isEditMode ? "updated" : "created"} successfully!`,
+        );
+
+        // Redirect after short delay to allow toast to be visible
+        setTimeout(() => {
+          router.push("/users");
+        }, 1000);
+      } else {
+        toast.error(
+          response?.message ||
+            `Failed to ${isEditMode ? "update" : "create"} user`,
+        );
+      }
+    } catch (error: any) {
       console.error("Error saving user:", error);
-      toast.error(
-        isEditMode ? "Failed to update user" : "Failed to create user",
-      );
+
+      // More specific error messages
+      if (error.response?.status === 409) {
+        toast.error("A user with this email already exists");
+      } else if (error.response?.status === 400) {
+        toast.error(error.response?.data?.message || "Invalid data provided");
+      } else if (error.response?.status === 403) {
+        toast.error("You don't have permission to perform this action");
+      } else {
+        toast.error(
+          `Failed to ${isEditMode ? "update" : "create"} user. Please try again.`,
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
-
   async function fetchAllAcounts() {
     const response = await getAllAccounts();
     if (response && response.statusCode === 200) {
@@ -219,28 +260,39 @@ const CreateUser: React.FC = () => {
     }
   }
 
-  async function fetchAllRoles() {
-    const response = await getAllRoles();
-    if (response && response.statusCode === 200) {
-      setRoles(response.data);
+  async function fetchAllRoles(id: number) {
+    if (id > 0) {
+      const response = await getAllRoles(id);
+      if (response && response.statusCode === 200) {
+        setRoles(response.data);
+      } else {
+        setRoles([]);
+      }
     }
   }
 
   useEffect(() => {
     fetchAllAcounts();
-    fetchAllRoles();
 
-    // If id exists in params, fetch user data
-    if (id) {
-      fetchUserData(id as string);
+    // Only fetch if id exists and is not "0"
+    if (normalizedId && normalizedId !== "0") {
+      fetchUserData(normalizedId);
     }
-  }, [id]);
+  }, [normalizedId]);
 
   const tabs = [
     { id: "profile" as TabType, label: "Profile" },
     { id: "access" as TabType, label: "Access & Roles" },
     { id: "security" as TabType, label: "Security" },
   ];
+
+  useEffect(() => {
+    if (formData.accountId) {
+      fetchAllRoles(formData.accountId);
+    } else {
+      setRoles([]);
+    }
+  }, [formData.accountId]);
 
   if (loading && isEditMode) {
     return (
@@ -554,34 +606,6 @@ const CreateUser: React.FC = () => {
                 </p>
 
                 <div className="space-y-4 sm:space-y-6">
-                  {/* Role Assignment */}
-                  <div>
-                    <label
-                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${
-                        isDark ? "text-gray-300" : "text-gray-700"
-                      }`}
-                    >
-                      Role Assignment
-                    </label>
-                    <select
-                      name="roleId"
-                      value={formData.roleId}
-                      onChange={handleInputChange}
-                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
-                        isDark
-                          ? "bg-gray-800 border-gray-700 text-foreground focus:border-purple-500"
-                          : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                    >
-                      <option value="">Select Role</option>
-                      {roles?.map((role: { id: number; value: string }) => (
-                        <option key={role.id} value={role.id}>
-                          {role.value}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
                   {/* Account Association */}
                   <div>
                     <label
@@ -615,6 +639,34 @@ const CreateUser: React.FC = () => {
                     >
                       The user will primarily belong to this account.
                     </p>
+                  </div>
+
+                  {/* System Role */}
+                  <div>
+                    <label
+                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${
+                        isDark ? "text-gray-300" : "text-gray-700"
+                      }`}
+                    >
+                      System Role
+                    </label>
+                    <select
+                      name="roleId"
+                      value={formData.roleId}
+                      onChange={handleInputChange}
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
+                        isDark
+                          ? "bg-gray-800 border-gray-700 text-foreground focus:border-purple-500"
+                          : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                    >
+                      <option value="">Select Role</option>
+                      {roles?.map((role: { id: number; value: string }) => (
+                        <option key={role.id} value={role.id}>
+                          {role.value}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>

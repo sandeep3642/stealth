@@ -5,7 +5,7 @@ export const getAllAccounts = async () => {
   return res.data;
 };
 
-export const getAllRoles = async () => {
-  const res = await api.get(`/api/common/dropdowns/roles?accountId=7`);
+export const getAllRoles = async (id) => {
+  const res = await api.get(`/api/common/dropdowns/roles?accountId=${id}`);
   return res.data;
 };

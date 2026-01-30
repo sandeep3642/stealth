@@ -2,30 +2,37 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: "http://fleetbharat.com:8080/",
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
-// 🟦 Add Bearer Token automatically (if available)
+// 🟦 Request Interceptor
 api.interceptors.request.use(
   (config) => {
+    // Add Bearer Token
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("authToken");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
+
+    // Auto-detect and set Content-Type
+    if (config.data instanceof FormData) {
+      // Let browser set Content-Type with boundary for FormData
+      delete config.headers["Content-Type"];
+    } else if (!config.headers["Content-Type"]) {
+      // Default to JSON for other requests
+      config.headers["Content-Type"] = "application/json";
+    }
+
     return config;
   },
   (error) => Promise.reject(error),
 );
 
-// 🟩 Response Interceptor (no toast here)
+// 🟩 Response Interceptor
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // ❌ No toast here — only reject error to be handled in component
     return Promise.reject(error);
   },
 );
