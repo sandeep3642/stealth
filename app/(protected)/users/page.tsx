@@ -89,7 +89,7 @@ const Users: React.FC = () => {
     const response = await deleteUser(row.userId);
 
     if (response && response.statusCode === 200) {
-      toast.success(response.message);
+      // toast.success(response.message);
       fetchUsers();
     } else {
       toast.error(response.message);
@@ -138,7 +138,7 @@ const Users: React.FC = () => {
     const response = await getUsers(pageNo, pageSize);
 
     if (response && response.statusCode === 200) {
-      toast.success(response.message);
+      // toast.success(response.message);
       setSummaryData(response.data.summary);
       setTotalRecords(response.data.users.totalRecords || 0);
       setData(response.data.users.items || []);

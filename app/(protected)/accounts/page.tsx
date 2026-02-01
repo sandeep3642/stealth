@@ -88,7 +88,7 @@ const Accounts: React.FC = () => {
   async function getAccountsList() {
     const response = await getAccounts(pageNo, pageSize, debouncedQuery);
     if (response && response.statusCode === 200) {
-      toast.success(response.message);
+      // toast.success(response.message);
       setData(response.data.items);
       setTotalRecords(response.data.totalRecords);
     }

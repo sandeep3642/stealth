@@ -98,8 +98,6 @@ const CommonTable: React.FC<CommonTableProps> = ({
   ): React.ReactNode => {
     const value = row[column.key];
 
-    console.log("sdjjkshfshkjd", column);
-
     if (column.render) {
       return column.render(value, row);
     }

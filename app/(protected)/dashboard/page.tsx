@@ -117,7 +117,7 @@ const Dashboard: React.FC = () => {
             />
             <MetricCard
               icon={dealersImg}
-              label="Dealers/Distributors"
+              label="Dealers Distributors"
               value={85}
               iconBgColor="bg-emerald-50"
               iconColor="text-emerald-600"

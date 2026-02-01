@@ -99,53 +99,51 @@ const AddRole: React.FC = () => {
 
       // Get accountId from localStorage
       const accountId = localStorage.getItem("accountId");
-      if (!accountId) {
-        toast.error("Account ID not found in localStorage");
-        return;
-      }
+      if (accountId) {
+        const response = await getRoleById(id, accountId);
+        if (response && response.statusCode === 200) {
+          const roleData = response.data;
 
-      const response = await getRoleById(id, accountId);
+          // Set form data from API response
+          setFormData((prev) => ({
+            ...prev,
+            account: roleData.accountId?.toString() || accountId,
+            roleName: roleData.roleName || "",
+            description: roleData.description || "",
+          }));
 
-      if (response && response.statusCode === 200) {
-        const roleData = response.data;
+          // Merge existing permissions with API rights
+          setFormData((prev) => {
+            const updatedPermissions = prev.permissions.map((perm) => {
+              const right = roleData.rights?.find(
+                (r: any) => r.formId === perm.formId,
+              );
 
-        // Set form data from API response
-        setFormData((prev) => ({
-          ...prev,
-          account: roleData.accountId?.toString() || accountId,
-          roleName: roleData.roleName || "",
-          description: roleData.description || "",
-        }));
+              if (right) {
+                return {
+                  ...perm,
+                  read: right.canRead || false,
+                  write: right.canWrite || false,
+                  delete: right.canDelete || false,
+                  export: right.canExport || false,
+                };
+              }
+              return perm;
+            });
 
-        // Merge existing permissions with API rights
-        setFormData((prev) => {
-          const updatedPermissions = prev.permissions.map((perm) => {
-            const right = roleData.rights?.find(
-              (r: any) => r.formId === perm.formId,
-            );
-
-            if (right) {
-              return {
-                ...perm,
-                read: right.canRead || false,
-                write: right.canWrite || false,
-                delete: right.canDelete || false,
-                export: right.canExport || false,
-              };
-            }
-            return perm;
+            return {
+              ...prev,
+              permissions: updatedPermissions,
+            };
           });
 
-          return {
-            ...prev,
-            permissions: updatedPermissions,
-          };
-        });
-
-        setIsEditMode(true);
-      } else {
-        toast.error(response?.message || "Failed to fetch role data");
+          setIsEditMode(true);
+        } else {
+          toast.error(response?.message || "Failed to fetch role data");
+        }
       }
+
+
     } catch (error) {
       console.error("Error fetching role:", error);
       toast.error("Failed to load role data");
@@ -325,11 +323,10 @@ const AddRole: React.FC = () => {
             </div>
             <div className="flex gap-2 sm:gap-3 sm:flex-shrink-0">
               <button
-                className={`flex-1 sm:flex-none px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg text-sm sm:text-base font-medium transition-colors ${
-                  isDark
+                className={`flex-1 sm:flex-none px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg text-sm sm:text-base font-medium transition-colors ${isDark
                     ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
                     : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-                }`}
+                  }`}
                 onClick={() => router.back()}
                 disabled={loading}
               >
@@ -394,13 +391,11 @@ const AddRole: React.FC = () => {
                     onChange={handleInputChange}
                     required
                     disabled={isEditMode}
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                      isDark
+                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
                         ? "bg-gray-800 border-gray-700 text-foreground focus:border-purple-500"
                         : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
-                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20 ${
-                      isEditMode ? "opacity-60 cursor-not-allowed" : ""
-                    }`}
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20 ${isEditMode ? "opacity-60 cursor-not-allowed" : ""
+                      }`}
                   >
                     <option value="">Select Account</option>
                     {accounts &&
@@ -426,11 +421,10 @@ const AddRole: React.FC = () => {
                     required
                     onChange={handleInputChange}
                     placeholder="e.g. Regional Manager"
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                      isDark
+                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
                         ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500 focus:border-purple-500"
                         : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500"
-                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
 
@@ -447,11 +441,10 @@ const AddRole: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Briefly describe the role's purpose"
                     rows={3}
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors resize-none ${
-                      isDark
+                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors resize-none ${isDark
                         ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500 focus:border-purple-500"
                         : "bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:border-purple-500"
-                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
               </div>
@@ -483,18 +476,16 @@ const AddRole: React.FC = () => {
                       className={`border-b ${isDark ? "border-gray-700" : "border-gray-200"}`}
                     >
                       <th
-                        className={`text-left py-3 px-4 font-semibold text-sm ${
-                          isDark ? "text-gray-300" : "text-gray-700"
-                        }`}
+                        className={`text-left py-3 px-4 font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"
+                          }`}
                       >
                         RESOURCE
                       </th>
                       <th className="text-center py-3 px-4">
                         <div className="flex flex-col items-center gap-1">
                           <span
-                            className={`font-semibold text-sm ${
-                              isDark ? "text-gray-300" : "text-gray-700"
-                            }`}
+                            className={`font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"
+                              }`}
                           >
                             READ
                           </span>
@@ -510,9 +501,8 @@ const AddRole: React.FC = () => {
                       <th className="text-center py-3 px-4">
                         <div className="flex flex-col items-center gap-1">
                           <span
-                            className={`font-semibold text-sm ${
-                              isDark ? "text-gray-300" : "text-gray-700"
-                            }`}
+                            className={`font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"
+                              }`}
                           >
                             WRITE
                           </span>
@@ -528,9 +518,8 @@ const AddRole: React.FC = () => {
                       <th className="text-center py-3 px-4">
                         <div className="flex flex-col items-center gap-1">
                           <span
-                            className={`font-semibold text-sm ${
-                              isDark ? "text-gray-300" : "text-gray-700"
-                            }`}
+                            className={`font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"
+                              }`}
                           >
                             DELETE
                           </span>
@@ -546,9 +535,8 @@ const AddRole: React.FC = () => {
                       <th className="text-center py-3 px-4">
                         <div className="flex flex-col items-center gap-1">
                           <span
-                            className={`font-semibold text-sm ${
-                              isDark ? "text-gray-300" : "text-gray-700"
-                            }`}
+                            className={`font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"
+                              }`}
                           >
                             EXPORT
                           </span>
@@ -570,9 +558,8 @@ const AddRole: React.FC = () => {
                         className={`border-b ${isDark ? "border-gray-700" : "border-gray-200"}`}
                       >
                         <td
-                          className={`py-4 px-4 font-medium ${
-                            isDark ? "text-foreground" : "text-gray-900"
-                          }`}
+                          className={`py-4 px-4 font-medium ${isDark ? "text-foreground" : "text-gray-900"
+                            }`}
                         >
                           {permission.resource}
                         </td>
