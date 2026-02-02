@@ -307,27 +307,46 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     const getHeaderClasses = (): HeaderClasses => {
       if (selectedColor && colorBlock && !isDark) {
         return {
-          bg: "bg-primary",
+          header: "bg-primary border-b border-primary",
           text: "text-primary-foreground",
-          border: "border-primary",
-          iconHover: "hover:bg-white/20",
-          profileHover: "hover:bg-white/10",
+          textSecondary: "text-primary-foreground/70",
+          hover: "hover:bg-white/20",
+          inputBg: "bg-white/10",
+          inputBorder: "border-white/20",
+          inputText: "text-primary-foreground",
+          hoverBg: "hover:bg-white/10",
+          dropdown: "bg-primary",
+          dropdownHover: "hover:bg-white/10",
+          useCustomBg: true,
+          customBg: selectedColor,
         };
       } else if (isDark) {
         return {
-          bg: "bg-card",
+          header: "bg-card border-b border-border",
           text: "text-foreground",
-          border: "border-border",
-          iconHover: "hover:bg-background/10",
-          profileHover: "hover:bg-background/10",
+          textSecondary: "text-foreground/70",
+          hover: "hover:bg-background/10",
+          inputBg: "bg-background/50",
+          inputBorder: "border-border",
+          inputText: "text-foreground",
+          hoverBg: "hover:bg-background/10",
+          dropdown: "bg-card",
+          dropdownHover: "hover:bg-background/10",
+          useCustomBg: false,
         };
       } else {
         return {
-          bg: "bg-card",
+          header: "bg-card border-b border-border",
           text: "text-foreground",
-          border: "border-border",
-          iconHover: "hover:bg-background",
-          profileHover: "hover:bg-background",
+          textSecondary: "text-foreground/70",
+          hover: "hover:bg-background",
+          inputBg: "bg-background",
+          inputBorder: "border-border",
+          inputText: "text-foreground",
+          hoverBg: "hover:bg-background",
+          dropdown: "bg-card",
+          dropdownHover: "hover:bg-background",
+          useCustomBg: false,
         };
       }
     };
@@ -336,7 +355,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
     return (
       <header
-        className={`${headerClasses.bg} ${headerClasses.text} border-b ${headerClasses.border} sticky top-0 z-40`}
+        className={`${headerClasses.header} ${headerClasses.text} sticky top-0 z-40`}
         style={
           headerClasses.useCustomBg
             ? { background: headerClasses.customBg }
@@ -348,7 +367,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           <div className="flex items-center gap-6">
             <button
               onClick={() => setMenuLayout("sidebar")}
-              className={`p-2 rounded-lg ${headerClasses.iconHover}`}
+              className={`p-2 rounded-lg ${headerClasses.hover}`}
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -367,25 +386,25 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               <input
                 type="text"
                 placeholder="Search..."
-                className={`pl-10 pr-4 py-2 rounded-lg bg-background/50 border ${headerClasses.border} focus:outline-none focus:ring-2 focus:ring-primary w-64`}
+                className={`pl-10 pr-4 py-2 rounded-lg ${headerClasses.inputBg} border ${headerClasses.inputBorder} focus:outline-none focus:ring-2 focus:ring-primary w-64`}
               />
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <button className={`p-2 rounded-lg ${headerClasses.iconHover}`}>
+            <button className={`p-2 rounded-lg ${headerClasses.hover}`}>
               <Globe className="w-5 h-5" />
             </button>
-            <button className={`p-2 rounded-lg ${headerClasses.iconHover}`}>
+            <button className={`p-2 rounded-lg ${headerClasses.hover}`}>
               <Bell className="w-5 h-5" />
             </button>
             <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${headerClasses.profileHover}`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${headerClasses.hoverBg}`}
               >
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
-                  {getInitials(user?.firstName, user?.lastName)}
+                  {getInitials(user?.firstName)}
                 </div>
                 <ChevronDown className="w-4 h-4 opacity-60" />
               </button>
@@ -414,7 +433,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                   <Link
                     key={item.id}
                     href={item.path || "#"}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg ${headerClasses.iconHover
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg ${headerClasses.hover
                       } ${item.active ? "bg-primary/10" : ""}`}
                   >
                     <IconComponent className="w-4 h-4" />
@@ -434,27 +453,46 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     const getHeaderClasses = (): HeaderClasses => {
       if (selectedColor && colorBlock && !isDark) {
         return {
-          bg: "bg-primary",
+          header: "bg-primary border-b border-primary",
           text: "text-primary-foreground",
-          border: "border-primary",
-          iconHover: "hover:bg-white/20",
-          profileHover: "hover:bg-white/10",
+          textSecondary: "text-primary-foreground/70",
+          hover: "hover:bg-white/20",
+          inputBg: "bg-white/10",
+          inputBorder: "border-white/20",
+          inputText: "text-primary-foreground",
+          hoverBg: "hover:bg-white/10",
+          dropdown: "bg-primary",
+          dropdownHover: "hover:bg-white/10",
+          useCustomBg: true,
+          customBg: selectedColor,
         };
       } else if (isDark) {
         return {
-          bg: "bg-card",
+          header: "bg-card border-b border-border",
           text: "text-foreground",
-          border: "border-border",
-          iconHover: "hover:bg-background/10",
-          profileHover: "hover:bg-background/10",
+          textSecondary: "text-foreground/70",
+          hover: "hover:bg-background/10",
+          inputBg: "bg-background/50",
+          inputBorder: "border-border",
+          inputText: "text-foreground",
+          hoverBg: "hover:bg-background/10",
+          dropdown: "bg-card",
+          dropdownHover: "hover:bg-background/10",
+          useCustomBg: false,
         };
       } else {
         return {
-          bg: "bg-card",
+          header: "bg-card border-b border-border",
           text: "text-foreground",
-          border: "border-border",
-          iconHover: "hover:bg-background",
-          profileHover: "hover:bg-background",
+          textSecondary: "text-foreground/70",
+          hover: "hover:bg-background",
+          inputBg: "bg-background",
+          inputBorder: "border-border",
+          inputText: "text-foreground",
+          hoverBg: "hover:bg-background",
+          dropdown: "bg-card",
+          dropdownHover: "hover:bg-background",
+          useCustomBg: false,
         };
       }
     };
@@ -463,7 +501,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
     return (
       <header
-        className={`${headerClasses.bg} ${headerClasses.text} border-b ${headerClasses.border} sticky top-0 z-40`}
+        className={`${headerClasses.header} ${headerClasses.text} sticky top-0 z-40`}
         style={
           headerClasses.useCustomBg
             ? { background: headerClasses.customBg }
@@ -491,7 +529,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                   setIsSidebarOpen(!isSidebarOpen);
                 }
               }}
-              className={`p-2 rounded-lg ${headerClasses.iconHover}`}
+              className={`p-2 rounded-lg ${headerClasses.hover}`}
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -501,25 +539,25 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               <input
                 type="text"
                 placeholder="Search..."
-                className={`pl-10 pr-4 py-2 rounded-lg bg-background/50 border ${headerClasses.border} focus:outline-none focus:ring-2 focus:ring-primary w-64`}
+                className={`pl-10 pr-4 py-2 rounded-lg ${headerClasses.inputBg} border ${headerClasses.inputBorder} focus:outline-none focus:ring-2 focus:ring-primary w-64`}
               />
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <button className={`p-2 rounded-lg ${headerClasses.iconHover}`}>
+            <button className={`p-2 rounded-lg ${headerClasses.hover}`}>
               <Globe className="w-5 h-5" />
             </button>
-            <button className={`p-2 rounded-lg ${headerClasses.iconHover}`}>
+            <button className={`p-2 rounded-lg ${headerClasses.hover}`}>
               <Bell className="w-5 h-5" />
             </button>
             <div className="relative">
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${headerClasses.profileHover}`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${headerClasses.hoverBg}`}
               >
                 <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
-                  {getInitials(user?.firstName, user?.lastName)}
+                  {getInitials(user?.firstName)}
                 </div>
                 <ChevronDown className="w-4 h-4 opacity-60" />
               </button>
