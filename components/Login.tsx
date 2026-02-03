@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import { AtSign, Lock, Eye, EyeOff } from "lucide-react";
 import { loginUser } from "@/services/authService";
 import { useRouter } from "next/navigation";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
+import { useColor } from "@/context/ColorContext";
 
 interface LoginComponentProps {
   onSwitchToRegister: () => void;
@@ -15,6 +16,13 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
   onSwitchToRegister,
   onSwitchToForgotPassword,
 }) => {
+  const {
+    selectedColor,
+    handleColorChange,
+    colorBlock,
+    setColorBlock,
+    hexToHsl,
+  } = useColor();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [email, setEmail] = useState("");
@@ -27,7 +35,7 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
   useEffect(() => {
     const savedEmail = localStorage.getItem("rememberedEmail");
     const savedPassword = localStorage.getItem("rememberedPassword");
-    
+
     if (savedEmail && savedPassword) {
       setEmail(savedEmail);
       setPassword(savedPassword);
@@ -55,11 +63,21 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
       }
 
       const response = await loginUser(email, password);
-      
+
       if (response.data.token) {
+        if (response.data.whiteLabel) {
+          const {
+            customEntryFqdn,
+            logoUrl,
+            primaryColorHex,
+            secondaryColorHex,
+            whiteLabelId,
+          } = response.data.whiteLabel;
+          handleColorChange(primaryColorHex);
+        }
         localStorage.setItem("authToken", response.data.token.accessToken);
         localStorage.setItem("user", JSON.stringify(response.data));
-        
+
         // Set cookie for middleware use
         Cookies.set("authToken", response.data.token.accessToken, {
           path: "/",
@@ -171,7 +189,7 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
                 Remember me
               </label>
             </div>
-            <button 
+            <button
               onClick={onSwitchToForgotPassword}
               className="text-xs sm:text-sm font-medium text-purple-600 hover:text-purple-700"
             >
