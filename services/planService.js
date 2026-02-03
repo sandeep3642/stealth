@@ -27,3 +27,24 @@ export const deletePlan = async (id) => {
   const res = await api.delete(`/api/plans/${id}`);
   return res.data;
 };
+
+export const updatePlan = async (id, payload) => {
+  try {
+    const res = await api.put(`/api/plans/${id}`, payload);
+    return res.data;
+  } catch (error) {
+    return (
+      error.response?.data || {
+        success: false,
+        statusCode: error.response?.status || 500,
+        message: error.response?.data?.message || "Network or server error",
+        data: null,
+      }
+    );
+  }
+};
+
+export const getById = async (id) => {
+  const res = await api.get(`/api/plans/${id}`);
+  return res.data;
+};

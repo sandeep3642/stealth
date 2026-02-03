@@ -22,6 +22,7 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
+import { getById, updatePlan, createPlan } from "@/services/planService";
 
 // Mock Theme and Color Contexts
 const useTheme = () => ({ isDark: false });
@@ -34,9 +35,8 @@ interface CardProps {
 
 const Card = ({ children, isDark }: CardProps) => (
   <div
-    className={`${isDark ? "bg-gray-900" : "bg-white"} rounded-xl shadow-lg p-6 border ${
-      isDark ? "border-gray-800" : "border-gray-200"
-    }`}
+    className={`${isDark ? "bg-gray-900" : "bg-white"} rounded-xl shadow-lg p-6 border ${isDark ? "border-gray-800" : "border-gray-200"
+      }`}
   >
     {children}
   </div>
@@ -134,11 +134,9 @@ const PlansManagement = () => {
     setLoading(true);
     try {
       // Replace with actual API call
-      const response = await fetch(
-        `http://fleetbharat.com:8080/api/plans/${id}`,
-      );
-      if (response.ok) {
-        const data = await response.json();
+      const response = getById(id)
+      if (response) {
+        const data = await response;
         // Map API response to form data
         setFormData({
           planName: data.structure.planName,
@@ -245,23 +243,17 @@ const PlansManagement = () => {
     };
 
     try {
-      const url = isEditMode
-        ? `http://fleetbharat.com:8080/api/plans/${id}`
-        : "http://fleetbharat.com:8080/api/plans";
+      let result:any;
 
-      const method = isEditMode ? "PUT" : "POST";
+      if (isEditMode) {
+        // Use updatePlan service function for edit mode
+        result = await updatePlan(id, payload);
+      } else {
+        // Use createPlan service function for create mode
+        result = await createPlan(payload);
+      }
 
-      const response = await fetch(url, {
-        method: method,
-        headers: {
-          "Content-Type": "application/json",
-          accept: "*/*",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        const result = await response.json();
+      if (result.success || result.statusCode === 200) {
         setSubmitStatus({
           type: "success",
           message: isEditMode
@@ -274,10 +266,9 @@ const PlansManagement = () => {
           router.push("/plans"); // Adjust to your plans list route
         }, 2000);
       } else {
-        const errorData = await response.json();
         setSubmitStatus({
           type: "error",
-          message: errorData.message || "Failed to save plan",
+          message: result.message || "Failed to save plan",
         });
       }
     } catch (error) {
@@ -348,11 +339,10 @@ const PlansManagement = () => {
         {/* Status Alert */}
         {submitStatus.type && (
           <div
-            className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
-              submitStatus.type === "success"
+            className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${submitStatus.type === "success"
                 ? "bg-green-50 border border-green-200"
                 : "bg-red-50 border border-red-200"
-            }`}
+              }`}
           >
             {submitStatus.type === "success" ? (
               <CheckCircle className="w-5 h-5 text-green-600" />
@@ -360,11 +350,10 @@ const PlansManagement = () => {
               <AlertCircle className="w-5 h-5 text-red-600" />
             )}
             <p
-              className={`text-sm font-medium ${
-                submitStatus.type === "success"
+              className={`text-sm font-medium ${submitStatus.type === "success"
                   ? "text-green-800"
                   : "text-red-800"
-              }`}
+                }`}
             >
               {submitStatus.message}
             </p>
@@ -386,11 +375,10 @@ const PlansManagement = () => {
             </div>
             <div className="flex gap-3 w-full sm:w-auto">
               <button
-                className={`flex-1 sm:flex-none px-6 py-3 rounded-lg font-medium transition-colors ${
-                  isDark
+                className={`flex-1 sm:flex-none px-6 py-3 rounded-lg font-medium transition-colors ${isDark
                     ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
                     : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-                }`}
+                  }`}
                 onClick={() => router.back()}
                 disabled={loading}
               >
@@ -452,11 +440,10 @@ const PlansManagement = () => {
                       onChange={handleInputChange}
                       placeholder="e.g. Premium Distributor Hub"
                       required
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                        isDark
+                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
                           ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                           : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     />
                   </div>
 
@@ -470,11 +457,10 @@ const PlansManagement = () => {
                       name="tenantCategory"
                       value={formData.tenantCategory}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                        isDark
+                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
                           ? "bg-gray-800 border-gray-700 text-white"
                           : "bg-white border-gray-300 text-gray-900"
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
                       {tenantCategories.map((cat) => (
                         <option key={cat} value={cat}>
@@ -494,11 +480,10 @@ const PlansManagement = () => {
                       name="settlementCurrency"
                       value={formData.settlementCurrency}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                        isDark
+                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
                           ? "bg-gray-800 border-gray-700 text-white"
                           : "bg-white border-gray-300 text-gray-900"
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
                       {currencies.map((curr) => (
                         <option key={curr} value={curr}>
@@ -518,11 +503,10 @@ const PlansManagement = () => {
                       name="billingInterval"
                       value={formData.billingInterval}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                        isDark
+                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
                           ? "bg-gray-800 border-gray-700 text-white"
                           : "bg-white border-gray-300 text-gray-900"
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
                       {billingIntervals.map((interval) => (
                         <option key={interval} value={interval}>
@@ -542,11 +526,10 @@ const PlansManagement = () => {
                       name="contractValidity"
                       value={formData.contractValidity}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                        isDark
+                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
                           ? "bg-gray-800 border-gray-700 text-white"
                           : "bg-white border-gray-300 text-gray-900"
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
                       {contractValidities.map((validity) => (
                         <option key={validity} value={validity}>
@@ -566,11 +549,10 @@ const PlansManagement = () => {
                       name="pricingModel"
                       value={formData.pricingModel}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                        isDark
+                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
                           ? "bg-gray-800 border-gray-700 text-white"
                           : "bg-white border-gray-300 text-gray-900"
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
                       {pricingModels.map((model) => (
                         <option key={model} value={model}>
@@ -610,11 +592,10 @@ const PlansManagement = () => {
                     value={formData.initialBasePrice}
                     onChange={handleInputChange}
                     placeholder="0"
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                      isDark
+                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
                         ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                         : "bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-400"
-                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
               </Card>
@@ -650,11 +631,10 @@ const PlansManagement = () => {
                       value={formData.amcCharge}
                       onChange={handleInputChange}
                       placeholder="0"
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                        isDark
+                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
                           ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                           : "bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-400"
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     />
                   </div>
                   <div>
@@ -669,11 +649,10 @@ const PlansManagement = () => {
                       value={formData.platformSubCharge}
                       onChange={handleInputChange}
                       placeholder="0"
-                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                        isDark
+                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
                           ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                           : "bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-400"
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     />
                   </div>
                 </div>
@@ -696,11 +675,10 @@ const PlansManagement = () => {
                   <div
                     key={key}
                     onClick={() => handleEntitlementChange(key)}
-                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      entitlements[key]
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${entitlements[key]
                         ? `border-purple-500 ${isDark ? "bg-purple-900/20" : "bg-purple-50"}`
                         : `border-gray-200 ${isDark ? "bg-gray-800/50" : "bg-white"}`
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start gap-3">
                       <div
@@ -805,11 +783,10 @@ const PlansManagement = () => {
                     value={formData.userCreationLimit}
                     onChange={handleInputChange}
                     placeholder="0"
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                      isDark
+                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
                         ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                         : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                   <p
                     className={`text-xs mt-2 italic ${isDark ? "text-gray-500" : "text-gray-500"}`}
@@ -854,11 +831,10 @@ const PlansManagement = () => {
                       value={formData.supportNumber}
                       onChange={handleInputChange}
                       placeholder="+1-XXX-XXX-XXXX"
-                      className={`w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors ${
-                        isDark
+                      className={`w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors ${isDark
                           ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                           : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     />
                   </div>
                 </div>
@@ -877,11 +853,10 @@ const PlansManagement = () => {
                       value={formData.supportEmail}
                       onChange={handleInputChange}
                       placeholder="support@domain.com"
-                      className={`w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors ${
-                        isDark
+                      className={`w-full pl-10 pr-4 py-2.5 rounded-lg border transition-colors ${isDark
                           ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                           : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     />
                   </div>
                 </div>
@@ -898,11 +873,10 @@ const PlansManagement = () => {
                     onChange={handleInputChange}
                     placeholder="Describe specific Support Level Agreements, priority response times, or dedicated communication channels..."
                     rows={4}
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors resize-none ${
-                      isDark
+                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors resize-none ${isDark
                         ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                         : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
               </div>
@@ -993,17 +967,15 @@ const PlansManagement = () => {
           <div className="lg:col-span-1">
             <div
               style={{ borderColor: selectedColor }}
-              className={`${
-                isDark
+              className={`${isDark
                   ? "bg-gray-900 border-gray-800"
                   : "bg-white border-gray-200"
-              } rounded-xl shadow-lg border-t-4 overflow-hidden sticky top-6`}
+                } rounded-xl shadow-lg border-t-4 overflow-hidden sticky top-6`}
             >
               <div className="p-6">
                 <h3
-                  className={`text-lg font-bold mb-1 ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
+                  className={`text-lg font-bold mb-1 ${isDark ? "text-white" : "text-gray-900"
+                    }`}
                 >
                   PLAN BLUEPRINT
                 </h3>
@@ -1016,9 +988,8 @@ const PlansManagement = () => {
               <div className="px-6 pb-6 space-y-4">
                 <div className="flex justify-between items-center">
                   <span
-                    className={`text-sm font-medium uppercase tracking-wide ${
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    }`}
+                    className={`text-sm font-medium uppercase tracking-wide ${isDark ? "text-gray-400" : "text-gray-600"
+                      }`}
                   >
                     Category:
                   </span>
@@ -1031,25 +1002,22 @@ const PlansManagement = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span
-                    className={`text-sm font-medium uppercase tracking-wide ${
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    }`}
+                    className={`text-sm font-medium uppercase tracking-wide ${isDark ? "text-gray-400" : "text-gray-600"
+                      }`}
                   >
                     Cycle:
                   </span>
                   <span
-                    className={`text-sm font-bold ${
-                      isDark ? "text-white" : "text-gray-900"
-                    }`}
+                    className={`text-sm font-bold ${isDark ? "text-white" : "text-gray-900"
+                      }`}
                   >
                     {formData.billingInterval || "N/A"}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span
-                    className={`text-sm font-medium uppercase tracking-wide ${
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    }`}
+                    className={`text-sm font-medium uppercase tracking-wide ${isDark ? "text-gray-400" : "text-gray-600"
+                      }`}
                   >
                     Users Limit:
                   </span>
@@ -1062,9 +1030,8 @@ const PlansManagement = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span
-                    className={`text-sm font-medium uppercase tracking-wide ${
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    }`}
+                    className={`text-sm font-medium uppercase tracking-wide ${isDark ? "text-gray-400" : "text-gray-600"
+                      }`}
                   >
                     Active Features:
                   </span>
@@ -1087,9 +1054,8 @@ const PlansManagement = () => {
                       {formData.initialBasePrice || "0"}
                     </div>
                     <p
-                      className={`text-sm uppercase tracking-wide ${
-                        isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
+                      className={`text-sm uppercase tracking-wide ${isDark ? "text-gray-400" : "text-gray-600"
+                        }`}
                     >
                       SETUP FEE
                     </p>
@@ -1097,9 +1063,8 @@ const PlansManagement = () => {
                 </div>
 
                 <div
-                  className={`mt-6 p-4 rounded-lg ${
-                    isDark ? "bg-purple-900/20" : "bg-purple-50"
-                  }`}
+                  className={`mt-6 p-4 rounded-lg ${isDark ? "bg-purple-900/20" : "bg-purple-50"
+                    }`}
                 >
                   <div className="flex items-start gap-3">
                     <Calendar
@@ -1114,9 +1079,8 @@ const PlansManagement = () => {
                         CONTRACT TERM
                       </p>
                       <p
-                        className={`text-sm font-medium ${
-                          isDark ? "text-white" : "text-gray-900"
-                        }`}
+                        className={`text-sm font-medium ${isDark ? "text-white" : "text-gray-900"
+                          }`}
                       >
                         {formData.contractValidity || "Not Set"}
                       </p>
@@ -1125,14 +1089,12 @@ const PlansManagement = () => {
                 </div>
 
                 <div
-                  className={`mt-4 p-4 rounded-lg ${
-                    isDark ? "bg-gray-800" : "bg-gray-50"
-                  }`}
+                  className={`mt-4 p-4 rounded-lg ${isDark ? "bg-gray-800" : "bg-gray-50"
+                    }`}
                 >
                   <p
-                    className={`text-xs font-bold mb-2 uppercase tracking-wide ${
-                      isDark ? "text-gray-400" : "text-gray-600"
-                    }`}
+                    className={`text-xs font-bold mb-2 uppercase tracking-wide ${isDark ? "text-gray-400" : "text-gray-600"
+                      }`}
                   >
                     Recurring Charges (Year 2+)
                   </p>

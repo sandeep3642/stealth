@@ -290,7 +290,7 @@ const CreateUser: React.FC = () => {
         if (userData.profileImagePath) {
           const imageUrl = userData.profileImagePath.startsWith('http')
             ? userData.profileImagePath
-            : `http://fleetbharat.com:8080${userData.profileImagePath}`;
+            : process.env.NEXT_PUBLIC_API_BASE_URL+userData.profileImagePath;
           setAvatarPreview(imageUrl);
         }
 
