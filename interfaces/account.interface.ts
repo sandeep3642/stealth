@@ -36,3 +36,19 @@ export interface Category {
   isActive?: boolean;
   createdAt?: string;
 }
+
+export interface AccountRights {
+  formId: number;
+  formCode: string;
+  formName: string;
+  pageUrl: string;
+  icon: string;
+  canRead: boolean;
+  canWrite: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+  canExport: boolean;
+  canAll: boolean;
+}
+
+

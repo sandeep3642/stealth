@@ -6,6 +6,7 @@ import { loginUser } from "@/services/authService";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { useColor } from "@/context/ColorContext";
+import { getUserRoleData } from "@/services/commonServie";
 
 interface LoginComponentProps {
   onSwitchToRegister: () => void;
@@ -43,57 +44,56 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
     }
   }, []);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError("Please enter email and password");
-      return;
+ const handleLogin = async () => {
+  if (!email || !password) {
+    setError("Please enter email and password");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError("");
+
+    // Handle remember me functionality
+    if (rememberMe) {
+      localStorage.setItem("rememberedEmail", email);
+      localStorage.setItem("rememberedPassword", password);
+    } else {
+      localStorage.removeItem("rememberedEmail");
+      localStorage.removeItem("rememberedPassword");
     }
 
-    try {
-      setLoading(true);
-      setError("");
+    const response = await loginUser(email, password);
 
-      // Handle remember me functionality
-      if (rememberMe) {
-        localStorage.setItem("rememberedEmail", email);
-        localStorage.setItem("rememberedPassword", password);
-      } else {
-        localStorage.removeItem("rememberedEmail");
-        localStorage.removeItem("rememberedPassword");
+    if (response.data.token) {
+      // ✅ set user + token
+      localStorage.setItem("authToken", response.data.token.accessToken);
+      localStorage.setItem("user", JSON.stringify(response.data));
+      Cookies.set("authToken", response.data.token.accessToken, { path: "/" });
+
+      // ✅ Apply color theme if white label info is present
+      if (response.data.whiteLabel) {
+        const { primaryColorHex } = response.data.whiteLabel;
+        handleColorChange(primaryColorHex);
       }
 
-      const response = await loginUser(email, password);
+      // ✅ Fetch and store permissions BEFORE redirect
+      await getUserRoleData();
 
-      if (response.data.token) {
-        if (response.data.whiteLabel) {
-          const {
-            customEntryFqdn,
-            logoUrl,
-            primaryColorHex,
-            secondaryColorHex,
-            whiteLabelId,
-          } = response.data.whiteLabel;
-          handleColorChange(primaryColorHex);
-        }
-        localStorage.setItem("authToken", response.data.token.accessToken);
-        localStorage.setItem("user", JSON.stringify(response.data));
+      // ✅ Dispatch event to notify layout about new permissions
+      window.dispatchEvent(new Event("permissions-updated"));
 
-        // Set cookie for middleware use
-        Cookies.set("authToken", response.data.token.accessToken, {
-          path: "/",
-        });
-
-        router.push("/dashboard");
-      }
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Login failed. Please try again.",
-      );
-      console.error("Login error:", err);
-    } finally {
-      setLoading(false);
+      // ✅ Now redirect
+      router.push("/dashboard");
     }
-  };
+  } catch (err: any) {
+    setError(err.response?.data?.message || "Login failed. Please try again.");
+    console.error("Login error:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="w-full max-w-[400px] px-4 sm:px-6 md:px-0 space-y-6 sm:space-y-8">

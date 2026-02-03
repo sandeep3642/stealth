@@ -23,6 +23,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   showFilterButton = false,
   FilterbuttonText = "Filters",
   onFilterClick,
+  showWriteButton=false
 }) => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
@@ -143,7 +144,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             )}
 
             {/* Primary Action Button */}
-            {showButton && (
+            {showWriteButton && (
               <button
                 onClick={handleButtonClick}
                 style={{ background: selectedColor }}

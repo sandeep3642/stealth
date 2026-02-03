@@ -39,11 +39,16 @@ import {
 } from "@/interfaces/navbar.interface";
 import { getInitials } from "@/utils/utils";
 import Cookies from "js-cookie";
-import { getUserRoleData, filterMenuByPermissions } from "@/services/commonServie";
+import {
+  filterMenuByPermissions,
+  getUserRoleData,
+} from "@/services/commonServie";
+import { usePathname } from "next/navigation";
 
 const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const pathname = usePathname();
   const { layout: menuLayout, setLayout: setMenuLayout } = useLayout();
   const { selectedColor, colorBlock } = useColor();
   const { isDark } = useTheme();
@@ -59,9 +64,10 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   const [selectedItemId, setSelectedItemId] = useState<string>("");
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [userRights, setUserRights] = useState<any[]>([]);
-  const [filteredSidebarSections, setFilteredSidebarSections] = useState<SidebarSection[]>([]);
+  const [filteredSections, setFilteredSections] = useState<SidebarSection[]>(
+    [],
+  );
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
 
   // Detect mobile screen size
@@ -81,41 +87,71 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Fetch permissions on mount
+  useEffect(() => {
+    function getPermissionsList() {
+      try {
+        setIsLoadingPermissions(true);
+        const storedPermissions = localStorage.getItem("permissions");
+
+        if (storedPermissions) {
+          const parsedPermissions = JSON.parse(storedPermissions);
+          setUserRights(parsedPermissions);
+        } else {
+          console.warn("No permissions found in localStorage.");
+        }
+      } catch (error) {
+        console.error("Error fetching permissions from localStorage:", error);
+      } finally {
+        setIsLoadingPermissions(false);
+      }
+    }
+
+    // run immediately on load
+    getPermissionsList();
+
+    // run when localStorage is updated via custom event
+    const handlePermissionUpdate = () => getPermissionsList();
+    window.addEventListener("permissions-updated", handlePermissionUpdate);
+
+    // also run on route change
+    // so navigating between pages re-filters the rights
+    return () =>
+      window.removeEventListener("permissions-updated", handlePermissionUpdate);
+  }, [pathname]);
+
+  console.log("userRights", userRights);
+
+  // Filter menu sections based on permissions
+  useEffect(() => {
+    if (userRights.length > 0) {
+      const filtered = sidebarSections
+        .map((section) => {
+          const filteredItems = filterMenuByPermissions(
+            section.items,
+            userRights,
+          );
+
+          return {
+            ...section,
+            items: filteredItems,
+          };
+        })
+        .filter((section) => section.items.length > 0); // Remove empty sections
+
+      setFilteredSections(filtered);
+    } else {
+      // If no permissions loaded yet, show empty or all menus (depending on your requirement)
+      setFilteredSections([]);
+    }
+  }, [userRights]);
+
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("accessToken");
+    localStorage.clear();
     Cookies.remove("authToken", { path: "/" });
 
     window.location.href = "/";
   };
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Fetch user role data and permissions
-  useEffect(() => {
-    const fetchUserPermissions = async () => {
-      try {
-        setIsLoadingPermissions(true);
-        const roleData = await getUserRoleData();
-        
-        if (roleData && roleData.data && roleData.data.rights) {
-          setUserRights(roleData.data.rights);
-        } else {
-          console.warn("No role data or rights found");
-          setUserRights([]);
-        }
-      } catch (error) {
-        console.error("Error fetching user permissions:", error);
-        setUserRights([]);
-      } finally {
-        setIsLoadingPermissions(false);
-      }
-    };
-
-    fetchUserPermissions();
-  }, []);
 
   // Complete menu structure with nested items
   const sidebarSections: SidebarSection[] = [
@@ -261,22 +297,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       ],
     },
   ];
-
-  // Filter sidebar sections based on user permissions
-  useEffect(() => {
-    if (userRights.length > 0) {
-      const filtered = sidebarSections.map((section) => ({
-        ...section,
-        items: filterMenuByPermissions(section.items, userRights),
-      })).filter((section) => section.items.length > 0); // Remove empty sections
-
-      setFilteredSidebarSections(filtered);
-    } else {
-      // If no rights found, show empty sidebar or default items
-      setFilteredSidebarSections([]);
-    }
-  }, [userRights]);
-
   const user =
     typeof window !== "undefined"
       ? JSON.parse(localStorage.getItem("user") || "{}")
@@ -290,310 +310,361 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
+  // Header classes for Top Nav - NEVER uses color block
+  const getTopNavHeaderClasses = (): HeaderClasses => {
+    if (isDark) {
+      return {
+        header: "bg-card border-border",
+        text: "text-white",
+        textSecondary: "text-white/70",
+        hover: "hover:text-white",
+        inputBg: "bg-background",
+        inputBorder: "border-border",
+        inputText: "text-white",
+        hoverBg: "hover:bg-background/50",
+        dropdown: "bg-card border-border",
+        dropdownHover: "hover:bg-background/50",
+        useCustomBg: false,
+      };
+    } else {
+      return {
+        header: "bg-card border-border",
+        text: "text-black",
+        textSecondary: "text-black/60",
+        hover: "hover:text-black",
+        inputBg: "bg-background",
+        inputBorder: "border-border",
+        inputText: "text-black",
+        hoverBg: "hover:bg-background/50",
+        dropdown: "bg-card border-border",
+        dropdownHover: "hover:bg-background/50",
+        useCustomBg: false,
+      };
+    }
+  };
+
+  // Header for Top Nav Layout (Horizontal with all menus)
+  const TopNavHeader: React.FC = () => {
+    const headerClasses = getTopNavHeaderClasses();
+    return (
+      <header
+        className={`${headerClasses.header} border-b fixed w-full`}
+        style={
+          headerClasses.useCustomBg
+            ? { background: headerClasses.customBg }
+            : {}
+        }
+      >
+        <div className="px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
+          {/* Left side: Logo and Navigation */}
+          <div className="flex items-center gap-4 md:gap-8">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">
+                A
+              </div>
+              <span
+                className={`text-lg md:text-xl font-semibold ${headerClasses.text}`}
+              >
+                Agentix
+              </span>
+            </div>
+
+            {/* Main Navigation - Hidden on mobile */}
+            <nav className="hidden lg:flex items-center gap-6">
+              {isLoadingPermissions ? (
+                <div className="text-sm text-gray-400">Loading...</div>
+              ) : (
+                filteredSections.map((section) =>
+                  section.items.map((item) => {
+                    if (item.expandable) {
+                      return (
+                        <div key={item.id} className="relative group">
+                          <button
+                            className={`flex items-center gap-2 py-1 text-sm ${headerClasses.textSecondary} ${headerClasses.hover}`}
+                          >
+                            <span>{item.label}</span>
+                            <ChevronDown className="w-3 h-3" />
+                          </button>
+                          {/* Dropdown */}
+                          <div
+                            className={`absolute left-0 top-full mt-2 w-56 ${headerClasses.dropdown} border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50`}
+                          >
+                            {item.children?.map((child) => {
+                              const ChildIcon = child.icon;
+                              return (
+                                <Link
+                                  key={child.id}
+                                  href={child.path}
+                                  className={`flex items-center gap-3 px-4 py-2.5 text-sm ${headerClasses.textSecondary} ${headerClasses.dropdownHover}`}
+                                  onClick={() => setSelectedItemId(child.id)}
+                                  style={{
+                                    color:
+                                      selectedItemId === child.id &&
+                                      selectedColor,
+                                  }}
+                                >
+                                  <ChildIcon className="w-4 h-4" />
+                                  <span>{child.label}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <Link
+                        key={item.id}
+                        href={item.path || "#"}
+                        className={`text-sm py-1 ${
+                          item.active
+                            ? `${headerClasses.text} font-semibold`
+                            : `${headerClasses.textSecondary} ${headerClasses.hover}`
+                        }`}
+                        onClick={() => setSelectedItemId(item.id)}
+                        style={{
+                          color: selectedItemId === item.id && selectedColor,
+                        }}
+                      >
+                        {item.label}
+                      </Link>
+                    );
+                  }),
+                )
+              )}
+            </nav>
+          </div>
+
+          {/* Right side: Search and User controls */}
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Search - Hidden on small mobile */}
+            <div className="relative hidden sm:block">
+              <Search
+                className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40`}
+              />
+              <input
+                type="text"
+                placeholder="Search..."
+                className={`pl-10 pr-4 py-2 border ${headerClasses.inputBorder} ${headerClasses.inputBg} ${headerClasses.inputText} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-40 md:w-64`}
+              />
+            </div>
+
+            {/* Language - Hidden on mobile */}
+            <button
+              className={`hidden md:flex items-center gap-2 text-sm ${headerClasses.textSecondary} ${headerClasses.hover}`}
+            >
+              <Globe className="w-4 h-4" />
+              <span className="hidden xl:inline">English</span>
+            </button>
+
+            {/* Notification */}
+            <button
+              className={`relative p-2 ${headerClasses.hoverBg} rounded-lg`}
+            >
+              <Bell className={`w-5 h-5 ${headerClasses.textSecondary}`} />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+
+            {/* User Avatar */}
+            <button
+              className={`flex items-center gap-2 ${headerClasses.hoverBg} rounded-lg p-2`}
+            >
+              <div className="text-right hidden xl:block">
+                <div className={`text-sm font-medium ${headerClasses.text}`}>
+                  {user?.fullName}
+                </div>
+                <div className={`text-xs ${headerClasses.textSecondary}`}>
+                  {user?.email}
+                </div>
+              </div>
+
+              <div
+                className={`w-8 h-8 bg-foreground/10 rounded flex items-center justify-center ${headerClasses.textSecondary} text-sm font-medium`}
+              >
+                <Package className="w-4 h-4" />
+              </div>
+            </button>
+          </div>
+        </div>
+      </header>
+    );
+  };
+
+  // Header for Sidebar Layout (Minimal)
+  const SidebarHeader: React.FC = () => {
+    const headerClasses: HeaderClasses = isDark
+      ? {
+          header: "bg-card border-border",
+          text: "text-white",
+          textSecondary: "text-white/70",
+          hover: "hover:text-white",
+          inputBg: "bg-background",
+          inputBorder: "border-white/20",
+          inputText: "text-white",
+          inputPlaceholder: "placeholder:text-white/40",
+          hoverBg: "hover:bg-background/50",
+          logo: "bg-primary",
+          logoText: "text-primary-foreground",
+          iconColor: "text-white/70",
+          useCustomBg: false,
+          dropdown: "",
+          dropdownHover: "",
+        }
+      : {
+          header: "bg-card border-border",
+          text: "text-black",
+          textSecondary: "text-black/60",
+          hover: "hover:text-black",
+          inputBg: "bg-background",
+          inputBorder: "border-black/20",
+          inputText: "text-black",
+          inputPlaceholder: "placeholder:text-black/40",
+          hoverBg: "hover:bg-background/50",
+          logo: "bg-primary",
+          logoText: "text-primary-foreground",
+          iconColor: "text-black/70",
+          useCustomBg: false,
+          dropdown: "",
+          dropdownHover: "",
+        };
+
+    return (
+      <header
+        className={`${headerClasses.header}
+    fixed top-0 z-50 border-b px-4 md:px-6 py-3 flex items-center justify-between transition-all duration-300
+    w-full
+    ${!isMobile && isSidebarOpen ? "lg:ml-64 lg:w-[calc(100%-16rem)]" : ""}
+    ${!isMobile && !isSidebarOpen ? "lg:ml-20 lg:w-[calc(100%-5rem)]" : ""}
+  `}
+      >
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              if (isMobile) {
+                setIsMobileSidebarOpen(true);
+              } else {
+                setIsSidebarOpen(!isSidebarOpen);
+              }
+            }}
+            className={`p-2 ${headerClasses.hoverBg} rounded-lg`}
+          >
+            <Menu
+              className={`w-5 h-5 ${headerClasses.textSecondary} cursor-pointer`}
+            />
+          </button>
+
+          {/* Logo - visible on mobile when sidebar is closed */}
+          <div className="flex items-center gap-2 lg:hidden">
+            <div
+              className={`w-8 h-8 ${headerClasses.logo} rounded-lg flex items-center justify-center ${headerClasses.logoText} font-bold`}
+            >
+              A
+            </div>
+            <span className={`text-lg font-semibold ${headerClasses.text}`}>
+              Agentix
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 md:gap-4">
+          {/* Search - Hidden on small screens */}
+          <div className="relative hidden sm:block">
+            <Search
+              className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${headerClasses.iconColor}`}
+            />
+            <input
+              type="text"
+              placeholder="Search..."
+              className={`pl-10 pr-4 py-2 border ${headerClasses.inputBorder} ${headerClasses.inputBg} ${headerClasses.inputText} ${headerClasses.inputPlaceholder} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-40 md:w-64`}
+            />
+          </div>
+
+          {/* Language - Hidden on mobile */}
+          <button
+            className={`hidden md:flex items-center gap-2 text-sm ${headerClasses.textSecondary} ${headerClasses.hover}`}
+          >
+            <Globe className={`w-4 h-4 ${headerClasses.iconColor}`} />
+            <span>English</span>
+          </button>
+
+          {/* Notification */}
+          <button
+            className={`relative p-2 ${headerClasses.hoverBg} rounded-lg`}
+          >
+            <Bell className={`w-5 h-5 ${headerClasses.iconColor}`} />
+            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          </button>
+
+          {/* User Avatar */}
+          <div className="relative">
+            <button
+              onClick={() => setShowProfileMenu((prev) => !prev)}
+              className={`flex items-center gap-2 ${headerClasses.hoverBg} rounded-lg p-2`}
+            >
+              <div
+                className={`w-8 h-8 ${headerClasses.logo} rounded-full flex items-center justify-center ${headerClasses.logoText} text-sm font-medium`}
+              >
+                {getInitials(user?.fullName || "U")}
+              </div>
+
+              <div className="text-right hidden xl:block">
+                <div className={`text-sm font-medium ${headerClasses.text}`}>
+                  {user?.fullName}
+                </div>
+                <div className={`text-xs ${headerClasses.textSecondary}`}>
+                  {user?.email}
+                </div>
+              </div>
+            </button>
+
+            {showProfileMenu && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-background rounded-lg shadow-lg border z-50">
+                <button
+                  onClick={handleLogout}
+                
+                  className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded ${
+                    isDark ? "text-foreground" : "text-gray-900"
+                  }`}
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+    );
+  };
+
   // Mobile Sidebar Overlay
-  const MobileSidebarOverlay = () => {
-    if (!isMobile || !isMobileSidebarOpen) return null;
+  const MobileSidebarOverlay: React.FC = () => {
+    if (!isMobileSidebarOpen) return null;
 
     return (
       <div
-        className="fixed inset-0 bg-black/50 z-40"
+        className="fixed inset-0 bg-black/50 z-40 lg:hidden"
         onClick={() => setIsMobileSidebarOpen(false)}
       />
     );
   };
 
-  // Top Navigation Header
-  const TopNavHeader = () => {
-    const getHeaderClasses = (): HeaderClasses => {
-      if (selectedColor && colorBlock && !isDark) {
-        return {
-          header: "bg-primary border-b border-primary",
-          text: "text-primary-foreground",
-          textSecondary: "text-primary-foreground/70",
-          hover: "hover:bg-white/20",
-          inputBg: "bg-white/10",
-          inputBorder: "border-white/20",
-          inputText: "text-primary-foreground",
-          hoverBg: "hover:bg-white/10",
-          dropdown: "bg-primary",
-          dropdownHover: "hover:bg-white/10",
-          useCustomBg: true,
-          customBg: selectedColor,
-        };
-      } else if (isDark) {
-        return {
-          header: "bg-card border-b border-border",
-          text: "text-foreground",
-          textSecondary: "text-foreground/70",
-          hover: "hover:bg-background/10",
-          inputBg: "bg-background/50",
-          inputBorder: "border-border",
-          inputText: "text-foreground",
-          hoverBg: "hover:bg-background/10",
-          dropdown: "bg-card",
-          dropdownHover: "hover:bg-background/10",
-          useCustomBg: false,
-        };
-      } else {
-        return {
-          header: "bg-card border-b border-border",
-          text: "text-foreground",
-          textSecondary: "text-foreground/70",
-          hover: "hover:bg-background",
-          inputBg: "bg-background",
-          inputBorder: "border-border",
-          inputText: "text-foreground",
-          hoverBg: "hover:bg-background",
-          dropdown: "bg-card",
-          dropdownHover: "hover:bg-background",
-          useCustomBg: false,
-        };
-      }
-    };
-
-    const headerClasses = getHeaderClasses();
-
-    return (
-      <header
-        className={`${headerClasses.header} ${headerClasses.text} sticky top-0 z-40`}
-        style={
-          headerClasses.useCustomBg
-            ? { background: headerClasses.customBg }
-            : {}
-        }
-      >
-        {/* Top Section */}
-        <div className="flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => setMenuLayout("sidebar")}
-              className={`p-2 rounded-lg ${headerClasses.hover}`}
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-2">
-              <div
-                className={`w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold`}
-              >
-                A
-              </div>
-              <span className="text-xl font-semibold">Agentix</span>
-            </div>
-
-            <div className="relative ml-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className={`pl-10 pr-4 py-2 rounded-lg ${headerClasses.inputBg} border ${headerClasses.inputBorder} focus:outline-none focus:ring-2 focus:ring-primary w-64`}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button className={`p-2 rounded-lg ${headerClasses.hover}`}>
-              <Globe className="w-5 h-5" />
-            </button>
-            <button className={`p-2 rounded-lg ${headerClasses.hover}`}>
-              <Bell className="w-5 h-5" />
-            </button>
-            <div className="relative">
-              <button
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${headerClasses.hoverBg}`}
-              >
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
-                  {getInitials(user?.firstName)}
-                </div>
-                <ChevronDown className="w-4 h-4 opacity-60" />
-              </button>
-              {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-1">
-                  <button
-                    onClick={handleLogout}
-                    className="w-full px-4 py-2 text-left hover:bg-background flex items-center gap-2 text-foreground"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation Menu */}
-        <div className="px-6 pb-3">
-          <nav className="flex gap-6">
-            {filteredSidebarSections.map((section) =>
-              section.items.map((item) => {
-                const IconComponent = item.icon;
-                return (
-                  <Link
-                    key={item.id}
-                    href={item.path || "#"}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg ${headerClasses.hover
-                      } ${item.active ? "bg-primary/10" : ""}`}
-                  >
-                    <IconComponent className="w-4 h-4" />
-                    <span className="text-sm font-medium">{item.label}</span>
-                  </Link>
-                );
-              }),
-            )}
-          </nav>
-        </div>
-      </header>
-    );
-  };
-
-  // Sidebar Header
-  const SidebarHeader = () => {
-    const getHeaderClasses = (): HeaderClasses => {
-      if (selectedColor && colorBlock && !isDark) {
-        return {
-          header: "bg-primary border-b border-primary",
-          text: "text-primary-foreground",
-          textSecondary: "text-primary-foreground/70",
-          hover: "hover:bg-white/20",
-          inputBg: "bg-white/10",
-          inputBorder: "border-white/20",
-          inputText: "text-primary-foreground",
-          hoverBg: "hover:bg-white/10",
-          dropdown: "bg-primary",
-          dropdownHover: "hover:bg-white/10",
-          useCustomBg: true,
-          customBg: selectedColor,
-        };
-      } else if (isDark) {
-        return {
-          header: "bg-card border-b border-border",
-          text: "text-foreground",
-          textSecondary: "text-foreground/70",
-          hover: "hover:bg-background/10",
-          inputBg: "bg-background/50",
-          inputBorder: "border-border",
-          inputText: "text-foreground",
-          hoverBg: "hover:bg-background/10",
-          dropdown: "bg-card",
-          dropdownHover: "hover:bg-background/10",
-          useCustomBg: false,
-        };
-      } else {
-        return {
-          header: "bg-card border-b border-border",
-          text: "text-foreground",
-          textSecondary: "text-foreground/70",
-          hover: "hover:bg-background",
-          inputBg: "bg-background",
-          inputBorder: "border-border",
-          inputText: "text-foreground",
-          hoverBg: "hover:bg-background",
-          dropdown: "bg-card",
-          dropdownHover: "hover:bg-background",
-          useCustomBg: false,
-        };
-      }
-    };
-
-    const headerClasses = getHeaderClasses();
-
-    return (
-      <header
-        className={`${headerClasses.header} ${headerClasses.text} sticky top-0 z-40`}
-        style={
-          headerClasses.useCustomBg
-            ? { background: headerClasses.customBg }
-            : {}
-        }
-      >
-        <div className="flex items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-4">
-            {!isSidebarOpen && (
-              <div className="flex items-center gap-2">
-                <div
-                  className={`w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold`}
-                >
-                  A
-                </div>
-                <span className="text-xl font-semibold">Agentix</span>
-              </div>
-            )}
-
-            <button
-              onClick={() => {
-                if (isMobile) {
-                  setIsMobileSidebarOpen(!isMobileSidebarOpen);
-                } else {
-                  setIsSidebarOpen(!isSidebarOpen);
-                }
-              }}
-              className={`p-2 rounded-lg ${headerClasses.hover}`}
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
-            <div className="relative ml-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className={`pl-10 pr-4 py-2 rounded-lg ${headerClasses.inputBg} border ${headerClasses.inputBorder} focus:outline-none focus:ring-2 focus:ring-primary w-64`}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button className={`p-2 rounded-lg ${headerClasses.hover}`}>
-              <Globe className="w-5 h-5" />
-            </button>
-            <button className={`p-2 rounded-lg ${headerClasses.hover}`}>
-              <Bell className="w-5 h-5" />
-            </button>
-            <div className="relative">
-              <button
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${headerClasses.hoverBg}`}
-              >
-                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold">
-                  {getInitials(user?.firstName)}
-                </div>
-                <ChevronDown className="w-4 h-4 opacity-60" />
-              </button>
-              {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-lg py-1 z-50">
-                  <button
-                    onClick={handleLogout}
-                    className="w-full px-4 py-2 text-left hover:bg-background flex items-center gap-2 text-foreground"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-    );
-  };
-
-  // Sidebar Component
-  const Sidebar = () => {
+  // Sidebar Menu Component
+  const Sidebar: React.FC = () => {
+    // Sidebar styling - ONLY uses color block for sidebar layout
     const getSidebarClasses = (): SidebarClasses => {
-      if (selectedColor && colorBlock && !isDark) {
+      if (colorBlock && selectedColor && menuLayout === "sidebar") {
+        // Color block mode ONLY for sidebar layout
         return {
           useCustomBg: true,
           customBg: selectedColor,
-          bg: "",
-          border: "border-white/10",
+          border: "border-transparent",
           logo: "bg-white/20",
           logoText: "text-white",
           brandText: "text-white",
           sectionTitle: "text-white/60",
-          menuText: "text-white/90",
-          menuIcon: "text-white/70",
+          menuText: "text-white",
+          menuIcon: "text-white",
           menuHover: "hover:bg-white/10",
           activeMenuBg: "bg-white/20",
           activeMenuText: "text-white",
@@ -647,11 +718,13 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
     return (
       <aside
-        className={`${width} ${sidebarClasses.bg} border-r ${sidebarClasses.border
-          } h-screen fixed left-0 top-0 overflow-y-auto transition-all duration-300 z-50 ${isMobile && !isMobileSidebarOpen
+        className={`${width} ${sidebarClasses.bg} border-r ${
+          sidebarClasses.border
+        } h-screen fixed left-0 top-0 overflow-y-auto transition-all duration-300 z-50 ${
+          isMobile && !isMobileSidebarOpen
             ? "-translate-x-full"
             : "translate-x-0"
-          }`}
+        }`}
         style={
           sidebarClasses.useCustomBg
             ? { background: sidebarClasses.customBg }
@@ -661,8 +734,9 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         <div className="p-4">
           {/* Logo Section */}
           <div
-            className={`flex items-center ${isOpen ? "justify-between" : "justify-center"
-              } px-3 py-4 mb-6`}
+            className={`flex items-center ${
+              isOpen ? "justify-between" : "justify-center"
+            } px-3 py-4 mb-6`}
           >
             <div
               className={`flex items-center gap-2 ${isOpen ? "" : "flex-col"}`}
@@ -692,16 +766,16 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
             )}
           </div>
 
+          {/* Loading state */}
           {isLoadingPermissions ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-sm text-foreground/50">Loading menu...</div>
-            </div>
-          ) : filteredSidebarSections.length === 0 ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="text-sm text-foreground/50">No menu items available</div>
+            <div className="text-center py-4">
+              <div className={`text-sm ${sidebarClasses.menuText}`}>
+                Loading menu...
+              </div>
             </div>
           ) : (
-            filteredSidebarSections.map((section, index) => (
+            /* Render filtered sections */
+            filteredSections.map((section, index) => (
               <div key={index} className="mb-6">
                 {isOpen && (
                   <h3
@@ -721,14 +795,17 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                           <>
                             <button
                               onClick={() => isOpen && toggleMenu(item.id)}
-                              className={`w-full flex items-center ${isOpen ? "justify-between" : "justify-center"
-                                } px-3 py-2.5 rounded-lg ${sidebarClasses.menuText
-                                } ${sidebarClasses.menuHover}`}
+                              className={`w-full flex items-center ${
+                                isOpen ? "justify-between" : "justify-center"
+                              } px-3 py-2.5 rounded-lg ${
+                                sidebarClasses.menuText
+                              } ${sidebarClasses.menuHover}`}
                               title={!isOpen ? item.label : ""}
                             >
                               <div
-                                className={`flex items-center gap-3 ${isOpen ? "" : "justify-center"
-                                  }`}
+                                className={`flex items-center gap-3 ${
+                                  isOpen ? "" : "justify-center"
+                                }`}
                               >
                                 <IconComponent
                                   className={`w-5 h-5 ${sidebarClasses.menuIcon}`}
@@ -741,9 +818,11 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                               </div>
                               {isOpen && (
                                 <ChevronDown
-                                  className={`w-4 h-4 ${sidebarClasses.chevron
-                                    } transition-transform ${isExpanded ? "rotate-180" : ""
-                                    }`}
+                                  className={`w-4 h-4 ${
+                                    sidebarClasses.chevron
+                                  } transition-transform ${
+                                    isExpanded ? "rotate-180" : ""
+                                  }`}
                                 />
                               )}
                             </button>
@@ -780,30 +859,35 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                         ) : (
                           <Link
                             href={item.path || "#"}
-                            className={`flex items-center gap-3 ${isOpen ? "" : "justify-center"
-                              } px-3 py-2.5 rounded-lg ${item.active
+                            className={`flex items-center gap-3 ${
+                              isOpen ? "" : "justify-center"
+                            } px-3 py-2.5 rounded-lg ${
+                              item.active
                                 ? `${sidebarClasses.activeMenuBg} ${sidebarClasses.activeMenuText}`
                                 : `${sidebarClasses.menuText} ${sidebarClasses.menuHover}`
-                              }`}
+                            }`}
                             title={!isOpen ? item.label : ""}
                             onClick={() => {
                               setSelectedItemId(item.id);
                               if (isMobile) setIsMobileSidebarOpen(false);
                             }}
                             style={{
-                              color: selectedItemId === item.id && selectedColor,
+                              color:
+                                selectedItemId === item.id && selectedColor,
                             }}
                           >
                             <IconComponent
-                              className={`w-5 h-5 ${item.active
-                                ? sidebarClasses.activeMenuIcon
-                                : sidebarClasses.menuIcon
-                                }`}
+                              className={`w-5 h-5 ${
+                                item.active
+                                  ? sidebarClasses.activeMenuIcon
+                                  : sidebarClasses.menuIcon
+                              }`}
                             />
                             {isOpen && (
                               <span
-                                className={`text-sm ${item.active ? "font-semibold" : "font-medium"
-                                  }`}
+                                className={`text-sm ${
+                                  item.active ? "font-semibold" : "font-medium"
+                                }`}
                               >
                                 {item.label}
                               </span>
@@ -834,12 +918,13 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       {menuLayout === "sidebar" && <Sidebar />}
 
       <main
-        className={`p-4 md:p-6 ${menuLayout === "sidebar" && !isMobile
-          ? isSidebarOpen
-            ? "lg:ml-64"
-            : "lg:ml-20"
-          : ""
-          } transition-all duration-300`}
+        className={`p-4 md:p-6 ${
+          menuLayout === "sidebar" && !isMobile
+            ? isSidebarOpen
+              ? "lg:ml-64"
+              : "lg:ml-20"
+            : ""
+        } transition-all duration-300`}
       >
         {children}
       </main>

@@ -18,4 +18,5 @@ export interface PageHeaderProps {
   showFilterButton?: boolean;
   FilterbuttonText?: string;
   onFilterClick?: () => void;
+  showWriteButton?: boolean;
 }

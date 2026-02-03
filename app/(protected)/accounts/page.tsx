@@ -7,10 +7,11 @@ import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
 import { useTheme } from "@/context/ThemeContext";
 import { deleteAccount, getAccounts } from "@/services/accountService";
-import { AccountData } from "@/interfaces/account.interface";
+import { AccountData, AccountRights } from "@/interfaces/account.interface";
 import { Building2, CheckCircle, Clock, XCircle, MapPin } from "lucide-react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { getUserRoleData } from "@/services/commonServie";
 
 const Accounts: React.FC = () => {
   const { isDark } = useTheme();
@@ -20,6 +21,9 @@ const Accounts: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [accountsRight, setAccountRights] = useState<AccountRights | null>(
+    null,
+  );
   const columns = [
     {
       key: "no",
@@ -106,6 +110,35 @@ const Accounts: React.FC = () => {
     getAccountsList();
   }, [pageNo, pageSize, debouncedQuery]);
 
+  useEffect(() => {
+    function getPermissionsList() {
+      try {
+        const storedPermissions = localStorage.getItem("permissions");
+
+        if (storedPermissions) {
+          const parsedPermissions = JSON.parse(storedPermissions);
+
+          // Find the rights for "Account List"
+          const rights = parsedPermissions.find(
+            (val: { formName: string }) => val.formName === "Account List",
+          );
+
+          if (rights) {
+            setAccountRights(rights);
+          } else {
+            console.warn('No matching rights found for "Account List".');
+          }
+        } else {
+          console.warn("No permissions found in localStorage.");
+        }
+      } catch (error) {
+        console.error("Error fetching permissions from localStorage:", error);
+      }
+    }
+
+    getPermissionsList();
+  }, []);
+
   return (
     <div className={`${isDark ? "dark" : ""} mt-20`}>
       <div
@@ -120,6 +153,7 @@ const Accounts: React.FC = () => {
             showButton={true}
             buttonText="Add Account"
             buttonRoute="/addAccount"
+            showWriteButton={accountsRight?.canWrite || false}
           />
         </div>
 
