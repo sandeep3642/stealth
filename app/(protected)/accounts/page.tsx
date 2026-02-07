@@ -22,6 +22,12 @@ const Accounts: React.FC = () => {
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [totalRecords, setTotalRecords] = useState(0);
   const [accountsRight, setAccountRights] = useState<FormRights | null>(null);
+  const [cardCounts, setCardCounts] = useState({
+    total: 0,
+    active: 0,
+    pending: 0,
+    inactive: 0,
+  });
   const columns = [
     {
       key: "no",
@@ -89,12 +95,19 @@ const Accounts: React.FC = () => {
 
   async function getAccountsList() {
     const response = await getAccounts(pageNo, pageSize, debouncedQuery);
+
     if (response && response.statusCode === 200) {
-      // toast.success(response.message);
-      setData(response.data.items);
-      setTotalRecords(response.data.totalRecords);
+      const pageData = response.data.pageData;
+      setData(pageData.items);
+      setTotalRecords(pageData.totalRecords);
+
+      // ✅ NEW: metric cards data
+      setCardCounts(response.data.cardCounts);
+    } else {
+      toast.error(response?.message ?? "Failed to load accounts");
     }
   }
+
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -158,11 +171,12 @@ const Accounts: React.FC = () => {
         </div>
 
         {/* Metric Cards - Truly Mobile Responsive */}
+        {/* Metric Cards - Truly Mobile Responsive */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <MetricCard
             icon={Building2}
             label="TOTAL"
-            value={4}
+            value={cardCounts.total}
             iconBgColor="bg-purple-100 dark:bg-purple-900/30"
             iconColor="text-purple-600 dark:text-purple-400"
             isDark={isDark}
@@ -170,7 +184,7 @@ const Accounts: React.FC = () => {
           <MetricCard
             icon={CheckCircle}
             label="ACTIVE"
-            value={2}
+            value={cardCounts.active}
             iconBgColor="bg-green-100 dark:bg-green-900/30"
             iconColor="text-green-600 dark:text-green-400"
             isDark={isDark}
@@ -178,7 +192,7 @@ const Accounts: React.FC = () => {
           <MetricCard
             icon={Clock}
             label="PENDING"
-            value={1}
+            value={cardCounts.pending}
             iconBgColor="bg-orange-100 dark:bg-orange-900/30"
             iconColor="text-orange-600 dark:text-orange-400"
             isDark={isDark}
@@ -186,7 +200,7 @@ const Accounts: React.FC = () => {
           <MetricCard
             icon={XCircle}
             label="INACTIVE"
-            value={1}
+            value={cardCounts.inactive}
             iconBgColor="bg-red-100 dark:bg-red-900/30"
             iconColor="text-red-600 dark:text-red-400"
             isDark={isDark}

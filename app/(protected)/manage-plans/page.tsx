@@ -137,7 +137,7 @@ const ManagePlans: React.FC = () => {
         </div>
 
         {/* Metric Cards - Truly Mobile Responsive */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+        {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <MetricCard
             icon={CreditCard}
             label="TOTAL PLANS"
@@ -170,7 +170,7 @@ const ManagePlans: React.FC = () => {
             iconColor="text-red-600 dark:text-red-400"
             isDark={isDark}
           />
-        </div>
+        </div> */}
 
         {/* Table Section - Mobile Optimized */}
         <div className="w-full">

@@ -52,3 +52,27 @@ export interface FormRights {
 }
 
 
+// account.interface.ts (or same file)
+
+export interface AccountCardCounts {
+  total: number;
+  active: number;
+  pending: number;
+  inactive: number;
+}
+
+export interface AccountsApiResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: {
+    pageData: {
+      page: number;
+      pageSize: number;
+      totalRecords: number;
+      totalPages: number;
+      items: AccountData[];
+    };
+    cardCounts: AccountCardCounts;
+  };
+}
