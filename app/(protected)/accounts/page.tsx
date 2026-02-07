@@ -7,7 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
 import { useTheme } from "@/context/ThemeContext";
 import { deleteAccount, getAccounts } from "@/services/accountService";
-import { AccountData, AccountRights } from "@/interfaces/account.interface";
+import { AccountData, FormRights } from "@/interfaces/account.interface";
 import { Building2, CheckCircle, Clock, XCircle, MapPin } from "lucide-react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
@@ -21,9 +21,7 @@ const Accounts: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [totalRecords, setTotalRecords] = useState(0);
-  const [accountsRight, setAccountRights] = useState<AccountRights | null>(
-    null,
-  );
+  const [accountsRight, setAccountRights] = useState<FormRights | null>(null);
   const columns = [
     {
       key: "no",
@@ -214,7 +212,7 @@ const Accounts: React.FC = () => {
           />
         </div>
       </div>
-      <ThemeCustomizer />
+      
     </div>
   );
 };

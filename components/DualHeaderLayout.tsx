@@ -44,13 +44,14 @@ import {
   getUserRoleData,
 } from "@/services/commonServie";
 import { usePathname } from "next/navigation";
+import { applyWhiteLabelColors } from "@/utils/themeUtils";
 
 const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const pathname = usePathname();
   const { layout: menuLayout, setLayout: setMenuLayout } = useLayout();
-  const { selectedColor, colorBlock } = useColor();
+  const { selectedColor, colorBlock, handleColorChange } = useColor();
   const { isDark } = useTheme();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([
     "accounts",
@@ -69,6 +70,17 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     [],
   );
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("whiteLabelTheme");
+    if (savedTheme) {
+      try {
+        applyWhiteLabelColors(JSON.parse(savedTheme), handleColorChange);
+      } catch (err) {
+        console.error("Error applying saved theme:", err);
+      }
+    }
+  }, []);
 
   // Detect mobile screen size
   useEffect(() => {
@@ -312,6 +324,10 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
   // Header classes for Top Nav - NEVER uses color block
   const getTopNavHeaderClasses = (): HeaderClasses => {
+    const savedTheme = localStorage.getItem("whiteLabelTheme");
+    const whiteLabelTheme = savedTheme ? JSON.parse(savedTheme) : null;
+
+    const { secondaryColorHex } = whiteLabelTheme || {};
     if (isDark) {
       return {
         header: "bg-card border-border",
@@ -328,7 +344,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       };
     } else {
       return {
-        header: "bg-card border-border",
+        header: `bg-${secondaryColorHex || "white"} border-border`,
         text: "text-black",
         textSecondary: "text-black/60",
         hover: "hover:text-black",
@@ -492,6 +508,10 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
   // Header for Sidebar Layout (Minimal)
   const SidebarHeader: React.FC = () => {
+    const savedTheme = localStorage.getItem("whiteLabelTheme");
+    const whiteLabelTheme = savedTheme ? JSON.parse(savedTheme) : null;
+
+    const { secondaryColorHex } = whiteLabelTheme || {};
     const headerClasses: HeaderClasses = isDark
       ? {
           header: "bg-card border-border",
@@ -511,7 +531,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           dropdownHover: "",
         }
       : {
-          header: "bg-card border-border",
+          header: `bg-${secondaryColorHex || "white"} border-border`,
           text: "text-black",
           textSecondary: "text-black/60",
           hover: "hover:text-black",
@@ -621,7 +641,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               <div className="absolute right-0 top-full mt-2 w-56 bg-background rounded-lg shadow-lg border z-50">
                 <button
                   onClick={handleLogout}
-                
                   className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded ${
                     isDark ? "text-foreground" : "text-gray-900"
                   }`}
@@ -692,8 +711,12 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           gridHover: "hover:bg-background/50",
         };
       } else {
+        const savedTheme = localStorage.getItem("whiteLabelTheme");
+        const whiteLabelTheme = savedTheme ? JSON.parse(savedTheme) : null;
+
+        const { secondaryColorHex } = whiteLabelTheme || {};
         return {
-          bg: "bg-card",
+          bg: secondaryColorHex,
           border: "border-border",
           logo: "bg-primary",
           logoText: "text-primary-foreground",

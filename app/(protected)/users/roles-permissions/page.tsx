@@ -119,6 +119,7 @@ const Roles: React.FC = () => {
           buttonRoute="/users/roles-permissions/0"
           showExportButton={true}
           ExportbuttonText="Export"
+          showWriteButton={true}
           onExportClick={handleExport}
         />
 
@@ -168,7 +169,7 @@ const Roles: React.FC = () => {
           isServerSide={true}
         />
       </div>
-      <ThemeCustomizer />
+      
     </div>
   );
 };

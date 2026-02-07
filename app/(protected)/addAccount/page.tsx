@@ -309,7 +309,7 @@ const AddAccount: React.FC = () => {
   return (
     <div className={`${isDark ? "dark" : ""} mt-20`}>
       <div
-        className={`min-h-screen ${isDark ? "bg-background" : "bg-gray-50"} p-6`}
+        className={`min-h-screen ${isDark ? "bg-background" : ""} p-6`}
       >
         {/* Header */}
         <div className="max-w-7xl mx-auto mb-6">
@@ -948,7 +948,7 @@ const AddAccount: React.FC = () => {
           </div>
         </div>
       </div>
-      <ThemeCustomizer />
+      
     </div>
   );
 };

@@ -37,7 +37,7 @@ export interface Category {
   createdAt?: string;
 }
 
-export interface AccountRights {
+export interface FormRights {
   formId: number;
   formCode: string;
   formName: string;

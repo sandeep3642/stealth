@@ -165,6 +165,7 @@ const Users: React.FC = () => {
           showFilterButton={true}
           FilterbuttonText="Filters"
           onFilterClick={handleFilter}
+          showWriteButton={true}
         />
         {isFilterOpen && (
           <div className="mb-6 rounded-xl  bg-card p-5 shadow-sm">
@@ -269,7 +270,7 @@ const Users: React.FC = () => {
           onPageSizeChange={handlePageSizeChange}
         />
       </div>
-      <ThemeCustomizer />
+      
     </div>
   );
 };

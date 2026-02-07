@@ -10,6 +10,7 @@ export interface Permission {
   write: boolean;
   delete: boolean;
   export: boolean;
+  update: boolean;
 }
 
 export interface RoleFormData {

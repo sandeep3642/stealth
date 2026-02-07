@@ -328,7 +328,7 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
-      <ThemeCustomizer />
+      
     </div>
   );
 };

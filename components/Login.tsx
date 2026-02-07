@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { useColor } from "@/context/ColorContext";
 import { getUserRoleData } from "@/services/commonServie";
+import { applyWhiteLabelColors } from "@/utils/themeUtils";
 
 interface LoginComponentProps {
   onSwitchToRegister: () => void;
@@ -44,56 +45,61 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
     }
   }, []);
 
- const handleLogin = async () => {
-  if (!email || !password) {
-    setError("Please enter email and password");
-    return;
-  }
-
-  try {
-    setLoading(true);
-    setError("");
-
-    // Handle remember me functionality
-    if (rememberMe) {
-      localStorage.setItem("rememberedEmail", email);
-      localStorage.setItem("rememberedPassword", password);
-    } else {
-      localStorage.removeItem("rememberedEmail");
-      localStorage.removeItem("rememberedPassword");
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError("Please enter email and password");
+      return;
     }
 
-    const response = await loginUser(email, password);
+    try {
+      setLoading(true);
+      setError("");
 
-    if (response.data.token) {
-      // ✅ set user + token
-      localStorage.setItem("authToken", response.data.token.accessToken);
-      localStorage.setItem("user", JSON.stringify(response.data));
-      Cookies.set("authToken", response.data.token.accessToken, { path: "/" });
-
-      // ✅ Apply color theme if white label info is present
-      if (response.data.whiteLabel) {
-        const { primaryColorHex } = response.data.whiteLabel;
-        handleColorChange(primaryColorHex);
+      // Handle remember me functionality
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", email);
+        localStorage.setItem("rememberedPassword", password);
+      } else {
+        localStorage.removeItem("rememberedEmail");
+        localStorage.removeItem("rememberedPassword");
       }
 
-      // ✅ Fetch and store permissions BEFORE redirect
-      await getUserRoleData();
+      const response = await loginUser(email, password);
 
-      // ✅ Dispatch event to notify layout about new permissions
-      window.dispatchEvent(new Event("permissions-updated"));
+      if (response.data.token) {
+        // ✅ set user + token
+        localStorage.setItem("authToken", response.data.token.accessToken);
+        localStorage.setItem("user", JSON.stringify(response.data));
+        Cookies.set("authToken", response.data.token.accessToken, {
+          path: "/",
+        });
 
-      // ✅ Now redirect
-      router.push("/dashboard");
+        if (response.data.whiteLabel) {
+          const whiteLabel = response.data.whiteLabel;
+          applyWhiteLabelColors(whiteLabel,handleColorChange);
+
+          // persist in localStorage for reloads
+          localStorage.setItem("whiteLabelTheme", JSON.stringify(whiteLabel));
+        }
+
+        // ✅ Fetch and store permissions BEFORE redirect
+        await getUserRoleData();
+
+        // ✅ Dispatch event to notify layout about new permissions
+        window.dispatchEvent(new Event("permissions-updated"));
+
+        // ✅ Now redirect
+        router.push("/dashboard");
+      }
+    } catch (err: any) {
+      setError(
+        err.response?.data?.message || "Login failed. Please try again.",
+      );
+      console.error("Login error:", err);
+    } finally {
+      setLoading(false);
     }
-  } catch (err: any) {
-    setError(err.response?.data?.message || "Login failed. Please try again.");
-    console.error("Login error:", err);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   return (
     <div className="w-full max-w-[400px] px-4 sm:px-6 md:px-0 space-y-6 sm:space-y-8">

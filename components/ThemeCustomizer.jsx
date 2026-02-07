@@ -203,7 +203,7 @@ export default function ThemeCustomizer() {
         </div>
 
         {/* Sidebar Style Toggle */}
-        <div>
+        {/* <div>
           <label
             className={`block text-xs font-medium mb-3 ${
               isDark ? "text-gray-400" : "text-gray-600"
@@ -232,7 +232,7 @@ export default function ThemeCustomizer() {
               ></div>
             </label>
           </div>
-        </div>
+        </div> */}
 
         {/* Dark Mode Toggle */}
         <div>

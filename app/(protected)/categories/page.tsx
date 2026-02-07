@@ -8,6 +8,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { getCategories, deleteCategory } from "@/services/categoryService";
 import { Category } from "@/interfaces/category.interface";
 import { useRouter } from "next/navigation";
+import { FormRights } from "@/interfaces/account.interface";
 
 const Categories: React.FC = () => {
   const { isDark } = useTheme();
@@ -17,6 +18,7 @@ const Categories: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [categoryRights, setCategoryRights] = useState<FormRights | null>(null);
 
   const columns = [
     {
@@ -66,7 +68,7 @@ const Categories: React.FC = () => {
   };
 
   const handleEdit = (row: Category) => {
-   router.push(`/categories/${row.categoryId}`);
+    router.push(`/categories/${row.categoryId}`);
   };
 
   const handleDelete = async (row: Category) => {
@@ -94,6 +96,34 @@ const Categories: React.FC = () => {
     fetchCategories();
   }, []);
 
+  useEffect(() => {
+    function getPermissionsList() {
+      try {
+        const storedPermissions = localStorage.getItem("permissions");
+
+        if (storedPermissions) {
+          const parsedPermissions = JSON.parse(storedPermissions);
+
+          const rights = parsedPermissions.find(
+            (val: { formName: string }) => val.formName === "Categories",
+          );
+
+          if (rights) {
+            setCategoryRights(rights);
+          } else {
+            console.warn('No matching rights found for "Categories".');
+          }
+        } else {
+          console.warn("No permissions found in localStorage.");
+        }
+      } catch (error) {
+        console.error("Error fetching permissions from localStorage:", error);
+      }
+    }
+
+    getPermissionsList();
+  }, []);
+
   return (
     <div className={`${isDark ? "dark" : ""} mt-20`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
@@ -104,6 +134,7 @@ const Categories: React.FC = () => {
           showButton={true}
           buttonText="Add Category"
           buttonRoute="/categories/0"
+          showWriteButton={categoryRights?.canWrite || false}
         />
 
         {/* Table */}
@@ -130,7 +161,7 @@ const Categories: React.FC = () => {
           />
         )}
       </div>
-      <ThemeCustomizer />
+      
     </div>
   );
 };

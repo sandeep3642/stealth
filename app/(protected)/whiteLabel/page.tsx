@@ -148,7 +148,7 @@ const WhiteLabelPage: React.FC = () => {
           // loading={loading}
         />
       </div>
-      <ThemeCustomizer />
+      
     </div>
   );
 };

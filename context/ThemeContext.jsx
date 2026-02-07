@@ -17,7 +17,7 @@ export function ThemeProvider({ children }) {
         "(prefers-color-scheme: dark)",
       ).matches;
 
-      setIsDark(savedDark !== null ? savedDark === "true" : prefersDark);
+      // setIsDark(savedDark !== null ? savedDark === "true" : prefersDark);
       setPrimaryHsl(savedPrimary || "239 68% 55%");
     }
   }, []);
