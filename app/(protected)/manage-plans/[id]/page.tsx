@@ -23,16 +23,17 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { getById, updatePlan, createPlan } from "@/services/planService";
+import { getCurrencies, getFormModulesDropdown } from "@/services/commonServie";
 import {
-  getCurrencies,
-  getFormModulesDropdown,
-} from "@/services/commonServie";
-import { CardProps, Currency, FormModule, TenantCategory } from "@/interfaces/plan.interface";
+  CardProps,
+  Currency,
+  FormModule,
+  TenantCategory,
+} from "@/interfaces/plan.interface";
 
 // Mock Theme and Color Contexts
 const useTheme = () => ({ isDark: false });
 const useColor = () => ({ selectedColor: "#8B5CF6" });
-
 
 const Card = ({ children, isDark }: CardProps) => (
   <div
@@ -45,8 +46,6 @@ const Card = ({ children, isDark }: CardProps) => (
     {children}
   </div>
 );
-
-
 
 const PlansManagement = () => {
   const router = useRouter();
@@ -84,7 +83,9 @@ const PlansManagement = () => {
   // Dropdown data from API
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [formModules, setFormModules] = useState<FormModule[]>([]);
-  const [tenantCategories, setTenantCategories] = useState<TenantCategory[]>([]);
+  const [tenantCategories, setTenantCategories] = useState<TenantCategory[]>(
+    [],
+  );
   const [loadingDropdowns, setLoadingDropdowns] = useState(true);
 
   const [loading, setLoading] = useState(false);
@@ -139,7 +140,7 @@ const PlansManagement = () => {
         if (!formData.currencyId && currenciesResponse.data.length > 0) {
           const defaultCurrency = currenciesResponse.data[0];
           // Extract code from value format "USD - US Dollar ($)"
-          const currencyCode = defaultCurrency.value.split(' - ')[0];
+          const currencyCode = defaultCurrency.value.split(" - ")[0];
           setFormData((prev) => ({
             ...prev,
             currencyId: defaultCurrency.id,
@@ -152,7 +153,7 @@ const PlansManagement = () => {
       const formModulesResponse = await getFormModulesDropdown();
       if (formModulesResponse?.success && formModulesResponse?.data) {
         setFormModules(formModulesResponse.data);
-        
+
         // Initialize entitlements with false for all modules
         const initialEntitlements: Record<number, boolean> = {};
         formModulesResponse.data.forEach((module: FormModule) => {
@@ -177,7 +178,7 @@ const PlansManagement = () => {
       const response = await getById(id);
       if (response?.success && response?.data) {
         const data = response.data;
-        
+
         // Map API response to form data
         setFormData({
           planName: data.structure?.planName || "",
@@ -187,12 +188,16 @@ const PlansManagement = () => {
           settlementCurrency: data.structure?.settlementCurrency || "",
           billingInterval: data.structure?.billingInterval || "Monthly",
           contractValidity: data.structure?.contractValidity || "1 Year",
-          pricingModel: data.structure?.pricingModel || "Fixed (Flat Account-based)",
+          pricingModel:
+            data.structure?.pricingModel || "Fixed (Flat Account-based)",
           initialBasePrice: data.setupFee?.initialBasePrice?.toString() || "",
-          amcCharge: data.recurringFee?.annualMaintenanceCharge?.toString() || "",
-          platformSubCharge: data.recurringFee?.platformSubscriptionCharge?.toString() || "",
+          amcCharge:
+            data.recurringFee?.annualMaintenanceCharge?.toString() || "",
+          platformSubCharge:
+            data.recurringFee?.platformSubscriptionCharge?.toString() || "",
           hardwareRestrictions: data.hardwareBinding?.isHardwareLocked || false,
-          userCreationLimit: data.userLimits?.userCreationLimit?.toString() || "",
+          userCreationLimit:
+            data.userLimits?.userCreationLimit?.toString() || "",
           supportNumber: data.support?.supportNumber || "",
           supportEmail: data.support?.supportEmail || "",
           supportInstructions: data.support?.internalInstructions || "",
@@ -203,8 +208,13 @@ const PlansManagement = () => {
         });
 
         // Map entitlement module IDs to entitlements
-        if (data.entitlementModuleIds && Array.isArray(data.entitlementModuleIds)) {
-          const updatedEntitlements: Record<number, boolean> = { ...entitlements };
+        if (
+          data.entitlementModuleIds &&
+          Array.isArray(data.entitlementModuleIds)
+        ) {
+          const updatedEntitlements: Record<number, boolean> = {
+            ...entitlements,
+          };
           data.entitlementModuleIds.forEach((moduleId: number) => {
             updatedEntitlements[moduleId] = true;
           });
@@ -327,10 +337,10 @@ const PlansManagement = () => {
     const iconMap: Record<string, any> = {
       "Live-Tracking": MapPin,
       "History-Playback": Activity,
-      "Geofencing": Zap,
+      Geofencing: Zap,
       "Fuel-Analytics": TrendingUp,
       "Driver-Behavior": Database,
-      "Maintenance": BarChart3,
+      Maintenance: BarChart3,
       "API-Access": Cpu,
       "Advanced-Reports": Smartphone,
       "Account-Management": Users,
@@ -342,12 +352,14 @@ const PlansManagement = () => {
 
   // Format module display name
   const formatModuleName = (value: string) => {
-    return value.split('-').join(' ');
+    return value.split("-").join(" ");
   };
 
   // Extract currency symbol from API value format "USD - US Dollar ($)"
   const getCurrencySymbol = () => {
-    const selectedCurrency = currencies.find((c) => c.id === formData.currencyId);
+    const selectedCurrency = currencies.find(
+      (c) => c.id === formData.currencyId,
+    );
     if (selectedCurrency) {
       const match = selectedCurrency.value.match(/\(([^)]+)\)/);
       return match ? match[1] : "$";
@@ -358,7 +370,7 @@ const PlansManagement = () => {
   return (
     <div className={`${isDark ? "dark" : ""} mt-20`}>
       <div
-        className={`min-h-screen ${isDark ? "bg-background" : "bg-gray-50"} p-6`}
+        className={`min-h-screen  ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
       >
         {/* Header */}
         <div className="mb-8">
@@ -442,7 +454,10 @@ const PlansManagement = () => {
                     isDark ? "text-white" : "text-gray-900"
                   }`}
                 >
-                  <Package style={{ color: selectedColor }} className="w-5 h-5" />
+                  <Package
+                    style={{ color: selectedColor }}
+                    className="w-5 h-5"
+                  />
                   Structural Definitions
                 </h3>
                 <p
@@ -490,11 +505,13 @@ const PlansManagement = () => {
                     value={formData.categoryID}
                     onChange={(e) => {
                       const selectedId = parseInt(e.target.value);
-                      const selectedCategory = tenantCategoriesOptions.find(c => c.id === selectedId);
-                      setFormData(prev => ({
+                      const selectedCategory = tenantCategoriesOptions.find(
+                        (c) => c.id === selectedId,
+                      );
+                      setFormData((prev) => ({
                         ...prev,
                         categoryID: selectedId,
-                        tenantCategory: selectedCategory?.name || ""
+                        tenantCategory: selectedCategory?.name || "",
                       }));
                     }}
                     className={`w-full px-4 py-3 rounded-lg border ${
@@ -524,14 +541,17 @@ const PlansManagement = () => {
                     value={formData.currencyId}
                     onChange={(e) => {
                       const selectedId = parseInt(e.target.value);
-                      const selectedCurrency = currencies.find(c => c.id === selectedId);
+                      const selectedCurrency = currencies.find(
+                        (c) => c.id === selectedId,
+                      );
                       if (selectedCurrency) {
                         // Extract code from format "USD - US Dollar ($)"
-                        const currencyCode = selectedCurrency.value.split(' - ')[0];
-                        setFormData(prev => ({
+                        const currencyCode =
+                          selectedCurrency.value.split(" - ")[0];
+                        setFormData((prev) => ({
                           ...prev,
                           currencyId: selectedId,
-                          settlementCurrency: currencyCode
+                          settlementCurrency: currencyCode,
                         }));
                       }
                     }}
@@ -777,8 +797,8 @@ const PlansManagement = () => {
                           entitlements[module.id]
                             ? "border-purple-500 bg-purple-50"
                             : isDark
-                            ? "border-gray-700 hover:border-gray-600"
-                            : "border-gray-200 hover:border-gray-300"
+                              ? "border-gray-700 hover:border-gray-600"
+                              : "border-gray-200 hover:border-gray-300"
                         }`}
                       >
                         <div className="flex items-start gap-3">
@@ -787,8 +807,8 @@ const PlansManagement = () => {
                               entitlements[module.id]
                                 ? "bg-purple-500"
                                 : isDark
-                                ? "bg-gray-800"
-                                : "bg-gray-100"
+                                  ? "bg-gray-800"
+                                  : "bg-gray-100"
                             }`}
                           >
                             <IconComponent
@@ -796,8 +816,8 @@ const PlansManagement = () => {
                                 entitlements[module.id]
                                   ? "text-white"
                                   : isDark
-                                  ? "text-gray-400"
-                                  : "text-gray-600"
+                                    ? "text-gray-400"
+                                    : "text-gray-600"
                               }`}
                             />
                           </div>
@@ -882,7 +902,8 @@ const PlansManagement = () => {
                           isDark ? "text-gray-400" : "text-gray-600"
                         }`}
                       >
-                        Is this plan locked to specific tracking device families?
+                        Is this plan locked to specific tracking device
+                        families?
                       </p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
