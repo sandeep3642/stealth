@@ -356,8 +356,10 @@ const PlansManagement = () => {
   };
 
   return (
-    <div className={`min-h-screen ${isDark ? "bg-gray-950" : "bg-gray-50"} py-8`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className={`${isDark ? "dark" : ""} mt-20`}>
+      <div
+        className={`min-h-screen ${isDark ? "bg-background" : "bg-gray-50"} p-6`}
+      >
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -1132,7 +1134,7 @@ const PlansManagement = () => {
                 isDark
                   ? "bg-gray-900 border-gray-800"
                   : "bg-white border-gray-200"
-              } rounded-xl shadow-lg border-t-4 overflow-hidden sticky top-6`}
+              } rounded-xl shadow-lg border-t-4`}
             >
               <div className="p-6">
                 <h3

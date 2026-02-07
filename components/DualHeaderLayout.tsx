@@ -70,15 +70,21 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     [],
   );
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("whiteLabelTheme");
-    if (savedTheme) {
-      try {
-        applyWhiteLabelColors(JSON.parse(savedTheme), handleColorChange);
-      } catch (err) {
-        console.error("Error applying saved theme:", err);
+    if (typeof window !== "undefined") {
+      const savedTheme = localStorage.getItem("whiteLabelTheme");
+      if (savedTheme) {
+        try {
+          applyWhiteLabelColors(JSON.parse(savedTheme), handleColorChange);
+        } catch (err) {
+          console.error("Error applying saved theme:", err);
+        }
       }
+
+      const userData = localStorage.getItem("user");
+      setUser(userData ? JSON.parse(userData) : null);
     }
   }, []);
 
@@ -102,6 +108,8 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   // Fetch permissions on mount
   useEffect(() => {
     function getPermissionsList() {
+      if (typeof window === "undefined") return;
+
       try {
         setIsLoadingPermissions(true);
         const storedPermissions = localStorage.getItem("permissions");
@@ -131,8 +139,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     return () =>
       window.removeEventListener("permissions-updated", handlePermissionUpdate);
   }, [pathname]);
-
-  console.log("userRights", userRights);
 
   // Filter menu sections based on permissions
   useEffect(() => {
@@ -309,10 +315,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       ],
     },
   ];
-  const user =
-    typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("user") || "{}")
-      : null;
 
   const toggleMenu = (menuId: string) => {
     setExpandedMenus((prev) =>
@@ -324,10 +326,29 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
   // Header classes for Top Nav - NEVER uses color block
   const getTopNavHeaderClasses = (): HeaderClasses => {
+    // Default return for SSR
+    const defaultClasses = {
+      header: "bg-white border-border",
+      text: "text-black",
+      textSecondary: "text-black/60",
+      hover: "hover:text-black",
+      inputBg: "bg-background",
+      inputBorder: "border-border",
+      inputText: "text-black",
+      hoverBg: "hover:bg-background/50",
+      dropdown: "bg-card border-border",
+      dropdownHover: "hover:bg-background/50",
+      useCustomBg: false,
+    };
+
+    if (typeof window === "undefined") {
+      return defaultClasses;
+    }
+
     const savedTheme = localStorage.getItem("whiteLabelTheme");
     const whiteLabelTheme = savedTheme ? JSON.parse(savedTheme) : null;
-
     const { secondaryColorHex } = whiteLabelTheme || {};
+
     if (isDark) {
       return {
         header: "bg-card border-border",
@@ -508,45 +529,69 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
   // Header for Sidebar Layout (Minimal)
   const SidebarHeader: React.FC = () => {
-    const savedTheme = localStorage.getItem("whiteLabelTheme");
-    const whiteLabelTheme = savedTheme ? JSON.parse(savedTheme) : null;
+    const [headerClasses, setHeaderClasses] = useState<HeaderClasses>({
+      header: "bg-white border-border",
+      text: "text-black",
+      textSecondary: "text-black/60",
+      hover: "hover:text-black",
+      inputBg: "bg-background",
+      inputBorder: "border-black/20",
+      inputText: "text-black",
+      inputPlaceholder: "placeholder:text-black/40",
+      hoverBg: "hover:bg-background/50",
+      logo: "bg-primary",
+      logoText: "text-primary-foreground",
+      iconColor: "text-black/70",
+      useCustomBg: false,
+      dropdown: "",
+      dropdownHover: "",
+    });
 
-    const { secondaryColorHex } = whiteLabelTheme || {};
-    const headerClasses: HeaderClasses = isDark
-      ? {
-          header: "bg-card border-border",
-          text: "text-white",
-          textSecondary: "text-white/70",
-          hover: "hover:text-white",
-          inputBg: "bg-background",
-          inputBorder: "border-white/20",
-          inputText: "text-white",
-          inputPlaceholder: "placeholder:text-white/40",
-          hoverBg: "hover:bg-background/50",
-          logo: "bg-primary",
-          logoText: "text-primary-foreground",
-          iconColor: "text-white/70",
-          useCustomBg: false,
-          dropdown: "",
-          dropdownHover: "",
-        }
-      : {
-          header: `bg-${secondaryColorHex || "white"} border-border`,
-          text: "text-black",
-          textSecondary: "text-black/60",
-          hover: "hover:text-black",
-          inputBg: "bg-background",
-          inputBorder: "border-black/20",
-          inputText: "text-black",
-          inputPlaceholder: "placeholder:text-black/40",
-          hoverBg: "hover:bg-background/50",
-          logo: "bg-primary",
-          logoText: "text-primary-foreground",
-          iconColor: "text-black/70",
-          useCustomBg: false,
-          dropdown: "",
-          dropdownHover: "",
-        };
+    useEffect(() => {
+      if (typeof window !== "undefined") {
+        const savedTheme = localStorage.getItem("whiteLabelTheme");
+        const whiteLabelTheme = savedTheme ? JSON.parse(savedTheme) : null;
+        const { secondaryColorHex } = whiteLabelTheme || {};
+
+        setHeaderClasses(
+          isDark
+            ? {
+                header: "bg-card border-border",
+                text: "text-white",
+                textSecondary: "text-white/70",
+                hover: "hover:text-white",
+                inputBg: "bg-background",
+                inputBorder: "border-white/20",
+                inputText: "text-white",
+                inputPlaceholder: "placeholder:text-white/40",
+                hoverBg: "hover:bg-background/50",
+                logo: "bg-primary",
+                logoText: "text-primary-foreground",
+                iconColor: "text-white/70",
+                useCustomBg: false,
+                dropdown: "",
+                dropdownHover: "",
+              }
+            : {
+                header: `bg-${secondaryColorHex || "white"} border-border`,
+                text: "text-black",
+                textSecondary: "text-black/60",
+                hover: "hover:text-black",
+                inputBg: "bg-background",
+                inputBorder: "border-black/20",
+                inputText: "text-black",
+                inputPlaceholder: "placeholder:text-black/40",
+                hoverBg: "hover:bg-background/50",
+                logo: "bg-primary",
+                logoText: "text-primary-foreground",
+                iconColor: "text-black/70",
+                useCustomBg: false,
+                dropdown: "",
+                dropdownHover: "",
+              },
+        );
+      }
+    }, [isDark]);
 
     return (
       <header
@@ -711,10 +756,13 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           gridHover: "hover:bg-background/50",
         };
       } else {
-        const savedTheme = localStorage.getItem("whiteLabelTheme");
+        const savedTheme =
+          typeof window !== "undefined"
+            ? localStorage.getItem("whiteLabelTheme")
+            : null;
         const whiteLabelTheme = savedTheme ? JSON.parse(savedTheme) : null;
-
         const { secondaryColorHex } = whiteLabelTheme || {};
+
         return {
           bg: secondaryColorHex,
           border: "border-border",

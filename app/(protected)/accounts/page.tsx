@@ -107,9 +107,11 @@ const Accounts: React.FC = () => {
   useEffect(() => {
     getAccountsList();
   }, [pageNo, pageSize, debouncedQuery]);
-
   useEffect(() => {
     function getPermissionsList() {
+      // 🧠 Prevents running during SSR / static generation
+      if (typeof window === "undefined") return;
+
       try {
         const storedPermissions = localStorage.getItem("permissions");
 
@@ -212,7 +214,6 @@ const Accounts: React.FC = () => {
           />
         </div>
       </div>
-      
     </div>
   );
 };

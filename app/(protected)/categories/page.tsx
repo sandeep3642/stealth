@@ -99,6 +99,7 @@ const Categories: React.FC = () => {
   useEffect(() => {
     function getPermissionsList() {
       try {
+           if (typeof window === "undefined") return;
         const storedPermissions = localStorage.getItem("permissions");
 
         if (storedPermissions) {

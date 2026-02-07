@@ -11,6 +11,7 @@ export interface Permission {
   delete: boolean;
   export: boolean;
   update: boolean;
+  all?: boolean;
 }
 
 export interface RoleFormData {
