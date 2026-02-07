@@ -45,19 +45,18 @@ const ManagePlans: React.FC = () => {
       visible: true,
     },
     {
-      key: "basePrice",
+      key: "initialBasePrice",
       label: "PRICING",
-      type: "icon-text" as const,
       icon: <DollarSign className="w-4 h-4" />,
       visible: true,
     },
+    // {
+    //   key: "userLimit",
+    //   label: "USER LIMIT",
+    //   visible: true,
+    // },
     {
-      key: "userLimit",
-      label: "USER LIMIT",
-      visible: true,
-    },
-    {
-      key: "status",
+      key: "isActive",
       label: "STATUS",
       type: "badge" as const,
       visible: true,
@@ -68,7 +67,7 @@ const ManagePlans: React.FC = () => {
   const [data, setData] = useState<PlanData[]>([]);
 
   const handleEdit = (row: PlanData) => {
-    router.push(`/billing/manage-plans/${row.planId}`);
+    router.push(`/manage-plans/${row.planId}`);
   };
 
   const handleDelete = async (row: PlanData) => {
