@@ -98,7 +98,7 @@ const ManagePlans: React.FC = () => {
     try {
       const response = await getPlans(pageNo, pageSize, debouncedQuery);
       if (response && response.statusCode === 200) {
-        toast.success(response.message);
+        // toast.success(response.message);
         setData(response.data.items);
       }
 

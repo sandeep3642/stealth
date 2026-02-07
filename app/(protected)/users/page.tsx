@@ -131,7 +131,7 @@ const Users: React.FC = () => {
       roles: filters.roles.map((r) => r.value),
       statuses: filters.statuses.map((s) => s.value),
     });
-    toast.success("Filters applied!");
+    // toast.success("Filters applied!");
   };
 
   async function fetchUsers() {

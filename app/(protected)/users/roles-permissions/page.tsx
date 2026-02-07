@@ -96,7 +96,7 @@ const Roles: React.FC = () => {
   async function fetchRoles() {
     const response = await getRoles(pageNo, pageSize);
     if (response && response.statusCode === 200) {
-      toast.success(response.message);
+      // toast.success(response.message);
       setSummary(response.data.summary);
       setData(response.data.roles.items);
       setTotalRecords(response.data.roles.totalRecords);

@@ -48,31 +48,100 @@ const AddRole: React.FC = () => {
     }));
   };
 
+  // Updated: Handle row-wise "All" checkbox
   const handlePermissionChange = (index: number, field: keyof Permission) => {
-    if (!["read", "write", "delete", "export"].includes(field)) return;
+    if (!["read", "write", "update", "delete", "export", "all"].includes(field)) return;
 
-    setFormData((prev) => ({
-      ...prev,
-      permissions: prev.permissions.map((perm, i) =>
-        i === index ? { ...perm, [field]: !perm[field] } : perm,
-      ),
-    }));
+    setFormData((prev) => {
+      const updatedPermissions = prev.permissions.map((perm, i) => {
+        if (i === index) {
+          // If "all" checkbox is clicked, toggle all other permissions for this row
+          if (field === "all") {
+            const newAllValue = !perm.all;
+            return {
+              ...perm,
+              all: newAllValue,
+              read: newAllValue,
+              write: newAllValue,
+              update: newAllValue,
+              delete: newAllValue,
+              export: newAllValue,
+            };
+          } else {
+            // If any individual permission is clicked
+            const updatedPerm = { ...perm, [field]: !perm[field] };
+            
+            // Auto-update "all" checkbox based on other permissions
+            const allPermissionsTrue = 
+              updatedPerm.read && 
+              updatedPerm.write && 
+              updatedPerm.update && 
+              updatedPerm.delete && 
+              updatedPerm.export;
+            
+            return {
+              ...updatedPerm,
+              all: allPermissionsTrue,
+            };
+          }
+        }
+        return perm;
+      });
+
+      return {
+        ...prev,
+        permissions: updatedPermissions,
+      };
+    });
   };
 
+  // Updated: Handle column header checkboxes
   const handleSelectAll = (field: keyof Permission) => {
     if (
       field === "read" ||
       field === "write" ||
+      field === "update" ||
       field === "delete" ||
-      field === "export"
+      field === "export" ||
+      field === "all"
     ) {
       const allChecked = formData.permissions.every((p) => p[field]);
+      
       setFormData((prev) => ({
         ...prev,
-        permissions: prev.permissions.map((p) => ({
-          ...p,
-          [field]: !allChecked,
-        })),
+        permissions: prev.permissions.map((p) => {
+          // If "all" column header is clicked
+          if (field === "all") {
+            return {
+              ...p,
+              all: !allChecked,
+              read: !allChecked,
+              write: !allChecked,
+              update: !allChecked,
+              delete: !allChecked,
+              export: !allChecked,
+            };
+          } else {
+            // For other column headers, just toggle that field
+            const updatedPerm = {
+              ...p,
+              [field]: !allChecked,
+            };
+            
+            // Auto-update "all" checkbox based on other permissions
+            const allPermissionsTrue = 
+              updatedPerm.read && 
+              updatedPerm.write && 
+              updatedPerm.update && 
+              updatedPerm.delete && 
+              updatedPerm.export;
+            
+            return {
+              ...updatedPerm,
+              all: allPermissionsTrue,
+            };
+          }
+        }),
       }));
     }
   };
@@ -82,8 +151,10 @@ const AddRole: React.FC = () => {
     if (
       field === "read" ||
       field === "write" ||
+      field === "update" ||
       field === "delete" ||
-      field === "export"
+      field === "export" ||
+      field === "all"
     ) {
       return (
         formData.permissions.length > 0 &&
@@ -120,12 +191,22 @@ const AddRole: React.FC = () => {
               );
 
               if (right) {
+                // Check if all permissions are true to set "all" flag
+                const allPermissionsTrue = 
+                  right.canRead && 
+                  right.canWrite && 
+                  right.canUpdate && 
+                  right.canDelete && 
+                  right.canExport;
+
                 return {
                   ...perm,
                   read: right.canRead || false,
                   write: right.canWrite || false,
+                  update: right.canUpdate || false,
                   delete: right.canDelete || false,
                   export: right.canExport || false,
+                  all: right.canAll || allPermissionsTrue,
                 };
               }
               return perm;
@@ -166,10 +247,10 @@ const AddRole: React.FC = () => {
         formId: p.formId,
         canRead: p.read,
         canWrite: p.write,
-        canUpdate: p.write,
+        canUpdate: p.update,
         canDelete: p.delete,
         canExport: p.export,
-        canAll: p.read && p.write && p.delete && p.export,
+        canAll: p.all,
       }));
 
       let response;
@@ -255,8 +336,10 @@ const AddRole: React.FC = () => {
           resource: item.formName,
           read: false,
           write: false,
+          update: false,
           delete: false,
           export: false,
+          all: false,
         }));
 
         // Update formData state
@@ -521,6 +604,23 @@ const AddRole: React.FC = () => {
                             className={`font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"
                               }`}
                           >
+                            UPDATE
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={areAllChecked("update")}
+                            onChange={() => handleSelectAll("update")}
+                            className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                            style={{ accentColor: selectedColor }}
+                          />
+                        </div>
+                      </th>
+                      <th className="text-center py-3 px-4">
+                        <div className="flex flex-col items-center gap-1">
+                          <span
+                            className={`font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"
+                              }`}
+                          >
                             DELETE
                           </span>
                           <input
@@ -544,6 +644,23 @@ const AddRole: React.FC = () => {
                             type="checkbox"
                             checked={areAllChecked("export")}
                             onChange={() => handleSelectAll("export")}
+                            className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                            style={{ accentColor: selectedColor }}
+                          />
+                        </div>
+                      </th>
+                      <th className="text-center py-3 px-4">
+                        <div className="flex flex-col items-center gap-1">
+                          <span
+                            className={`font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"
+                              }`}
+                          >
+                            ALL
+                          </span>
+                          <input
+                            type="checkbox"
+                            checked={areAllChecked("all")}
+                            onChange={() => handleSelectAll("all")}
                             className="w-4 h-4 rounded border-gray-300 cursor-pointer"
                             style={{ accentColor: selectedColor }}
                           />
@@ -588,6 +705,17 @@ const AddRole: React.FC = () => {
                         <td className="text-center py-4 px-4">
                           <input
                             type="checkbox"
+                            checked={permission.update}
+                            onChange={() =>
+                              handlePermissionChange(index, "update")
+                            }
+                            className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                            style={{ accentColor: selectedColor }}
+                          />
+                        </td>
+                        <td className="text-center py-4 px-4">
+                          <input
+                            type="checkbox"
                             checked={permission.delete}
                             onChange={() =>
                               handlePermissionChange(index, "delete")
@@ -602,6 +730,17 @@ const AddRole: React.FC = () => {
                             checked={permission.export}
                             onChange={() =>
                               handlePermissionChange(index, "export")
+                            }
+                            className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                            style={{ accentColor: selectedColor }}
+                          />
+                        </td>
+                        <td className="text-center py-4 px-4">
+                          <input
+                            type="checkbox"
+                            checked={permission.all}
+                            onChange={() =>
+                              handlePermissionChange(index, "all")
                             }
                             className="w-4 h-4 rounded border-gray-300 cursor-pointer"
                             style={{ accentColor: selectedColor }}

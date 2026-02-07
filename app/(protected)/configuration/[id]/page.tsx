@@ -170,7 +170,7 @@ const NewConfiguration: React.FC = () => {
   async function fetchAllAcounts() {
     const response = await getAllAccounts();
     if (response && response.statusCode === 200) {
-      toast.success(response.message);
+      // toast.success(response.message);
       setAccounts(response.data);
     }
   }

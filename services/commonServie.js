@@ -102,3 +102,15 @@ export const filterMenuByPermissions = (menuItems, rights) => {
     })
     .filter(Boolean); // Remove null items
 };
+
+export const getCurrencies = async () => {
+  const res = await api.get(`/api/common/dropdowns/Currency`);
+  return res.data;
+};
+
+export const getFormModulesDropdown = async () => {
+  const res = await api.get(
+    `/api/common/dropdowns/form-modules/dropdown`
+  );
+  return res.data;
+}
