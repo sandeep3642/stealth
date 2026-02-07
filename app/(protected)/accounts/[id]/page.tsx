@@ -410,8 +410,8 @@ const EditAccount: React.FC = () => {
             </div>
             <button
               className={`px-6 py-2 rounded-lg font-medium transition-colors ${isDark
-                  ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+                ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
                 }`}
               onClick={() => router.back()}
             >
@@ -446,8 +446,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Enter account name"
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
@@ -464,8 +464,8 @@ const EditAccount: React.FC = () => {
                     value={formData.superior}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground"
-                        : "bg-white border-gray-300 text-gray-900"
+                      ? "bg-gray-800 border-gray-700 text-foreground"
+                      : "bg-white border-gray-300 text-gray-900"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
                     <option value="">Select Superior Account</option>
@@ -489,8 +489,8 @@ const EditAccount: React.FC = () => {
                     value={formData.referrer}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground"
-                        : "bg-white border-gray-300 text-gray-900"
+                      ? "bg-gray-800 border-gray-700 text-foreground"
+                      : "bg-white border-gray-300 text-gray-900"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
                     <option value="">Select Referrer</option>
@@ -520,8 +520,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Name"
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
@@ -540,8 +540,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Phone"
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
@@ -560,8 +560,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Position/Designation"
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
@@ -591,11 +591,11 @@ const EditAccount: React.FC = () => {
                     value={formData.countryId}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground"
-                        : "bg-white border-gray-300 text-gray-900"
+                      ? "bg-gray-800 border-gray-700 text-foreground"
+                      : "bg-white border-gray-300 text-gray-900"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
-                    <option value="">Select or Add Country</option>
+                    <option value="">Select Country</option>
                     {countries.map((country) => (
                       <option key={country.countryId} value={country.countryId}>
                         {country.countryName}
@@ -617,8 +617,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     disabled={!formData.countryId}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground"
-                        : "bg-white border-gray-300 text-gray-900"
+                      ? "bg-gray-800 border-gray-700 text-foreground"
+                      : "bg-white border-gray-300 text-gray-900"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     <option value="">Select or Add State</option>
@@ -643,8 +643,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     disabled={!formData.stateId}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground"
-                        : "bg-white border-gray-300 text-gray-900"
+                      ? "bg-gray-800 border-gray-700 text-foreground"
+                      : "bg-white border-gray-300 text-gray-900"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     <option value="">Select or Add City</option>
@@ -670,8 +670,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Select or Add Zipcode"
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
@@ -691,8 +691,8 @@ const EditAccount: React.FC = () => {
                   onChange={handleInputChange}
                   placeholder="Enter full address"
                   className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                    ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                     } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                 />
               </div>
@@ -723,8 +723,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Business Contact Number"
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
@@ -743,8 +743,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="e.g. 9 AM - 5 PM"
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
@@ -765,8 +765,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="example.com"
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
@@ -785,8 +785,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="business@example.com"
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
@@ -807,8 +807,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Enter business address"
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
@@ -828,8 +828,8 @@ const EditAccount: React.FC = () => {
                     placeholder="Auto-filled from country"
                     disabled
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20 disabled:opacity-50`}
                   />
                 </div>
@@ -861,8 +861,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Enter username"
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
@@ -881,8 +881,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="Enter password"
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
@@ -901,8 +901,8 @@ const EditAccount: React.FC = () => {
                     onChange={handleInputChange}
                     placeholder="user@example.com"
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   />
                 </div>
@@ -921,8 +921,8 @@ const EditAccount: React.FC = () => {
                     value={formData.categoryId}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground"
-                        : "bg-white border-gray-300 text-gray-900"
+                      ? "bg-gray-800 border-gray-700 text-foreground"
+                      : "bg-white border-gray-300 text-gray-900"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
                     <option value="">Select Category</option>
@@ -946,8 +946,8 @@ const EditAccount: React.FC = () => {
                     value={formData.status}
                     onChange={handleInputChange}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground"
-                        : "bg-white border-gray-300 text-gray-900"
+                      ? "bg-gray-800 border-gray-700 text-foreground"
+                      : "bg-white border-gray-300 text-gray-900"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
                     <option value="Active">Active</option>
@@ -1018,8 +1018,8 @@ const EditAccount: React.FC = () => {
           <div className="flex justify-end gap-4">
             <button
               className={`px-6 py-3 rounded-lg font-medium transition-colors ${isDark
-                  ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+                ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
                 }`}
               onClick={() => router.back()}
             >

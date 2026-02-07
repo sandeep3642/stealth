@@ -508,7 +508,7 @@ const AddAccount: React.FC = () => {
                       : "bg-white border-gray-300 text-gray-900"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
-                    <option value="">Select or Add Country</option>
+                    <option value="">Select Country</option>
                     {countries.map((country) => (
                       <option key={country.countryId} value={country.countryId}>
                         {country.countryName}
