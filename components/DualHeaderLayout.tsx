@@ -71,13 +71,16 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   );
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [secondaryColorHex, setSecondaryColorHex] = useState<string>("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedTheme = localStorage.getItem("whiteLabelTheme");
       if (savedTheme) {
         try {
-          applyWhiteLabelColors(JSON.parse(savedTheme), handleColorChange);
+          const parsedTheme = JSON.parse(savedTheme);
+          applyWhiteLabelColors(parsedTheme, handleColorChange);
+          setSecondaryColorHex(parsedTheme.secondaryColorHex || "");
         } catch (err) {
           console.error("Error applying saved theme:", err);
         }
@@ -345,10 +348,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       return defaultClasses;
     }
 
-    const savedTheme = localStorage.getItem("whiteLabelTheme");
-    const whiteLabelTheme = savedTheme ? JSON.parse(savedTheme) : null;
-    const { secondaryColorHex } = whiteLabelTheme || {};
-
     if (isDark) {
       return {
         header: "bg-card border-border",
@@ -365,7 +364,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       };
     } else {
       return {
-        header: `bg-${secondaryColorHex || "white"} border-border`,
+        header: secondaryColorHex ? "" : "bg-white border-border",
         text: "text-black",
         textSecondary: "text-black/60",
         hover: "hover:text-black",
@@ -375,7 +374,8 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         hoverBg: "hover:bg-background/50",
         dropdown: "bg-card border-border",
         dropdownHover: "hover:bg-background/50",
-        useCustomBg: false,
+        useCustomBg: !!secondaryColorHex,
+        customBg: secondaryColorHex,
       };
     }
   };
@@ -385,14 +385,14 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     const headerClasses = getTopNavHeaderClasses();
     return (
       <header
-        className={`${headerClasses.header} border-b fixed w-full`}
+        className={`${headerClasses.header} border-b fixed w-full top-0 z-50`}
         style={
-          headerClasses.useCustomBg
-            ? { background: headerClasses.customBg }
+          headerClasses.useCustomBg && headerClasses.customBg
+            ? { backgroundColor: headerClasses.customBg }
             : {}
         }
       >
-        <div className="px-4 md:px-6 py-3 md:py-4 flex items-center justify-between">
+        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4">
           {/* Left side: Logo and Navigation */}
           <div className="flex items-center gap-4 md:gap-8">
             <div className="flex items-center gap-2">
@@ -528,9 +528,74 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // Header for Sidebar Layout (Minimal)
+  // Header for Sidebar Layout (Minimal)
+
+  const getSidebarClasses = (): SidebarClasses => {
+    if (colorBlock && selectedColor && menuLayout === "sidebar") {
+      // Color block mode ONLY for sidebar layout
+      return {
+        useCustomBg: true,
+        customBg: selectedColor,
+        border: "border-transparent",
+        logo: "bg-white/20",
+        logoText: "text-white",
+        brandText: "text-white",
+        sectionTitle: "text-white/60",
+        menuText: "text-white",
+        menuIcon: "text-white",
+        menuHover: "hover:bg-white/10",
+        activeMenuBg: "bg-white/20",
+        activeMenuText: "text-white",
+        activeMenuIcon: "text-white",
+        chevron: "text-white/60",
+        gridIcon: "text-white/70",
+        gridHover: "hover:bg-white/10",
+      };
+    } else if (isDark) {
+      return {
+        bg: "bg-card",
+        border: "border-border",
+        logo: "bg-primary",
+        logoText: "text-primary-foreground",
+        brandText: "text-foreground",
+        sectionTitle: "text-foreground",
+        menuText: "text-foreground",
+        menuIcon: "text-foreground/70",
+        menuHover: "hover:bg-background/50",
+        activeMenuBg: "bg-primary/10",
+        activeMenuText: "text-primary",
+        activeMenuIcon: "text-primary",
+        chevron: "text-foreground/40",
+        gridIcon: "text-foreground/50",
+        gridHover: "hover:bg-background/50",
+      };
+    } else {
+      // Use secondaryColorHex for light mode sidebar background
+      return {
+        useCustomBg: !!secondaryColorHex,
+        customBg: secondaryColorHex,
+        bg: secondaryColorHex ? "" : "bg-white",
+        border: "border-border",
+        logo: "bg-primary",
+        logoText: "text-primary-foreground",
+        brandText: "text-foreground",
+        sectionTitle: "text-foreground/50",
+        menuText: "text-foreground",
+        menuIcon: "text-foreground/70",
+        menuHover: "hover:bg-background/50",
+        activeMenuBg: "bg-primary/10",
+        activeMenuText: "text-primary",
+        activeMenuIcon: "text-primary",
+        chevron: "text-foreground/40",
+        gridIcon: "text-foreground/50",
+        gridHover: "hover:bg-background/50",
+      };
+    }
+  };
+
   const SidebarHeader: React.FC = () => {
     const [headerClasses, setHeaderClasses] = useState<HeaderClasses>({
-      header: "bg-white border-border",
+      header: "bg-white", // Remove border-border from here
       text: "text-black",
       textSecondary: "text-black/60",
       hover: "hover:text-black",
@@ -547,16 +612,14 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       dropdownHover: "",
     });
 
+    const sidebarClasses = getSidebarClasses();
+
     useEffect(() => {
       if (typeof window !== "undefined") {
-        const savedTheme = localStorage.getItem("whiteLabelTheme");
-        const whiteLabelTheme = savedTheme ? JSON.parse(savedTheme) : null;
-        const { secondaryColorHex } = whiteLabelTheme || {};
-
         setHeaderClasses(
           isDark
             ? {
-                header: "bg-card border-border",
+                header: "bg-card", // Remove border-border from here too
                 text: "text-white",
                 textSecondary: "text-white/70",
                 hover: "hover:text-white",
@@ -573,7 +636,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                 dropdownHover: "",
               }
             : {
-                header: `bg-${secondaryColorHex || "white"} border-border`,
+                header: secondaryColorHex ? "" : "bg-white", // Remove border-border from here too
                 text: "text-black",
                 textSecondary: "text-black/60",
                 hover: "hover:text-black",
@@ -585,22 +648,27 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                 logo: "bg-primary",
                 logoText: "text-primary-foreground",
                 iconColor: "text-black/70",
-                useCustomBg: false,
+                useCustomBg: !!secondaryColorHex,
+                customBg: secondaryColorHex,
                 dropdown: "",
                 dropdownHover: "",
               },
         );
       }
-    }, [isDark]);
+    }, [isDark, secondaryColorHex]);
 
     return (
       <header
         className={`${headerClasses.header}
-    fixed top-0 z-50 border-b px-4 md:px-6 py-3 flex items-center justify-between transition-all duration-300
-    w-full
-    ${!isMobile && isSidebarOpen ? "lg:ml-64 lg:w-[calc(100%-16rem)]" : ""}
-    ${!isMobile && !isSidebarOpen ? "lg:ml-20 lg:w-[calc(100%-5rem)]" : ""}
-  `}
+        fixed top-0 left-0 right-0 z-50 border-b ${sidebarClasses.border} px-4 md:px-6 py-3 flex items-center justify-between transition-all duration-300
+        ${!isMobile && isSidebarOpen ? "lg:left-64" : ""}
+        ${!isMobile && !isSidebarOpen ? "lg:left-20" : ""}
+      `}
+        style={
+          headerClasses.useCustomBg && headerClasses.customBg
+            ? { backgroundColor: headerClasses.customBg }
+            : {}
+        }
       >
         <div className="flex items-center gap-3">
           <button
@@ -715,7 +783,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
   // Sidebar Menu Component
   const Sidebar: React.FC = () => {
-    // Sidebar styling - ONLY uses color block for sidebar layout
+    // Sidebar styling - uses color block for sidebar layout OR secondaryColorHex
     const getSidebarClasses = (): SidebarClasses => {
       if (colorBlock && selectedColor && menuLayout === "sidebar") {
         // Color block mode ONLY for sidebar layout
@@ -756,15 +824,11 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           gridHover: "hover:bg-background/50",
         };
       } else {
-        const savedTheme =
-          typeof window !== "undefined"
-            ? localStorage.getItem("whiteLabelTheme")
-            : null;
-        const whiteLabelTheme = savedTheme ? JSON.parse(savedTheme) : null;
-        const { secondaryColorHex } = whiteLabelTheme || {};
-
+        // Use secondaryColorHex for light mode sidebar background
         return {
-          bg: secondaryColorHex,
+          useCustomBg: !!secondaryColorHex,
+          customBg: secondaryColorHex,
+          bg: secondaryColorHex ? "" : "bg-white",
           border: "border-border",
           logo: "bg-primary",
           logoText: "text-primary-foreground",
@@ -797,12 +861,12 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
             : "translate-x-0"
         }`}
         style={
-          sidebarClasses.useCustomBg
-            ? { background: sidebarClasses.customBg }
+          sidebarClasses.useCustomBg && sidebarClasses.customBg
+            ? { backgroundColor: sidebarClasses.customBg }
             : {}
         }
       >
-        <div className="p-4">
+        <div className="p-4 pb-20">
           {/* Logo Section */}
           <div
             className={`flex items-center ${
@@ -978,7 +1042,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-    <div className="bg-background">
+    <div className="bg-background h-screen overflow-hidden flex flex-col">
       {/* Render appropriate header based on layout */}
       {menuLayout === "topnav" ? <TopNavHeader /> : <SidebarHeader />}
 
@@ -989,13 +1053,19 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       {menuLayout === "sidebar" && <Sidebar />}
 
       <main
-        className={`p-4 md:p-6 ${
+        className={`
+        flex-1 overflow-y-auto
+        p-4 md:p-6
+        ${menuLayout === "topnav" ? " md:mt-20" : " md:mt-20"}
+        ${
           menuLayout === "sidebar" && !isMobile
             ? isSidebarOpen
               ? "lg:ml-64"
               : "lg:ml-20"
             : ""
-        } transition-all duration-300`}
+        }
+        transition-all duration-300
+      `}
       >
         {children}
       </main>

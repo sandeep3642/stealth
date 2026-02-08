@@ -127,7 +127,7 @@ const Subscriptions: React.FC = () => {
     }, [pageNo, pageSize, debouncedQuery]);
 
     return (
-        <div className={`${isDark ? "dark" : ""} mt-20`}>
+        <div className={`${isDark ? "dark" : ""} `}>
             <div
                 className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
             >

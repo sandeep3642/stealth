@@ -448,7 +448,7 @@ const CreateUser: React.FC = () => {
 
   if (loading && isEditMode && !formData.emailAddress) {
     return (
-      <div className={`${isDark ? "dark" : ""} mt-16 sm:mt-20`}>
+      <div className={`${isDark ? "dark" : ""}  sm:`}>
         <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-3 sm:p-4 md:p-6 flex items-center justify-center`}>
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: selectedColor }}></div>
@@ -460,7 +460,7 @@ const CreateUser: React.FC = () => {
   }
 
   return (
-    <div className={`${isDark ? "dark" : ""} mt-16 sm:mt-20`}>
+    <div className={`${isDark ? "dark" : ""}  sm:`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-3 sm:p-4 md:p-6`}>
         <div className="mb-4 sm:mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">

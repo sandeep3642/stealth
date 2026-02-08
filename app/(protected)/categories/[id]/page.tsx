@@ -112,7 +112,7 @@ const AddEditCategory: React.FC = () => {
 
   if (fetchingData) {
     return (
-      <div className={`${isDark ? "dark" : ""} mt-20`}>
+      <div className={`${isDark ? "dark" : ""} `}>
         <div className="min-h-screen bg-background flex items-center justify-center">
           <p className="text-foreground">Loading category data...</p>
         </div>
@@ -121,11 +121,11 @@ const AddEditCategory: React.FC = () => {
   }
 
   return (
-    <div className={`${isDark ? "dark" : ""} mt-20`}>
+    <div className={`${isDark ? "dark" : ""} `}>
       <div className="min-h-screen bg-background flex justify-center p-2">
         <div className="w-full max-w-4xl">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mt-20 mb-6 px-4 sm:px-0">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0  mb-6 px-4 sm:px-0">
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
               {isEditMode ? "Edit Classification" : "New Classification"}
             </h1>

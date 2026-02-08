@@ -223,7 +223,7 @@ const ProvisionBranding: React.FC = () => {
 
   if (loading && isEditMode) {
     return (
-      <div className={`${isDark ? "dark" : ""} mt-20`}>
+      <div className={`${isDark ? "dark" : ""} `}>
         <div className="min-h-screen bg-background flex items-center justify-center">
           <p className="text-foreground text-lg">Loading...</p>
         </div>
@@ -232,7 +232,7 @@ const ProvisionBranding: React.FC = () => {
   }
 
   return (
-    <div className={`${isDark ? "dark" : ""} mt-20`}>
+    <div className={`${isDark ? "dark" : ""} `}>
       <div className="min-h-screen bg-background flex items-start justify-center p-6">
         <div className="w-full max-w-7xl">
           {/* Header */}

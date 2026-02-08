@@ -23,16 +23,17 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { getById, updatePlan, createPlan } from "@/services/planService";
+import { getCurrencies, getFormModulesDropdown } from "@/services/commonServie";
 import {
-  getCurrencies,
-  getFormModulesDropdown,
-} from "@/services/commonServie";
-import { CardProps, Currency, FormModule, TenantCategory } from "@/interfaces/plan.interface";
+  CardProps,
+  Currency,
+  FormModule,
+  TenantCategory,
+} from "@/interfaces/plan.interface";
 
 // Mock Theme and Color Contexts
 const useTheme = () => ({ isDark: false });
 const useColor = () => ({ selectedColor: "#8B5CF6" });
-
 
 const Card = ({ children, isDark }: CardProps) => (
   <div
@@ -45,8 +46,6 @@ const Card = ({ children, isDark }: CardProps) => (
     {children}
   </div>
 );
-
-
 
 const PlansManagement = () => {
   const router = useRouter();
@@ -85,7 +84,9 @@ const PlansManagement = () => {
   // Dropdown data from API
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [formModules, setFormModules] = useState<FormModule[]>([]);
-  const [tenantCategories, setTenantCategories] = useState<TenantCategory[]>([]);
+  const [tenantCategories, setTenantCategories] = useState<TenantCategory[]>(
+    [],
+  );
   const [loadingDropdowns, setLoadingDropdowns] = useState(true);
 
   const [loading, setLoading] = useState(false);
@@ -132,25 +133,31 @@ const PlansManagement = () => {
   // Apply pending entitlements when formModules loads after plan details
   useEffect(() => {
     if (pendingPlanData && formModules.length > 0) {
-      console.log('🔄 Applying pending entitlements via useEffect');
-      console.log('📦 Form Modules:', formModules);
-      console.log('🎯 Pending Entitlement IDs:', pendingPlanData.entitlementModuleIds);
-      
+      console.log("🔄 Applying pending entitlements via useEffect");
+      console.log("📦 Form Modules:", formModules);
+      console.log(
+        "🎯 Pending Entitlement IDs:",
+        pendingPlanData.entitlementModuleIds,
+      );
+
       const updatedEntitlements: Record<number, boolean> = {};
-      
+
       // Initialize all to false
       formModules.forEach((module: FormModule) => {
         updatedEntitlements[module.id] = false;
       });
-      
+
       // Set selected ones to true
-      if (pendingPlanData.entitlementModuleIds && Array.isArray(pendingPlanData.entitlementModuleIds)) {
+      if (
+        pendingPlanData.entitlementModuleIds &&
+        Array.isArray(pendingPlanData.entitlementModuleIds)
+      ) {
         pendingPlanData.entitlementModuleIds.forEach((moduleId: number) => {
           updatedEntitlements[moduleId] = true;
         });
       }
-      
-      console.log('✨ Setting Entitlements:', updatedEntitlements);
+
+      console.log("✨ Setting Entitlements:", updatedEntitlements);
       setEntitlements(updatedEntitlements);
       setPendingPlanData(null);
     }
@@ -167,7 +174,7 @@ const PlansManagement = () => {
         if (!formData.currencyId && currenciesResponse.data.length > 0) {
           const defaultCurrency = currenciesResponse.data[0];
           // Extract code from value format "USD - US Dollar ($)"
-          const currencyCode = defaultCurrency.value.split(' - ')[0];
+          const currencyCode = defaultCurrency.value.split(" - ")[0];
           setFormData((prev) => ({
             ...prev,
             currencyId: defaultCurrency.id,
@@ -178,31 +185,43 @@ const PlansManagement = () => {
 
       // Fetch form modules for entitlement matrix
       const formModulesResponse = await getFormModulesDropdown();
-      console.log('📦 Form Modules Response:', formModulesResponse);
-      
+      console.log("📦 Form Modules Response:", formModulesResponse);
+
       if (formModulesResponse?.success && formModulesResponse?.data) {
         setFormModules(formModulesResponse.data);
-        
+
         // Initialize entitlements with false for all modules
         const initialEntitlements: Record<number, boolean> = {};
         formModulesResponse.data.forEach((module: FormModule) => {
           initialEntitlements[module.id] = false;
         });
-        
-        console.log('🔧 Initial Entitlements (all false):', initialEntitlements);
-        
+
+        console.log(
+          "🔧 Initial Entitlements (all false):",
+          initialEntitlements,
+        );
+
         // If we have pending plan data (from edit mode), apply the entitlements now
-        if (pendingPlanData?.entitlementModuleIds && Array.isArray(pendingPlanData.entitlementModuleIds)) {
-          console.log('⏳ Applying pending entitlements:', pendingPlanData.entitlementModuleIds);
-          
+        if (
+          pendingPlanData?.entitlementModuleIds &&
+          Array.isArray(pendingPlanData.entitlementModuleIds)
+        ) {
+          console.log(
+            "⏳ Applying pending entitlements:",
+            pendingPlanData.entitlementModuleIds,
+          );
+
           pendingPlanData.entitlementModuleIds.forEach((moduleId: number) => {
             initialEntitlements[moduleId] = true;
           });
-          
-          console.log('✅ Final Entitlements (after pending):', initialEntitlements);
+
+          console.log(
+            "✅ Final Entitlements (after pending):",
+            initialEntitlements,
+          );
           setPendingPlanData(null); // Clear pending data
         }
-        
+
         setEntitlements(initialEntitlements);
       }
     } catch (error) {
@@ -220,14 +239,17 @@ const PlansManagement = () => {
     setLoading(true);
     try {
       const response = await getById(id);
-      console.log('📋 Plan Details Response:', response);
-      
+      console.log("📋 Plan Details Response:", response);
+
       if (response?.success && response?.data) {
         const data = response.data;
-        
-        console.log('🎯 Entitlement Module IDs from API:', data.entitlementModuleIds);
-        console.log('📦 Current Form Modules:', formModules);
-        
+
+        console.log(
+          "🎯 Entitlement Module IDs from API:",
+          data.entitlementModuleIds,
+        );
+        console.log("📦 Current Form Modules:", formModules);
+
         // Map API response to form data
         setFormData({
           planName: data.structure?.planName || "",
@@ -237,12 +259,16 @@ const PlansManagement = () => {
           settlementCurrency: data.structure?.settlementCurrency || "",
           billingInterval: data.structure?.billingInterval || "Monthly",
           contractValidity: data.structure?.contractValidity || "1 Year",
-          pricingModel: data.structure?.pricingModel || "Fixed (Flat Account-based)",
+          pricingModel:
+            data.structure?.pricingModel || "Fixed (Flat Account-based)",
           initialBasePrice: data.setupFee?.initialBasePrice?.toString() || "",
-          amcCharge: data.recurringFee?.annualMaintenanceCharge?.toString() || "",
-          platformSubCharge: data.recurringFee?.platformSubscriptionCharge?.toString() || "",
+          amcCharge:
+            data.recurringFee?.annualMaintenanceCharge?.toString() || "",
+          platformSubCharge:
+            data.recurringFee?.platformSubscriptionCharge?.toString() || "",
           hardwareRestrictions: data.hardwareBinding?.isHardwareLocked || false,
-          userCreationLimit: data.userLimits?.userCreationLimit?.toString() || "",
+          userCreationLimit:
+            data.userLimits?.userCreationLimit?.toString() || "",
           supportNumber: data.support?.supportNumber || "",
           supportEmail: data.support?.supportEmail || "",
           supportInstructions: data.support?.internalInstructions || "",
@@ -253,28 +279,35 @@ const PlansManagement = () => {
         });
 
         // Handle entitlement module IDs
-        if (data.entitlementModuleIds && Array.isArray(data.entitlementModuleIds)) {
+        if (
+          data.entitlementModuleIds &&
+          Array.isArray(data.entitlementModuleIds)
+        ) {
           // If formModules are already loaded, apply entitlements immediately
           if (formModules.length > 0) {
-            console.log('✅ Modules already loaded, applying entitlements immediately');
-            
+            console.log(
+              "✅ Modules already loaded, applying entitlements immediately",
+            );
+
             const updatedEntitlements: Record<number, boolean> = {};
-            
+
             // Initialize all to false
             formModules.forEach((module: FormModule) => {
               updatedEntitlements[module.id] = false;
             });
-            
+
             // Set selected ones to true
             data.entitlementModuleIds.forEach((moduleId: number) => {
               updatedEntitlements[moduleId] = true;
             });
-            
-            console.log('✨ Final Entitlements:', updatedEntitlements);
+
+            console.log("✨ Final Entitlements:", updatedEntitlements);
             setEntitlements(updatedEntitlements);
           } else {
             // If modules not loaded yet, store data for later
-            console.log('⏳ Modules not loaded yet, storing plan data as pending');
+            console.log(
+              "⏳ Modules not loaded yet, storing plan data as pending",
+            );
             setPendingPlanData(data);
           }
         }
@@ -395,10 +428,10 @@ const PlansManagement = () => {
     const iconMap: Record<string, any> = {
       "Live-Tracking": MapPin,
       "History-Playback": Activity,
-      "Geofencing": Zap,
+      Geofencing: Zap,
       "Fuel-Analytics": TrendingUp,
       "Driver-Behavior": Database,
-      "Maintenance": BarChart3,
+      Maintenance: BarChart3,
       "API-Access": Cpu,
       "Advanced-Reports": Smartphone,
       "Account-Management": Users,
@@ -410,12 +443,14 @@ const PlansManagement = () => {
 
   // Format module display name
   const formatModuleName = (value: string) => {
-    return value.split('-').join(' ');
+    return value.split("-").join(" ");
   };
 
   // Extract currency symbol from API value format "USD - US Dollar ($)"
   const getCurrencySymbol = () => {
-    const selectedCurrency = currencies.find((c) => c.id === formData.currencyId);
+    const selectedCurrency = currencies.find(
+      (c) => c.id === formData.currencyId,
+    );
     if (selectedCurrency) {
       const match = selectedCurrency.value.match(/\(([^)]+)\)/);
       return match ? match[1] : "$";
@@ -425,11 +460,11 @@ const PlansManagement = () => {
 
   return (
     <div className={`${isDark ? "dark" : ""}`}>
-      <div
-        className={`min-h-screen ${isDark ? "bg-background" : "bg-gray-50"}`}
-      >
+      <div className={`min-h-screen ${isDark ? "bg-background" : ""}`}>
         {/* Sticky Header */}
-        <div className={`sticky top-0 z-20 ${isDark ? "bg-background" : "bg-gray-50"} pt-6 px-6 pb-4 border-b ${isDark ? "border-gray-800" : "border-gray-200"} backdrop-blur-sm bg-opacity-95`}>
+        <div
+          className={` ${isDark ? "bg-background" : ""} pt-6 px-6 pb-4`}
+        >
           <div className="max-w-[1600px] mx-auto">
             <div className="flex items-center justify-between">
               <div>
@@ -513,7 +548,10 @@ const PlansManagement = () => {
                       isDark ? "text-white" : "text-gray-900"
                     }`}
                   >
-                    <Package style={{ color: selectedColor }} className="w-5 h-5" />
+                    <Package
+                      style={{ color: selectedColor }}
+                      className="w-5 h-5"
+                    />
                     Structural Definitions
                   </h3>
                   <p
@@ -561,11 +599,13 @@ const PlansManagement = () => {
                       value={formData.categoryID}
                       onChange={(e) => {
                         const selectedId = parseInt(e.target.value);
-                        const selectedCategory = tenantCategoriesOptions.find(c => c.id === selectedId);
-                        setFormData(prev => ({
+                        const selectedCategory = tenantCategoriesOptions.find(
+                          (c) => c.id === selectedId,
+                        );
+                        setFormData((prev) => ({
                           ...prev,
                           categoryID: selectedId,
-                          tenantCategory: selectedCategory?.name || ""
+                          tenantCategory: selectedCategory?.name || "",
                         }));
                       }}
                       className={`w-full px-4 py-3 rounded-lg border ${
@@ -595,14 +635,17 @@ const PlansManagement = () => {
                       value={formData.currencyId}
                       onChange={(e) => {
                         const selectedId = parseInt(e.target.value);
-                        const selectedCurrency = currencies.find(c => c.id === selectedId);
+                        const selectedCurrency = currencies.find(
+                          (c) => c.id === selectedId,
+                        );
                         if (selectedCurrency) {
                           // Extract code from format "USD - US Dollar ($)"
-                          const currencyCode = selectedCurrency.value.split(' - ')[0];
-                          setFormData(prev => ({
+                          const currencyCode =
+                            selectedCurrency.value.split(" - ")[0];
+                          setFormData((prev) => ({
                             ...prev,
                             currencyId: selectedId,
-                            settlementCurrency: currencyCode
+                            settlementCurrency: currencyCode,
                           }));
                         }
                       }}
@@ -848,8 +891,8 @@ const PlansManagement = () => {
                             entitlements[module.id]
                               ? "border-purple-500 bg-purple-50"
                               : isDark
-                              ? "border-gray-700 hover:border-gray-600"
-                              : "border-gray-200 hover:border-gray-300"
+                                ? "border-gray-700 hover:border-gray-600"
+                                : "border-gray-200 hover:border-gray-300"
                           }`}
                         >
                           <div className="flex items-start gap-3">
@@ -858,8 +901,8 @@ const PlansManagement = () => {
                                 entitlements[module.id]
                                   ? "bg-purple-500"
                                   : isDark
-                                  ? "bg-gray-800"
-                                  : "bg-gray-100"
+                                    ? "bg-gray-800"
+                                    : "bg-gray-100"
                               }`}
                             >
                               <IconComponent
@@ -867,8 +910,8 @@ const PlansManagement = () => {
                                   entitlements[module.id]
                                     ? "text-white"
                                     : isDark
-                                    ? "text-gray-400"
-                                    : "text-gray-600"
+                                      ? "text-gray-400"
+                                      : "text-gray-600"
                                 }`}
                               />
                             </div>
@@ -953,7 +996,8 @@ const PlansManagement = () => {
                             isDark ? "text-gray-400" : "text-gray-600"
                           }`}
                         >
-                          Is this plan locked to specific tracking device families?
+                          Is this plan locked to specific tracking device
+                          families?
                         </p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">

@@ -382,7 +382,7 @@ const EditAccount: React.FC = () => {
   }, [countries, formData.countryId]);
   if (loading) {
     return (
-      <div className={`${isDark ? "dark" : ""} mt-20`}>
+      <div className={`${isDark ? "dark" : ""} `}>
         <div className={`min-h-screen ${isDark ? "bg-background" : "bg-gray-50"} p-6 flex items-center justify-center`}>
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
@@ -394,7 +394,7 @@ const EditAccount: React.FC = () => {
   }
 
   return (
-    <div className={`${isDark ? "dark" : ""} mt-20`}>
+    <div className={`${isDark ? "dark" : ""} `}>
       <div
         className={`min-h-screen ${isDark ? "bg-background" : "bg-gray-50"} p-6`}
       >

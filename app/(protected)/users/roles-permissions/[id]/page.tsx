@@ -366,7 +366,7 @@ const AddRole: React.FC = () => {
 
   if (loading && isEditMode && formData.permissions.length === 0) {
     return (
-      <div className={`${isDark ? "dark" : ""} mt-20`}>
+      <div className={`${isDark ? "dark" : ""} `}>
         <div
           className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 flex items-center justify-center`}
         >
@@ -385,7 +385,7 @@ const AddRole: React.FC = () => {
   }
 
   return (
-    <div className={`${isDark ? "dark" : ""} mt-20`}>
+    <div className={`${isDark ? "dark" : ""} `}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         {/* Header */}
         <div className="mx-auto mb-6 sm:mb-8">
