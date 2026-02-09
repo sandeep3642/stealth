@@ -21,6 +21,15 @@ interface RegisterForm {
   refferalCode?: string;
 }
 
+interface FormErrors {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  mobileNo?: string;
+  password?: string;
+  confirmPassword?: string;
+}
+
 export const RegisterComponent: React.FC<RegisterComponentProps> = ({
   onSwitchToLogin,
 }) => {
@@ -35,6 +44,7 @@ export const RegisterComponent: React.FC<RegisterComponentProps> = ({
     refferalCode: "",
   });
 
+  const [errors, setErrors] = useState<FormErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -49,94 +59,137 @@ export const RegisterComponent: React.FC<RegisterComponentProps> = ({
     { code: "+65", country: "Singapore" },
   ];
 
+  // Email validation regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const validateField = (
+    field: keyof RegisterForm,
+    value: string,
+  ): string | undefined => {
+    switch (field) {
+      case "firstName":
+        if (!value.trim()) return "First name is required";
+        if (value.trim().length < 2)
+          return "First name must be at least 2 characters";
+        break;
+
+      case "lastName":
+        if (!value.trim()) return "Last name is required";
+        if (value.trim().length < 2)
+          return "Last name must be at least 2 characters";
+        break;
+
+      case "email":
+        if (!value.trim()) return "Email is required";
+        if (!emailRegex.test(value))
+          return "Please enter a valid email address";
+        break;
+
+      case "mobileNo":
+        if (!value.trim()) return "Mobile number is required";
+        if (!/^\d+$/.test(value))
+          return "Mobile number must contain only digits";
+        if (value.length !== 10) return "Mobile number must be 10 digits";
+        break;
+
+      case "password":
+        if (!value) return "Password is required";
+        if (value.length < 6) return "Password must be at least 6 characters";
+        if (value.length > 50)
+          return "Password must be less than 50 characters";
+        break;
+
+      case "confirmPassword":
+        if (!value) return "Please confirm your password";
+        if (value !== formData.password) return "Passwords do not match";
+        break;
+    }
+    return undefined;
+  };
+
   const handleChange = (field: keyof RegisterForm, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+
+    // Clear error for this field when user starts typing
+    if (errors[field as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+
+    // Re-validate confirm password when password changes
+    if (field === "password" && formData.confirmPassword) {
+      const confirmError = validateField(
+        "confirmPassword",
+        formData.confirmPassword,
+      );
+      setErrors((prev) => ({ ...prev, confirmPassword: confirmError }));
+    }
+  };
+
+  const handleBlur = (field: keyof RegisterForm) => {
+    const error = validateField(field, formData[field] as string);
+    setErrors((prev) => ({ ...prev, [field]: error }));
   };
 
   const validateForm = (): boolean => {
-    const { firstName, lastName, email, mobileNo, password, confirmPassword } =
-      formData;
+    const newErrors: FormErrors = {};
 
-    if (!firstName.trim()) {
-      toast.error("First name is required");
-      return false;
-    }
-    if (!lastName.trim()) {
-      toast.error("Last name is required");
-      return false;
-    }
-    if (!email.trim()) {
-      toast.error("Email is required");
-      return false;
-    }
-    if (!mobileNo.trim()) {
-      toast.error("Mobile number is required");
-      return false;
-    }
-     if (mobileNo.length !== 10) {
-      toast.error("Mobile number must be  10 characters");
-      return false;
-    }
-    if (!password) {
-      toast.error("Password is required");
-      return false;
-    }
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return false;
-    }
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return false;
-    }
+    newErrors.firstName = validateField("firstName", formData.firstName);
+    newErrors.lastName = validateField("lastName", formData.lastName);
+    newErrors.email = validateField("email", formData.email);
+    newErrors.mobileNo = validateField("mobileNo", formData.mobileNo);
+    newErrors.password = validateField("password", formData.password);
+    newErrors.confirmPassword = validateField(
+      "confirmPassword",
+      formData.confirmPassword,
+    );
 
-    return true;
+    setErrors(newErrors);
+
+    // Check if there are any errors
+    return !Object.values(newErrors).some((error) => error !== undefined);
   };
 
- const handleRegister = async () => {
-  if (!validateForm()) {
-    return;
-  }
-
-  try {
-    setLoading(true);
-
-    // optional loader delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    const res = await registerUser(formData);
-
-    // agar backend success true bheje
-    if (res?.success) {
-      toast.success("Registration successful!");
-       setTimeout(() => {
-        onSwitchToLogin();
-      }, 500);
-    } else {
-      toast.error(res?.Message || "Registration failed");
+  const handleRegister = async () => {
+    if (!validateForm()) {
+      toast.error("Please fix the errors in the form");
+      return;
     }
 
-  } catch (err: any) {
-    console.error("Registration error:", err);
+    try {
+      setLoading(true);
 
-    // ✅ AXIOS ERROR HANDLING
-    if (err?.response?.data) {
-      toast.error(err.response.data.Message || "Registration failed");
-    } else {
-      toast.error("Network error. Please try again.");
+      // optional loader delay
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      const res = await registerUser(formData);
+
+      // agar backend success true bheje
+      if (res?.success) {
+        toast.success("Registration successful!");
+        setTimeout(() => {
+          onSwitchToLogin();
+        }, 500);
+      } else {
+        toast.error(res?.Message || "Registration failed");
+      }
+    } catch (err: any) {
+      console.error("Registration error:", err);
+
+      // ✅ AXIOS ERROR HANDLING
+      if (err?.response?.data) {
+        toast.error(err.response.data.Message || "Registration failed");
+      } else {
+        toast.error("Network error. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
-
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   return (
     <div className="w-full h-full overflow-y-auto px-2">
       <div className="w-full max-w-md mx-auto py-4">
         <div className="space-y-4">
-          
           {/* Header */}
           <div className="text-center">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
@@ -158,10 +211,16 @@ export const RegisterComponent: React.FC<RegisterComponentProps> = ({
                 type="text"
                 value={formData.firstName}
                 onChange={(e) => handleChange("firstName", e.target.value)}
-                className="w-full h-10 pl-9 pr-3 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                onBlur={() => handleBlur("firstName")}
+                className={`w-full h-10 pl-9 pr-3 text-sm border rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition ${
+                  errors.firstName ? "border-red-500" : "border-gray-300"
+                }`}
                 placeholder="John"
               />
             </div>
+            {errors.firstName && (
+              <p className="text-xs text-red-500 mt-1">{errors.firstName}</p>
+            )}
           </div>
 
           {/* Last Name */}
@@ -175,10 +234,16 @@ export const RegisterComponent: React.FC<RegisterComponentProps> = ({
                 type="text"
                 value={formData.lastName}
                 onChange={(e) => handleChange("lastName", e.target.value)}
-                className="w-full h-10 pl-9 pr-3 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                onBlur={() => handleBlur("lastName")}
+                className={`w-full h-10 pl-9 pr-3 text-sm border rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition ${
+                  errors.lastName ? "border-red-500" : "border-gray-300"
+                }`}
                 placeholder="Doe"
               />
             </div>
+            {errors.lastName && (
+              <p className="text-xs text-red-500 mt-1">{errors.lastName}</p>
+            )}
           </div>
 
           {/* Email */}
@@ -192,10 +257,16 @@ export const RegisterComponent: React.FC<RegisterComponentProps> = ({
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleChange("email", e.target.value)}
-                className="w-full h-10 pl-9 pr-3 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                onBlur={() => handleBlur("email")}
+                className={`w-full h-10 pl-9 pr-3 text-sm border rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition ${
+                  errors.email ? "border-red-500" : "border-gray-300"
+                }`}
                 placeholder="you@example.com"
               />
             </div>
+            {errors.email && (
+              <p className="text-xs text-red-500 mt-1">{errors.email}</p>
+            )}
           </div>
 
           {/* Mobile Number */}
@@ -221,11 +292,18 @@ export const RegisterComponent: React.FC<RegisterComponentProps> = ({
                   type="tel"
                   value={formData.mobileNo}
                   onChange={(e) => handleChange("mobileNo", e.target.value)}
-                  className="w-full h-10 pl-9 pr-3 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                  onBlur={() => handleBlur("mobileNo")}
+                  className={`w-full h-10 pl-9 pr-3 text-sm border rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition ${
+                    errors.mobileNo ? "border-red-500" : "border-gray-300"
+                  }`}
                   placeholder="1234567890"
+                  maxLength={10}
                 />
               </div>
             </div>
+            {errors.mobileNo && (
+              <p className="text-xs text-red-500 mt-1">{errors.mobileNo}</p>
+            )}
           </div>
 
           {/* Password */}
@@ -239,7 +317,10 @@ export const RegisterComponent: React.FC<RegisterComponentProps> = ({
                 type={showPassword ? "text" : "password"}
                 value={formData.password}
                 onChange={(e) => handleChange("password", e.target.value)}
-                className="w-full h-10 pl-9 pr-10 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                onBlur={() => handleBlur("password")}
+                className={`w-full h-10 pl-9 pr-10 text-sm border rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition ${
+                  errors.password ? "border-red-500" : "border-gray-300"
+                }`}
                 placeholder="••••••••"
               />
               <button
@@ -247,9 +328,16 @@ export const RegisterComponent: React.FC<RegisterComponentProps> = ({
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
               >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
+            {errors.password && (
+              <p className="text-xs text-red-500 mt-1">{errors.password}</p>
+            )}
           </div>
 
           {/* Confirm Password */}
@@ -262,8 +350,13 @@ export const RegisterComponent: React.FC<RegisterComponentProps> = ({
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 value={formData.confirmPassword}
-                onChange={(e) => handleChange("confirmPassword", e.target.value)}
-                className="w-full h-10 pl-9 pr-10 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
+                onChange={(e) =>
+                  handleChange("confirmPassword", e.target.value)
+                }
+                onBlur={() => handleBlur("confirmPassword")}
+                className={`w-full h-10 pl-9 pr-10 text-sm border rounded-lg bg-white focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition ${
+                  errors.confirmPassword ? "border-red-500" : "border-gray-300"
+                }`}
                 placeholder="••••••••"
               />
               <button
@@ -271,9 +364,18 @@ export const RegisterComponent: React.FC<RegisterComponentProps> = ({
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
               >
-                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showConfirmPassword ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
+            {errors.confirmPassword && (
+              <p className="text-xs text-red-500 mt-1">
+                {errors.confirmPassword}
+              </p>
+            )}
           </div>
 
           {/* Referral Code */}

@@ -618,7 +618,7 @@ const NewConfiguration: React.FC = () => {
           </div>
         )}
       </div>
-      <ThemeCustomizer />
+      
     </div>
   );
 };

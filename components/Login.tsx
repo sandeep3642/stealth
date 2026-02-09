@@ -8,10 +8,16 @@ import Cookies from "js-cookie";
 import { useColor } from "@/context/ColorContext";
 import { getUserRoleData } from "@/services/commonServie";
 import { applyWhiteLabelColors } from "@/utils/themeUtils";
+import { toast } from "react-toastify";
 
 interface LoginComponentProps {
   onSwitchToRegister: () => void;
   onSwitchToForgotPassword: () => void;
+}
+
+interface FormErrors {
+  email?: string;
+  password?: string;
 }
 
 export const LoginComponent: React.FC<LoginComponentProps> = ({
@@ -30,8 +36,13 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<FormErrors>({});
   const router = useRouter();
+
+  // Email validation regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Mobile validation regex (10 digits)
+  const mobileRegex = /^\d{10}$/;
 
   // Load saved credentials on component mount
   useEffect(() => {
@@ -45,15 +56,81 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
     }
   }, []);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      setError("Please enter email and password");
-      return;
+  const validateEmail = (value: string): string | undefined => {
+    if (!value.trim()) {
+      return "Email, mobile number, or username is required";
     }
+
+    // Check if it's a valid email or 10-digit mobile number
+    // Username can be any alphanumeric string, so we allow it to pass
+    const isValidEmail = emailRegex.test(value);
+    const isValidMobile = mobileRegex.test(value);
+    const isUsername = /^[a-zA-Z0-9_]{3,}$/.test(value); // Username: at least 3 alphanumeric/underscore chars
+
+    if (!isValidEmail && !isValidMobile && !isUsername) {
+      return "Please enter a valid email, mobile number, or username";
+    }
+
+    return undefined;
+  };
+
+  const validatePassword = (value: string): string | undefined => {
+    if (!value) {
+      return "Password is required";
+    }
+    if (value.length < 6) {
+      return "Password must be at least 6 characters";
+    }
+    return undefined;
+  };
+
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    // Clear error when user starts typing
+    if (errors.email) {
+      setErrors((prev) => ({ ...prev, email: undefined }));
+    }
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    // Clear error when user starts typing
+    if (errors.password) {
+      setErrors((prev) => ({ ...prev, password: undefined }));
+    }
+  };
+
+  const handleEmailBlur = () => {
+    const error = validateEmail(email);
+    setErrors((prev) => ({ ...prev, email: error }));
+  };
+
+  const handlePasswordBlur = () => {
+    const error = validatePassword(password);
+    setErrors((prev) => ({ ...prev, password: error }));
+  };
+
+  const validateForm = (): boolean => {
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+
+    setErrors({
+      email: emailError,
+      password: passwordError,
+    });
+
+    return !emailError && !passwordError;
+  };
+
+  const handleLogin = async () => {
+    // Validate form before proceeding
+    // if (!validateForm()) {
+    //   return;
+    // }
 
     try {
       setLoading(true);
-      setError("");
+      setErrors({});
 
       // Handle remember me functionality
       if (rememberMe) {
@@ -76,7 +153,7 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
 
         if (response.data.whiteLabel) {
           const whiteLabel = response.data.whiteLabel;
-          applyWhiteLabelColors(whiteLabel,handleColorChange);
+          applyWhiteLabelColors(whiteLabel, handleColorChange);
 
           // persist in localStorage for reloads
           localStorage.setItem("whiteLabelTheme", JSON.stringify(whiteLabel));
@@ -88,14 +165,25 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
         // ✅ Dispatch event to notify layout about new permissions
         window.dispatchEvent(new Event("permissions-updated"));
 
+        // ✅ Show success toast
+        toast.success("Login successful!");
+
         // ✅ Now redirect
         router.push("/dashboard");
       }
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || "Login failed. Please try again.",
-      );
       console.error("Login error:", err);
+
+      // ✅ Show API errors via toast
+      if (err?.response?.data) {
+        toast.error(
+          err.response.data.message ||
+            err.response.data.Message ||
+            "Login failed. Please try again.",
+        );
+      } else {
+        toast.error("Network error. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -113,28 +201,28 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
       </div>
 
       <div className="space-y-5 sm:space-y-6">
-        {error && (
-          <div className="p-3 text-xs sm:text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-            {error}
-          </div>
-        )}
-
         <div className="space-y-3 sm:space-y-4">
           {/* Email Field */}
           <div className="space-y-1.5 sm:space-y-2">
             <label className="text-xs sm:text-sm font-semibold text-zinc-700">
-              Email or Mobile
+              Email, Mobile, or Username
             </label>
             <div className="relative">
               <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 h-4 w-4" />
               <input
                 type="text"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="flex h-10 sm:h-11 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-1 pl-9 sm:pl-10 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-purple-600 focus:border-purple-600 focus:outline-none"
-                placeholder="you@example.com"
+                onChange={(e) => handleEmailChange(e.target.value)}
+                onBlur={handleEmailBlur}
+                className={`flex h-10 sm:h-11 w-full rounded-md border bg-zinc-50 px-3 py-1 pl-9 sm:pl-10 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-purple-600 focus:border-purple-600 focus:outline-none ${
+                  errors.email ? "border-red-500" : "border-zinc-200"
+                }`}
+                placeholder="you@example.com, 1234567890, or username"
               />
             </div>
+            {errors.email && (
+              <p className="text-xs text-red-500 mt-1">{errors.email}</p>
+            )}
           </div>
 
           {/* Password Field */}
@@ -147,9 +235,12 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => handlePasswordChange(e.target.value)}
+                onBlur={handlePasswordBlur}
                 onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-                className="flex h-10 sm:h-11 w-full rounded-md border border-zinc-200 bg-zinc-50 px-3 py-1 pl-9 sm:pl-10 pr-10 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-purple-600 focus:border-purple-600 focus:outline-none"
+                className={`flex h-10 sm:h-11 w-full rounded-md border bg-zinc-50 px-3 py-1 pl-9 sm:pl-10 pr-10 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-purple-600 focus:border-purple-600 focus:outline-none ${
+                  errors.password ? "border-red-500" : "border-zinc-200"
+                }`}
                 placeholder="••••••••"
               />
               <button
@@ -160,6 +251,9 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
+            {errors.password && (
+              <p className="text-xs text-red-500 mt-1">{errors.password}</p>
+            )}
           </div>
 
           {/* Remember me & Forgot Password */}

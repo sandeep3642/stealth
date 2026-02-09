@@ -490,7 +490,9 @@ const CommonTable: React.FC<CommonTableProps> = ({
             </button>
 
             {showColumnMenu && (
-              <div className="absolute right-0 mt-2 w-48 sm:w-52 bg-card rounded-lg shadow-xl border border-border py-2 z-10 max-h-[300px] overflow-y-auto">
+              <div className="absolute right-0 mt-2 w-48 sm:w-52 bg-[#ffffff] rounded-lg shadow-xl border border-border py-2 z-10 max-h-[300px] overflow-y-auto
+              
+              ">
                 <div className="px-3 sm:px-4 py-2 text-[10px] sm:text-xs font-semibold text-foreground opacity-70 uppercase tracking-wide">
                   Visibility
                 </div>

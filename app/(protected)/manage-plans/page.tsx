@@ -192,7 +192,7 @@ const ManagePlans: React.FC = () => {
           />
         </div>
       </div>
-      <ThemeCustomizer />
+      
     </div>
   );
 };

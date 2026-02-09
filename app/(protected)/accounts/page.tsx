@@ -5,6 +5,7 @@ import CommonTable from "@/components/CommonTable";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { useTheme } from "@/context/ThemeContext";
 import { deleteAccount, getAccounts } from "@/services/accountService";
 import { AccountData, FormRights } from "@/interfaces/account.interface";
@@ -22,12 +23,20 @@ const Accounts: React.FC = () => {
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [totalRecords, setTotalRecords] = useState(0);
   const [accountsRight, setAccountRights] = useState<FormRights | null>(null);
+
+  // Confirmation dialog state
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState<AccountData | null>(
+    null,
+  );
+
   const [cardCounts, setCardCounts] = useState({
     total: 0,
     active: 0,
     pending: 0,
     inactive: 0,
   });
+
   const columns = [
     {
       key: "no",
@@ -43,13 +52,11 @@ const Accounts: React.FC = () => {
     {
       key: "accountName",
       label: "INSTANCE",
-      // type: "multi-line" as const,
       visible: true,
     },
     {
       key: "phone",
       label: "CONTACT",
-      // type: "multi-line" as const,
       visible: true,
     },
     {
@@ -73,8 +80,17 @@ const Accounts: React.FC = () => {
     router.push(`/accounts/${row.accountId}`);
   };
 
-  const handleDelete = async (row: AccountData) => {
-    const response = await deleteAccount(row.accountId);
+  // Show confirmation dialog instead of deleting directly
+  const handleDelete = (row: AccountData) => {
+    setAccountToDelete(row);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Actual delete operation after confirmation
+  const confirmDelete = async () => {
+    if (!accountToDelete) return;
+
+    const response = await deleteAccount(accountToDelete.accountId);
     if (response && response.statusCode === 200) {
       toast.success(response.message);
       if (pageNo > 1) setPageNo(1);
@@ -82,6 +98,9 @@ const Accounts: React.FC = () => {
     } else {
       toast.error(response.message);
     }
+
+    // Reset state
+    setAccountToDelete(null);
   };
 
   const handlePageChange = (page: number) => {
@@ -100,19 +119,16 @@ const Accounts: React.FC = () => {
       const pageData = response.data.pageData;
       setData(pageData.items);
       setTotalRecords(pageData.totalRecords);
-
-      // ✅ NEW: metric cards data
       setCardCounts(response.data.cardCounts);
     } else {
       toast.error(response?.message ?? "Failed to load accounts");
     }
   }
 
-
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
-    }, 500); // 500ms delay
+    }, 500);
 
     return () => clearTimeout(handler);
   }, [searchQuery]);
@@ -120,9 +136,9 @@ const Accounts: React.FC = () => {
   useEffect(() => {
     getAccountsList();
   }, [pageNo, pageSize, debouncedQuery]);
+
   useEffect(() => {
     function getPermissionsList() {
-      // 🧠 Prevents running during SSR / static generation
       if (typeof window === "undefined") return;
 
       try {
@@ -130,8 +146,6 @@ const Accounts: React.FC = () => {
 
         if (storedPermissions) {
           const parsedPermissions = JSON.parse(storedPermissions);
-
-          // Find the rights for "Account List"
           const rights = parsedPermissions.find(
             (val: { formName: string }) => val.formName === "Account List",
           );
@@ -155,9 +169,9 @@ const Accounts: React.FC = () => {
   return (
     <div className={`${isDark ? "dark" : ""}`}>
       <div
-        className={`min-h-screen  ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
+        className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
       >
-        {/* Page Header - Mobile Optimized */}
+        {/* Page Header */}
         <div className="mb-4 sm:mb-6">
           <PageHeader
             title="Account List"
@@ -170,8 +184,7 @@ const Accounts: React.FC = () => {
           />
         </div>
 
-        {/* Metric Cards - Truly Mobile Responsive */}
-        {/* Metric Cards - Truly Mobile Responsive */}
+        {/* Metric Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <MetricCard
             icon={Building2}
@@ -207,7 +220,7 @@ const Accounts: React.FC = () => {
           />
         </div>
 
-        {/* Table Section - Mobile Optimized */}
+        {/* Table Section */}
         <div className="w-full">
           <CommonTable
             columns={columns}
@@ -227,6 +240,22 @@ const Accounts: React.FC = () => {
             totalRecords={totalRecords}
           />
         </div>
+
+        {/* Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={() => {
+            setIsDeleteDialogOpen(false);
+            setAccountToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          title="Delete Account"
+          message={`Are you sure you want to delete "${accountToDelete?.instance}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="danger"
+          isDark={isDark}
+        />
       </div>
     </div>
   );

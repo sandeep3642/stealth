@@ -321,15 +321,7 @@ const AddAccount: React.FC = () => {
                 Add New Account
               </h1>
             </div>
-            <button
-              className={`px-6 py-2 rounded-lg font-medium transition-colors ${isDark
-                ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-                }`}
-              onClick={() => router.back()}
-            >
-              Cancel
-            </button>
+          
           </div>
         </div>
 

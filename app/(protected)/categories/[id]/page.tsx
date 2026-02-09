@@ -19,7 +19,7 @@ const AddEditCategory: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
   const params = useParams();
-  
+
   // Get ID from route params
   const categoryId = params?.id ? Number(params.id) : 0;
   const isEditMode = categoryId > 0;
@@ -41,12 +41,12 @@ const AddEditCategory: React.FC = () => {
     try {
       setFetchingData(true);
       const response = await getCategoryById(categoryId);
-      
+
       if (response.success && response.data) {
-        const category = Array.isArray(response.data) 
-          ? response.data[0] 
+        const category = Array.isArray(response.data)
+          ? response.data[0]
           : response.data;
-          
+
         setLabelName(category.labelName || "");
         setDescription(category.description || "");
         setIsActive(category.isActive ?? true);
@@ -92,7 +92,7 @@ const AddEditCategory: React.FC = () => {
         toast.success(
           isEditMode
             ? "Category updated successfully!"
-            : "Category created successfully!"
+            : "Category created successfully!",
         );
         router.push("/categories");
       } else {
@@ -129,13 +129,6 @@ const AddEditCategory: React.FC = () => {
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
               {isEditMode ? "Edit Classification" : "New Classification"}
             </h1>
-
-            <button
-              onClick={handleCancel}
-              className="text-foreground hover:text-foreground/70 font-medium transition-colors w-full sm:w-auto text-center sm:text-right"
-            >
-              Cancel
-            </button>
           </div>
 
           {/* Form Card */}
@@ -242,7 +235,11 @@ const AddEditCategory: React.FC = () => {
                 <button
                   onClick={handleCancel}
                   disabled={loading}
-                  className="px-8 py-3 rounded-lg font-semibold border border-gray-300 text-foreground hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+                  className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                    isDark
+                      ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                      : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+                  }`}
                 >
                   Cancel
                 </button>
@@ -266,7 +263,6 @@ const AddEditCategory: React.FC = () => {
           </div>
         </div>
       </div>
-      <ThemeCustomizer />
     </div>
   );
 };

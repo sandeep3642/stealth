@@ -4,11 +4,13 @@ import React, { useEffect, useState } from "react";
 import CommonTable from "@/components/CommonTable";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { useTheme } from "@/context/ThemeContext";
 import { getCategories, deleteCategory } from "@/services/categoryService";
 import { Category } from "@/interfaces/category.interface";
 import { useRouter } from "next/navigation";
 import { FormRights } from "@/interfaces/account.interface";
+import { toast } from "react-toastify";
 
 const Categories: React.FC = () => {
   const { isDark } = useTheme();
@@ -19,6 +21,12 @@ const Categories: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [totalRecords, setTotalRecords] = useState(0);
   const [categoryRights, setCategoryRights] = useState<FormRights | null>(null);
+
+  // Confirmation dialog state
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+    null,
+  );
 
   const columns = [
     {
@@ -71,15 +79,29 @@ const Categories: React.FC = () => {
     router.push(`/categories/${row.categoryId}`);
   };
 
-  const handleDelete = async (row: Category) => {
-    if (confirm(`Are you sure you want to delete "${row.labelName}"?`)) {
-      const response = await deleteCategory(row.categoryId);
+  // Show confirmation dialog instead of browser confirm
+  const handleDelete = (row: Category) => {
+    setCategoryToDelete(row);
+    setIsDeleteDialogOpen(true);
+  };
+
+  // Actual delete operation after confirmation
+  const confirmDelete = async () => {
+    if (!categoryToDelete) return;
+
+    try {
+      const response = await deleteCategory(categoryToDelete.categoryId);
       if (response.success) {
-        alert("Category deleted successfully!");
+        toast.success("Category deleted successfully!");
         fetchCategories(); // Refresh list
       } else {
-        alert(`Failed to delete: ${response.message}`);
+        toast.error(`Failed to delete: ${response.message}`);
       }
+    } catch (error) {
+      toast.error("Error deleting category");
+      console.error("Error deleting category:", error);
+    } finally {
+      setCategoryToDelete(null);
     }
   };
 
@@ -99,7 +121,7 @@ const Categories: React.FC = () => {
   useEffect(() => {
     function getPermissionsList() {
       try {
-           if (typeof window === "undefined") return;
+        if (typeof window === "undefined") return;
         const storedPermissions = localStorage.getItem("permissions");
 
         if (storedPermissions) {
@@ -153,7 +175,6 @@ const Categories: React.FC = () => {
             searchPlaceholder="Search categories..."
             rowsPerPageOptions={[10, 25, 50, 100]}
             defaultRowsPerPage={10}
-            // variant="simple"
             pageNo={pageNo}
             pageSize={pageSize}
             onPageChange={handlePageChange}
@@ -161,8 +182,23 @@ const Categories: React.FC = () => {
             isServerSide={false}
           />
         )}
+
+        {/* Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={() => {
+            setIsDeleteDialogOpen(false);
+            setCategoryToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          title="Delete Category"
+          message={`Are you sure you want to delete the category "${categoryToDelete?.labelName}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="danger"
+          isDark={isDark}
+        />
       </div>
-      
     </div>
   );
 };

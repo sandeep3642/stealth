@@ -918,7 +918,7 @@ const CreateUser: React.FC = () => {
           )}
         </div>
       </div>
-      <ThemeCustomizer />
+      
     </div>
   );
 };

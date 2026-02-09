@@ -197,7 +197,7 @@ const Subscriptions: React.FC = () => {
                     />
                 </div>
             </div>
-            <ThemeCustomizer />
+            
         </div>
     );
 };

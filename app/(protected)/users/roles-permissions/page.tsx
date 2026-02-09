@@ -1,8 +1,8 @@
+// Roles.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import CommonTable from "@/components/CommonTable";
-import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
 import { useTheme } from "@/context/ThemeContext";
@@ -11,10 +11,12 @@ import { toast } from "react-toastify";
 import { deleteRole, exportRoles, getRoles } from "@/services/rolesService";
 import { RoleAccount } from "@/interfaces/permission.interface";
 import { useRouter } from "next/navigation";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 
 const Roles: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
@@ -25,30 +27,17 @@ const Roles: React.FC = () => {
   });
 
   const [totalRecords, setTotalRecords] = useState(0);
+  const [data, setData] = useState<RoleAccount[]>([]);
+
+  // Confirmation dialog states
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState<RoleAccount | null>(null);
 
   const columns = [
-    {
-      key: "no",
-      label: "NO",
-      visible: true,
-    },
-    {
-      key: "accountName",
-      label: "Account",
-      // type: "link" as const,
-      visible: true,
-    },
-    {
-      key: "roleName",
-      label: "Role",
-      type: "link" as const,
-      visible: true,
-    },
-    {
-      key: "description",
-      label: "Description",
-      visible: true,
-    },
+    { key: "no", label: "NO", visible: true },
+    { key: "accountName", label: "Account", visible: true },
+    { key: "roleName", label: "Role", type: "link" as const, visible: true },
+    { key: "description", label: "Description", visible: true },
     {
       key: "createdOn",
       label: "Created At",
@@ -57,8 +46,6 @@ const Roles: React.FC = () => {
     },
   ];
 
-  const [data, setData] = useState<RoleAccount[]>([]);
-
   const handleEdit = (row: RoleAccount) => {
     localStorage.setItem("accountId", String(row.accountId));
     setTimeout(() => {
@@ -66,37 +53,52 @@ const Roles: React.FC = () => {
     }, 500);
   };
 
-  async function handleDelete(row: RoleAccount) {
-    const response = await deleteRole(row.roleId);
-    if (response && response.statusCode === 200) {
-      toast.success(response.message);
-      fetchRoles();
-    } else toast.error(response.message);
-  }
-
-  const handlePageChange = (page: number) => {
-    setPageNo(page);
+  // Open confirmation dialog
+  const handleDelete = (row: RoleAccount) => {
+    setRoleToDelete(row);
+    setIsDeleteDialogOpen(true);
   };
 
+  // Confirm deletion
+  const confirmDelete = async () => {
+    if (!roleToDelete) return;
+
+    try {
+      const response = await deleteRole(roleToDelete.roleId);
+
+      if (response && response.statusCode === 200) {
+        toast.success(response.message);
+        fetchRoles();
+      } else {
+        toast.error(response.message || "Failed to delete role");
+      }
+    } catch (error) {
+      console.error("Error deleting role:", error);
+      toast.error("An error occurred while deleting.");
+    } finally {
+      setRoleToDelete(null);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
+  const handlePageChange = (page: number) => setPageNo(page);
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
     setPageNo(1);
   };
 
   const handleExport = async () => {
-  try {
-    await exportRoles(); // optionally pass accountId or search term
-    toast.success("Roles exported successfully!");
-  } catch {
-    toast.error("Failed to export roles");
-  }
-};
-
+    try {
+      await exportRoles();
+      toast.success("Roles exported successfully!");
+    } catch {
+      toast.error("Failed to export roles");
+    }
+  };
 
   async function fetchRoles() {
     const response = await getRoles(pageNo, pageSize);
     if (response && response.statusCode === 200) {
-      // toast.success(response.message);
       setSummary(response.data.summary);
       setData(response.data.roles.items);
       setTotalRecords(response.data.roles.totalRecords);
@@ -108,7 +110,7 @@ const Roles: React.FC = () => {
   }, [pageNo, pageSize]);
 
   return (
-    <div className={`${isDark ? "dark" : ""}  sm:`}>
+    <div className={`${isDark ? "dark" : ""}`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
           title="Roles & Permissions"
@@ -123,7 +125,7 @@ const Roles: React.FC = () => {
           onExportClick={handleExport}
         />
 
-        {/* Metric Cards - Figma Design */}
+        {/* Metric Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <MetricCard
             icon={Shield}
@@ -168,8 +170,23 @@ const Roles: React.FC = () => {
           onPageSizeChange={handlePageSizeChange}
           isServerSide={true}
         />
+
+        {/* Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={() => {
+            setIsDeleteDialogOpen(false);
+            setRoleToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          title="Delete Role"
+          message={`Are you sure you want to delete role "${roleToDelete?.roleName}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="danger"
+          isDark={isDark}
+        />
       </div>
-      
     </div>
   );
 };

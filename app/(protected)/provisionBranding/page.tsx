@@ -610,7 +610,7 @@ const ProvisionBranding: React.FC = () => {
           </div>
         </div>
       </div>
-      <ThemeCustomizer />
+      
     </div>
   );
 };

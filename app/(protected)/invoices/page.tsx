@@ -212,7 +212,7 @@ const Invoices: React.FC = () => {
           />
         </div>
       </div>
-      <ThemeCustomizer />
+      
     </div>
   );
 };

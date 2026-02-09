@@ -2,69 +2,36 @@
 
 import React, { useEffect, useState } from "react";
 import CommonTable from "@/components/CommonTable";
-import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
 import { useTheme } from "@/context/ThemeContext";
-import { getAccounts } from "@/services/accountService";
-import { AccountData } from "@/interfaces/account.interface";
-import { Users as UsersIcon, CheckCircle, Lock, Shield } from "lucide-react";
-import { toast } from "react-toastify";
 import MultiSelect from "@/components/MultiSelect";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { getUsers, deleteUser } from "@/services/userService";
 import { UserItem } from "@/interfaces/user.interface";
-
+import { Users as UsersIcon, CheckCircle, Lock, Shield } from "lucide-react";
+import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
 const Users: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  type OptionType = {
-    label: string;
-    value: string;
-  };
-  const [appliedFilters, setAppliedFilters] = useState<{
-    roles: OptionType[];
-    statuses: OptionType[];
-  }>({
-    roles: [],
-    statuses: [],
-  });
-  const [activeFilter, setActiveFilter] = useState<"role" | "status" | null>(
-    null,
-  );
+  const [data, setData] = useState<UserItem[]>([]);
+  const [totalRecords, setTotalRecords] = useState(0);
   const [summaryData, setSummaryData] = useState({
     totalUsers: 0,
     active: 0,
     suspendedOrLocked: 0,
     twoFactorEnabled: 0,
   });
-  const [totalReconrds, setTotalRecords] = useState(0);
 
-  const columns = [
-    { key: "fullName", label: "Full Name", visible: true },
-    { key: "email", label: "Email", visible: true },
-    { key: "roleName", label: "Role", visible: true },
-    { key: "accountName", label: "Account", visible: true },
-    { key: "status", label: "Status", type: "badge" as const, visible: true },
-    {
-      key: "twoFactorEnabled",
-      label: "2FA",
-      visible: true,
-      render: (value: boolean) => {
-        return value ? "Enabled" : "Disabled";
-      },
-    },
-    {
-      key: "lastLoginAt",
-      label: "Last Login",
-      visible: true,
-      type: "date" as const,
-    },
-  ];
+  // Confirmation dialog states
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserItem | null>(null);
 
   const roleOptions = [
     { label: "Super Admin", value: "SUPER_ADMIN" },
@@ -79,78 +46,103 @@ const Users: React.FC = () => {
     { label: "Suspended", value: "SUSPENDED" },
   ];
 
-  const [data, setData] = useState<UserItem[]>([]);
+  const [appliedFilters, setAppliedFilters] = useState({
+    roles: [] as { label: string; value: string }[],
+    statuses: [] as { label: string; value: string }[],
+  });
+
+  const columns = [
+    { key: "fullName", label: "Full Name", visible: true },
+    { key: "email", label: "Email", visible: true },
+    { key: "roleName", label: "Role", visible: true },
+    { key: "accountName", label: "Account", visible: true },
+    { key: "status", label: "Status", type: "badge" as const, visible: true },
+    {
+      key: "twoFactorEnabled",
+      label: "2FA",
+      visible: true,
+      render: (value: boolean) => (value ? "Enabled" : "Disabled"),
+    },
+    {
+      key: "lastLoginAt",
+      label: "Last Login",
+      visible: true,
+      type: "date" as const,
+    },
+  ];
 
   const handleEdit = (row: UserItem) => {
     router.push(`/users/${row.userId}`);
   };
 
-  const handleDelete = async (row: UserItem) => {
-    const response = await deleteUser(row.userId);
+  // Open confirmation dialog
+  const handleDelete = (row: UserItem) => {
+    setUserToDelete(row);
+    setIsDeleteDialogOpen(true);
+  };
 
-    if (response && response.statusCode === 200) {
-      // toast.success(response.message);
-      fetchUsers();
-    } else {
-      toast.error(response.message);
+  // Confirm delete
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+
+    try {
+      const response = await deleteUser(userToDelete.userId);
+
+      if (response && response.statusCode === 200) {
+        toast.success("User deleted successfully!");
+        fetchUsers();
+      } else {
+        toast.error(response.message || "Failed to delete user");
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error("An error occurred while deleting.");
+    } finally {
+      setUserToDelete(null);
+      setIsDeleteDialogOpen(false);
     }
   };
 
-  const handlePageChange = (page: number) => {
-    setPageNo(page);
+  const fetchUsers = async () => {
+    try {
+      const response = await getUsers(pageNo, pageSize);
+      if (response && response.statusCode === 200) {
+        setSummaryData(response.data.summary);
+        setTotalRecords(response.data.users.totalRecords || 0);
+        setData(response.data.users.items || []);
+      } else {
+        toast.error("Failed to fetch users");
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
   };
 
+  useEffect(() => {
+    fetchUsers();
+  }, [pageNo, pageSize]);
+
+  const handlePageChange = (page: number) => setPageNo(page);
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
     setPageNo(1);
   };
 
   const handleExport = () => {
-    console.log("Exporting data...");
     toast.info("Export functionality coming soon!");
   };
 
   const handleFilter = () => {
-    setIsFilterOpen((prev) => !prev); // toggle
+    setIsFilterOpen((prev) => !prev);
   };
-  const toggleFilter = (type: "role" | "status") => {
-    setActiveFilter((prev) => (prev === type ? null : type));
-  };
+
   const handleResetFilters = () => {
     setAppliedFilters({ roles: [], statuses: [] });
-    setActiveFilter(null);
     toast.info("Filters reset");
-    // Optionally: call API or refresh table with no filters
   };
-
-  const handleApplyFilters = (filters: { roles: any[]; statuses: any[] }) => {
-    // Here you would normally:
-    // 1. Call API with filters
-    // 2. Or filter locally if data is already loaded
-    console.log("Applying filters:", {
-      roles: filters.roles.map((r) => r.value),
-      statuses: filters.statuses.map((s) => s.value),
-    });
-    // toast.success("Filters applied!");
-  };
-
-  async function fetchUsers() {
-    const response = await getUsers(pageNo, pageSize);
-
-    if (response && response.statusCode === 200) {
-      // toast.success(response.message);
-      setSummaryData(response.data.summary);
-      setTotalRecords(response.data.users.totalRecords || 0);
-      setData(response.data.users.items || []);
-    }
-  }
-
-  useEffect(() => {
-    fetchUsers();
-  }, [pageNo, pageSize]);
 
   return (
-    <div className={`${isDark ? "dark" : ""}  sm:`}>
+    <div className={`${isDark ? "dark" : ""}`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
           title="User List"
@@ -167,8 +159,10 @@ const Users: React.FC = () => {
           onFilterClick={handleFilter}
           showWriteButton={true}
         />
+
+        {/* Filter Section */}
         {isFilterOpen && (
-          <div className="mb-6 rounded-xl  bg-card p-5 shadow-sm">
+          <div className="mb-6 rounded-xl bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-base font-semibold">Advanced Filters</h3>
               <div className="flex items-center gap-4">
@@ -188,7 +182,6 @@ const Users: React.FC = () => {
             </div>
 
             <div className="flex flex-wrap gap-6">
-              {/* Role Filter */}
               <div className="min-w-[260px]">
                 <MultiSelect
                   options={roleOptions}
@@ -196,12 +189,10 @@ const Users: React.FC = () => {
                   onChange={(roles) =>
                     setAppliedFilters((prev) => ({ ...prev, roles }))
                   }
-                  placeholder=" roles"
+                  placeholder="Roles"
                   searchPlaceholder="Search roles"
                 />
               </div>
-
-              {/* Status Filter */}
               <div className="min-w-[260px]">
                 <MultiSelect
                   options={statusOptions}
@@ -209,7 +200,7 @@ const Users: React.FC = () => {
                   onChange={(statuses) =>
                     setAppliedFilters((prev) => ({ ...prev, statuses }))
                   }
-                  placeholder="status"
+                  placeholder="Status"
                   searchPlaceholder="Search status"
                 />
               </div>
@@ -266,11 +257,26 @@ const Users: React.FC = () => {
           pageNo={pageNo}
           pageSize={pageSize}
           onPageChange={handlePageChange}
-          totalRecords={totalReconrds}
+          totalRecords={totalRecords}
           onPageSizeChange={handlePageSizeChange}
         />
+
+        {/* Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={() => {
+            setIsDeleteDialogOpen(false);
+            setUserToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          title="Delete User"
+          message={`Are you sure you want to delete user "${userToDelete?.fullName}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="danger"
+          isDark={isDark}
+        />
       </div>
-      
     </div>
   );
 };

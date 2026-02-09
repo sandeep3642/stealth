@@ -79,7 +79,7 @@ const Hierarchy: React.FC = () => {
           showSearch={true}
         />
       </div>
-      <ThemeCustomizer />
+      
     </div>
   );
 };
