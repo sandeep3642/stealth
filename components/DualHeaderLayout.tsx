@@ -168,7 +168,17 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   }, [userRights]);
 
   const handleLogout = () => {
-    localStorage.clear();
+    const keysToRemove = [
+      "authToken",
+      "darkMode",
+      "permissions",
+      "primaryHsl",
+      "user",
+      "whiteLabelTheme",
+    ];
+
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+
     Cookies.remove("authToken", { path: "/" });
 
     window.location.href = "/";
@@ -453,11 +463,10 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                       <Link
                         key={item.id}
                         href={item.path || "#"}
-                        className={`text-sm py-1 ${
-                          item.active
+                        className={`text-sm py-1 ${item.active
                             ? `${headerClasses.text} font-semibold`
                             : `${headerClasses.textSecondary} ${headerClasses.hover}`
-                        }`}
+                          }`}
                         onClick={() => setSelectedItemId(item.id)}
                         style={{
                           color: selectedItemId === item.id && selectedColor,
@@ -619,40 +628,40 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         setHeaderClasses(
           isDark
             ? {
-                header: "bg-card", // Remove border-border from here too
-                text: "text-white",
-                textSecondary: "text-white/70",
-                hover: "hover:text-white",
-                inputBg: "bg-background",
-                inputBorder: "border-white/20",
-                inputText: "text-white",
-                inputPlaceholder: "placeholder:text-white/40",
-                hoverBg: "hover:bg-background/50",
-                logo: "bg-primary",
-                logoText: "text-primary-foreground",
-                iconColor: "text-white/70",
-                useCustomBg: false,
-                dropdown: "",
-                dropdownHover: "",
-              }
+              header: "bg-card", // Remove border-border from here too
+              text: "text-white",
+              textSecondary: "text-white/70",
+              hover: "hover:text-white",
+              inputBg: "bg-background",
+              inputBorder: "border-white/20",
+              inputText: "text-white",
+              inputPlaceholder: "placeholder:text-white/40",
+              hoverBg: "hover:bg-background/50",
+              logo: "bg-primary",
+              logoText: "text-primary-foreground",
+              iconColor: "text-white/70",
+              useCustomBg: false,
+              dropdown: "",
+              dropdownHover: "",
+            }
             : {
-                header: secondaryColorHex ? "" : "bg-white", // Remove border-border from here too
-                text: "text-black",
-                textSecondary: "text-black/60",
-                hover: "hover:text-black",
-                inputBg: "bg-background",
-                inputBorder: "border-black/20",
-                inputText: "text-black",
-                inputPlaceholder: "placeholder:text-black/40",
-                hoverBg: "hover:bg-background/50",
-                logo: "bg-primary",
-                logoText: "text-primary-foreground",
-                iconColor: "text-black/70",
-                useCustomBg: !!secondaryColorHex,
-                customBg: secondaryColorHex,
-                dropdown: "",
-                dropdownHover: "",
-              },
+              header: secondaryColorHex ? "" : "bg-white", // Remove border-border from here too
+              text: "text-black",
+              textSecondary: "text-black/60",
+              hover: "hover:text-black",
+              inputBg: "bg-background",
+              inputBorder: "border-black/20",
+              inputText: "text-black",
+              inputPlaceholder: "placeholder:text-black/40",
+              hoverBg: "hover:bg-background/50",
+              logo: "bg-primary",
+              logoText: "text-primary-foreground",
+              iconColor: "text-black/70",
+              useCustomBg: !!secondaryColorHex,
+              customBg: secondaryColorHex,
+              dropdown: "",
+              dropdownHover: "",
+            },
         );
       }
     }, [isDark, secondaryColorHex]);
@@ -754,9 +763,8 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               <div className="absolute right-0 top-full mt-2 w-56 bg-background rounded-lg shadow-lg border z-50">
                 <button
                   onClick={handleLogout}
-                  className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded ${
-                    isDark ? "text-foreground" : "text-gray-900"
-                  }`}
+                  className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded ${isDark ? "text-foreground" : "text-gray-900"
+                    }`}
                 >
                   <LogOut className="w-4 h-4" />
                   Logout
@@ -853,13 +861,11 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
     return (
       <aside
-        className={`${width} ${sidebarClasses.bg} border-r ${
-          sidebarClasses.border
-        } h-screen fixed left-0 top-0 overflow-y-auto transition-all duration-300 z-50 ${
-          isMobile && !isMobileSidebarOpen
+        className={`${width} ${sidebarClasses.bg} border-r ${sidebarClasses.border
+          } h-screen fixed left-0 top-0 overflow-y-auto transition-all duration-300 z-50 ${isMobile && !isMobileSidebarOpen
             ? "-translate-x-full"
             : "translate-x-0"
-        }`}
+          }`}
         style={
           sidebarClasses.useCustomBg && sidebarClasses.customBg
             ? { backgroundColor: sidebarClasses.customBg }
@@ -869,9 +875,8 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         <div className="p-4 pb-20">
           {/* Logo Section */}
           <div
-            className={`flex items-center ${
-              isOpen ? "justify-between" : "justify-center"
-            } px-3 py-4 mb-6`}
+            className={`flex items-center ${isOpen ? "justify-between" : "justify-center"
+              } px-3 py-4 mb-6`}
           >
             <div
               className={`flex items-center gap-2 ${isOpen ? "" : "flex-col"}`}
@@ -930,17 +935,14 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                           <>
                             <button
                               onClick={() => isOpen && toggleMenu(item.id)}
-                              className={`w-full flex items-center ${
-                                isOpen ? "justify-between" : "justify-center"
-                              } px-3 py-2.5 rounded-lg ${
-                                sidebarClasses.menuText
-                              } ${sidebarClasses.menuHover}`}
+                              className={`w-full flex items-center ${isOpen ? "justify-between" : "justify-center"
+                                } px-3 py-2.5 rounded-lg ${sidebarClasses.menuText
+                                } ${sidebarClasses.menuHover}`}
                               title={!isOpen ? item.label : ""}
                             >
                               <div
-                                className={`flex items-center gap-3 ${
-                                  isOpen ? "" : "justify-center"
-                                }`}
+                                className={`flex items-center gap-3 ${isOpen ? "" : "justify-center"
+                                  }`}
                               >
                                 <IconComponent
                                   className={`w-5 h-5 ${sidebarClasses.menuIcon}`}
@@ -953,11 +955,9 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                               </div>
                               {isOpen && (
                                 <ChevronDown
-                                  className={`w-4 h-4 ${
-                                    sidebarClasses.chevron
-                                  } transition-transform ${
-                                    isExpanded ? "rotate-180" : ""
-                                  }`}
+                                  className={`w-4 h-4 ${sidebarClasses.chevron
+                                    } transition-transform ${isExpanded ? "rotate-180" : ""
+                                    }`}
                                 />
                               )}
                             </button>
@@ -994,13 +994,11 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                         ) : (
                           <Link
                             href={item.path || "#"}
-                            className={`flex items-center gap-3 ${
-                              isOpen ? "" : "justify-center"
-                            } px-3 py-2.5 rounded-lg ${
-                              item.active
+                            className={`flex items-center gap-3 ${isOpen ? "" : "justify-center"
+                              } px-3 py-2.5 rounded-lg ${item.active
                                 ? `${sidebarClasses.activeMenuBg} ${sidebarClasses.activeMenuText}`
                                 : `${sidebarClasses.menuText} ${sidebarClasses.menuHover}`
-                            }`}
+                              }`}
                             title={!isOpen ? item.label : ""}
                             onClick={() => {
                               setSelectedItemId(item.id);
@@ -1012,17 +1010,15 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                             }}
                           >
                             <IconComponent
-                              className={`w-5 h-5 ${
-                                item.active
+                              className={`w-5 h-5 ${item.active
                                   ? sidebarClasses.activeMenuIcon
                                   : sidebarClasses.menuIcon
-                              }`}
+                                }`}
                             />
                             {isOpen && (
                               <span
-                                className={`text-sm ${
-                                  item.active ? "font-semibold" : "font-medium"
-                                }`}
+                                className={`text-sm ${item.active ? "font-semibold" : "font-medium"
+                                  }`}
                               >
                                 {item.label}
                               </span>
@@ -1057,13 +1053,12 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         flex-1 overflow-y-auto
         p-4 md:p-6
         ${menuLayout === "topnav" ? " md:mt-20" : " md:mt-20"}
-        ${
-          menuLayout === "sidebar" && !isMobile
+        ${menuLayout === "sidebar" && !isMobile
             ? isSidebarOpen
               ? "lg:ml-64"
               : "lg:ml-20"
             : ""
-        }
+          }
         transition-all duration-300
       `}
       >

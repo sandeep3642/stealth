@@ -97,26 +97,21 @@ const PlansManagement = () => {
 
   // Hardcoded tenant categories (can be replaced with API call)
   const tenantCategoriesOptions = [
-    { id: 1, name: "End User (Direct)", displayName: "End User (Direct)" },
-    { id: 2, name: "Distributor", displayName: "Distributor" },
-    { id: 3, name: "Reseller", displayName: "Reseller" },
-    { id: 4, name: "Enterprise", displayName: "Enterprise" },
+    { id: 1, name: "End User (Direct)", displayName: "End User(Direct)" },
+    { id: 2, name: "Distributor", displayName: "Distributor(B2B Enterprise)" },
+    { id: 3, name: "Reseller", displayName: "Reseller(B2B)" },
+    { id: 4, name: "Enterprise", displayName: "Dealer(B2B2C)" },
   ];
 
-  const billingIntervals = ["Monthly", "Quarterly", "Half-Yearly", "Yearly"];
+  const billingIntervals = ["Monthly","Yearly"];
   const contractValidities = [
-    "1 Month",
-    "3 Months",
-    "6 Months",
     "1 Year",
     "2 Years",
-    "3 Years",
+    "Lifetime",
   ];
   const pricingModels = [
     "Fixed (Flat Account-based)",
-    "Per User",
-    "Tiered",
-    "Usage-based",
+    "License-based (Variable per Unit)",
   ];
 
   // Fetch dropdown data on component mount
