@@ -21,6 +21,10 @@ export interface SidebarSection {
 }
 
 export interface HeaderClasses {
+  bg?: string;
+  border?: string;
+  iconHover?: string;
+  profileHover?: string;
   header: string;
   text: string;
   textSecondary: string;

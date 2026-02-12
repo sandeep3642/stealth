@@ -198,6 +198,13 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           path: "/dashboard",
         },
         {
+          id: "track-trace",
+          label: "Track & Trace",
+          icon: Activity,
+          active: false,
+          path: "/(protected)/track-trace",
+        },
+        {
           id: "report",
           label: "Report",
           icon: FileText,
