@@ -28,6 +28,8 @@ build_and_push:
         --build-arg NEXT_PUBLIC_APP_ENV="$NEXT_PUBLIC_APP_ENV" \
         --build-arg NEXT_PUBLIC_GOOGLE_MAPS_KEY="$NEXT_PUBLIC_GOOGLE_MAPS_KEY" \
         --build-arg NEXT_PUBLIC_VTS_API_BASE_URL="$NEXT_PUBLIC_VTS_API_BASE_URL" \
+        --build-arg NEXT_PUBLIC_JAVA_API_BASE_URL="$NEXT_PUBLIC_JAVA_API_BASE_URL" \
+        
         -t "$IMAGE_NAME:$CI_COMMIT_SHORT_SHA" .
 
     - echo "✅ Tag docker image..."
