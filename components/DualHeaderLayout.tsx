@@ -159,7 +159,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           };
         })
         .filter((section) => section.items.length > 0); // Remove empty sections
-
+      console.log("filtered",filtered)
       setFilteredSections(filtered);
     } else {
       // If no permissions loaded yet, show empty or all menus (depending on your requirement)
@@ -202,7 +202,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           label: "Track & Trace",
           icon: Activity,
           active: false,
-          path: "/(protected)/track-trace",
+          path: "/fleet",
         },
         {
           id: "report",
