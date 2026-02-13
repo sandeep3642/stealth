@@ -27,6 +27,7 @@ import {
   getLiveTrackingBatch,
   getLiveTrackingByKey,
 } from "@/services/liveTrackingService";
+import { useRouter } from "next/navigation";
 
 const POLL_MS = 15000;
 const VEHICLE_LIST = DEFAULT_FLEET_VEHICLES.slice(0, 3);
@@ -55,6 +56,7 @@ function getMarkerSvg(status, isActive) {
 
 export default function FleetDashboard() {
   const mapRef = useRef(null);
+  const router = useRouter();
   const [fleetData, setFleetData] = useState([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [popupVehicleId, setPopupVehicleId] = useState(null);
@@ -139,7 +141,8 @@ export default function FleetDashboard() {
   const filteredFleet = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     return fleetData.filter((vehicle) => {
-      const byStatus = filterStatus === "ALL" || vehicle.status === filterStatus;
+      const byStatus =
+        filterStatus === "ALL" || vehicle.status === filterStatus;
       const bySearch =
         !term ||
         vehicle.name?.toLowerCase().includes(term) ||
@@ -243,7 +246,9 @@ export default function FleetDashboard() {
                   {stat.label}
                 </span>
               </div>
-              <div className="text-2xl font-black text-slate-800">{stat.count}</div>
+              <div className="text-2xl font-black text-slate-800">
+                {stat.count}
+              </div>
             </button>
           );
         })}
@@ -265,7 +270,8 @@ export default function FleetDashboard() {
             {!isFleetLoading &&
               !fleetError &&
               filteredFleet.map((vehicle) => {
-                const statusColor = STATUS_META[vehicle.status]?.color || "#64748b";
+                const statusColor =
+                  STATUS_META[vehicle.status]?.color || "#64748b";
                 const active = selectedVehicle?.id === vehicle.id;
                 return (
                   <button
@@ -284,7 +290,10 @@ export default function FleetDashboard() {
                           className="flex h-10 w-10 items-center justify-center rounded-full"
                           style={{ backgroundColor: `${statusColor}22` }}
                         >
-                          <CarFront className="h-5 w-5" style={{ color: statusColor }} />
+                          <CarFront
+                            className="h-5 w-5"
+                            style={{ color: statusColor }}
+                          />
                         </div>
                         <div>
                           <div className="text-lg font-black text-slate-900">
@@ -400,7 +409,9 @@ export default function FleetDashboard() {
               </GoogleMap>
 
               <div className="pointer-events-none absolute left-4 top-4 rounded-xl bg-white/95 px-4 py-2 shadow-lg">
-                <div className="text-sm font-bold text-slate-900">Live Tracking Active</div>
+                <div className="text-sm font-bold text-slate-900">
+                  Live Tracking Active
+                </div>
                 <div className="text-xs font-medium text-slate-500">
                   Monitoring {filteredFleet.length} vehicles
                 </div>
@@ -415,7 +426,11 @@ export default function FleetDashboard() {
                       </div>
                       <div
                         className="text-sm font-bold"
-                        style={{ color: STATUS_META[popupVehicle.status]?.color || "#64748b" }}
+                        style={{
+                          color:
+                            STATUS_META[popupVehicle.status]?.color ||
+                            "#64748b",
+                        }}
                       >
                         {popupVehicle.status}
                       </div>
@@ -446,6 +461,26 @@ export default function FleetDashboard() {
                         {popupVehicle.velocity} KM/H
                       </div>
                     </div>
+                  </div>
+
+                  {/* ✅ Added Buttons */}
+                  <div className="mt-4 flex justify-between">
+                    <button
+                      onClick={() =>
+                        router.push(`/live-tracking/${popupVehicle.id}`)
+                      }
+                      className="w-[48%] rounded-xl bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"
+                    >
+                      Live Tracking
+                    </button>
+                    <button
+                      onClick={() =>
+                        router.push(`/history-tracking/${popupVehicle.id}`)
+                      }
+                      className="w-[48%] rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                    >
+                      History Tracking
+                    </button>
                   </div>
                 </div>
               )}
