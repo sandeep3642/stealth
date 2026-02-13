@@ -68,9 +68,17 @@ interface ViolationPoint extends HistoryDataPoint {
     index: number;
 }
 
-// Helper to format date for API
-function formatDateForAPI(date: Date): string {
-    return date.toISOString();
+// Keep API datetime in local-style format without UTC suffix (e.g. 2026-02-12T13:00:00)
+function formatDateForAPI(input: string): string {
+    const trimmed = input.trim();
+    if (!trimmed) return "";
+    if (trimmed.length === 16) return `${trimmed}:00`;
+    return trimmed.replace(/\.\d{3}Z$/, "").replace(/Z$/, "");
+}
+
+function formatDateTimeLocalInput(date: Date): string {
+    const pad = (num: number): string => String(num).padStart(2, "0");
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 // Helper to format date display
@@ -139,13 +147,13 @@ export default function HistoryTracking() {
     const [startDate, setStartDate] = useState<string>(() => {
         const date = new Date();
         date.setHours(0, 0, 0, 0);
-        return date.toISOString().slice(0, 16);
+        return formatDateTimeLocalInput(date);
     });
 
     const [endDate, setEndDate] = useState<string>(() => {
         const date = new Date();
         date.setHours(23, 59, 59, 999);
-        return date.toISOString().slice(0, 16);
+        return formatDateTimeLocalInput(date);
     });
 
     // Data state
@@ -187,8 +195,8 @@ export default function HistoryTracking() {
                 },
                 body: JSON.stringify({
                     vehicleNo: vehicleId,
-                    start: new Date(startDate).toISOString(),
-                    end: new Date(endDate).toISOString(),
+                    start: formatDateForAPI(startDate),
+                    end: formatDateForAPI(endDate),
                 }),
             });
 
