@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { Suspense, useState, useEffect, useMemo } from "react";
 import FleetMap from "@/components/maps/FleetMap";
 import type { Vehicle, RoutePoint } from "@/lib/mapTypes";
 import { getLiveTrackingData } from "@/services/liveTrackingService";
@@ -128,6 +128,17 @@ function toNum(value: any): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+function toIgnitionStatus(value: any): "ignition-on" | "ignition-off" {
+  if (value === true || value === 1) return "ignition-on";
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "1" || normalized === "true" || normalized === "on") {
+      return "ignition-on";
+    }
+  }
+  return "ignition-off";
+}
+
 function normalizeVehicle(item: any): Vehicle | null {
   const lat = toNum(item.latitude) ?? toNum(item.lat) ?? toNum(item.Latitude) ?? toNum(item.Lat) ?? toNum(item.LAT);
   const lng = toNum(item.longitude) ?? toNum(item.lng) ?? toNum(item.lon) ?? toNum(item.Longitude) ?? toNum(item.Lng) ?? toNum(item.LNG);
@@ -139,6 +150,7 @@ function normalizeVehicle(item: any): Vehicle | null {
     vehicleNo = id;
   }
   return {
+    ...item,
     id,
     name: id,
     vehicleNo,
@@ -147,8 +159,7 @@ function normalizeVehicle(item: any): Vehicle | null {
     speed: toNum(item.speed ?? item.Speed),
     heading: toNum(item.direction ?? item.heading ?? item.Dir ?? item.bearing),
     timestamp: item.gpsDate ?? item.timestamp ?? item.gpsTime,
-    status: item.ignition ? "ignition-on" : "ignition-off",
-    ...item,
+    status: toIgnitionStatus(item.ignition ?? item.Ignition ?? item.ign),
   };
 }
 
@@ -204,7 +215,7 @@ function getStatusCounts(vehicles: Vehicle[]) {
   return counts;
 }
 
-export default function TrackTracePage() {
+function TrackTracePageContent() {
   // Use FleetMap and useVehiclesLive for live polling
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -319,5 +330,13 @@ export default function TrackTracePage() {
       </div>
 
     </div>
+  );
+}
+
+export default function TrackTracePage() {
+  return (
+    <Suspense fallback={<div style={{ padding: 24 }}>Loading track trace...</div>}>
+      <TrackTracePageContent />
+    </Suspense>
   );
 }

@@ -14,6 +14,17 @@ function toNum(value: any): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
+function toIgnitionStatus(value: any): "ignition-on" | "ignition-off" {
+  if (value === true || value === 1) return "ignition-on";
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "1" || normalized === "true" || normalized === "on") {
+      return "ignition-on";
+    }
+  }
+  return "ignition-off";
+}
+
 
 // ----------------------------------------------------------
 // NORMALIZER — Handles ALL field variations & nested formats
@@ -57,17 +68,15 @@ function normalizeVehicle(item: any): Vehicle | null {
     `${lat},${lng}`;
 
   return {
+    ...item,
     id,
     name: id,
     lat,
     lng,
-
     speed: toNum(item.speed ?? item.Speed),
     heading: toNum(item.direction ?? item.heading ?? item.Dir ?? item.bearing),
     timestamp: item.gpsDate ?? item.timestamp ?? item.gpsTime,
-    status: item.ignition ? "ignition-on" : "ignition-off",
-
-    ...item,
+    status: toIgnitionStatus(item.ignition ?? item.Ignition ?? item.ign),
   };
 }
 
