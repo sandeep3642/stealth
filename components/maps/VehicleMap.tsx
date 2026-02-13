@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { GoogleMap, InfoWindow, MarkerF, PolylineF } from "@react-google-maps/api";
-import { MarkerClusterer } from "@googlemaps/markerclusterer";
+// import { MarkerClusterer } from "@googlemaps/markerclusterer";
 import type { RoutePoint, Vehicle } from "@/lib/mapTypes";
 
 type Props = {

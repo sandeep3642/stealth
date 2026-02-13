@@ -23,16 +23,19 @@ export default function FleetMap({
   height = "80vh",
   renderInfoCard,
 }: Props) {
-
   const { vehicles } = useVehiclesLive(fetchVehicles, { pollMs });
-  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(
+    null,
+  );
   const [route, setRoute] = useState<RoutePoint[]>([]);
-  const [liveRoute, setLiveRoute] = useState<{ lat: number; lng: number }[]>([]);
+  const [liveRoute, setLiveRoute] = useState<{ lat: number; lng: number }[]>(
+    [],
+  );
 
   // Track all positions for the first vehicle since live tracking started
   React.useEffect(() => {
     if (vehicles.length > 0) {
-      setLiveRoute(prev => {
+      setLiveRoute((prev) => {
         const last = prev.length > 0 ? prev[prev.length - 1] : null;
         const curr = { lat: vehicles[0].lat, lng: vehicles[0].lng };
         if (!last || last.lat !== curr.lat || last.lng !== curr.lng) {
@@ -44,7 +47,10 @@ export default function FleetMap({
   }, [vehicles]);
 
   // playback
-  const { isPlaying, progress, current, play, pause, seek } = useRoutePlayback(route, 1);
+  const { isPlaying, progress, current, play, pause, seek } = useRoutePlayback(
+    route,
+    1,
+  );
 
   const runner = useMemo(() => {
     if (isPlaying && current) {
@@ -61,12 +67,11 @@ export default function FleetMap({
     return null;
   }, [isPlaying, current, vehicles]);
 
-
   // Compute map bounds for all vehicles
   const mapBounds = useMemo(() => {
     if (vehicles.length > 1) {
       const bounds = new window.google.maps.LatLngBounds();
-      vehicles.forEach(v => {
+      vehicles.forEach((v) => {
         if (
           typeof v.lat === "number" &&
           typeof v.lng === "number" &&
@@ -103,9 +108,7 @@ export default function FleetMap({
   return (
     <MapLoader>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {renderInfoCard && (
-          <div>{renderInfoCard(vehicles[0])}</div>
-        )}
+        {renderInfoCard && <div>{renderInfoCard(vehicles[0])}</div>}
         <VehicleMap
           vehicles={vehicles}
           route={route}
@@ -128,7 +131,8 @@ export default function FleetMap({
         )}
         {selectedVehicleId && (
           <div style={{ padding: "0 12px", opacity: 0.8 }}>
-            Selected: <b>{selectedVehicleId}</b> (click another vehicle to load route)
+            Selected: <b>{selectedVehicleId}</b> (click another vehicle to load
+            route)
           </div>
         )}
       </div>
