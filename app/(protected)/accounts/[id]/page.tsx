@@ -13,6 +13,9 @@ import { Category } from "@/interfaces/account.interface";
 
 interface FormData {
   accountName: string;
+  accountCode: string;
+  userId: number;
+  taxTypeId: number;
   superior: string;
   referrer: string;
   contactName: string;
@@ -70,6 +73,9 @@ const EditAccount: React.FC = () => {
 
   const [formData, setFormData] = useState<FormData>({
     accountName: "",
+    accountCode: "",
+    userId: 1,
+    taxTypeId: 1,
     superior: "",
     referrer: "",
     contactName: "",
@@ -217,7 +223,7 @@ const EditAccount: React.FC = () => {
 
       const payload = {
         accountName: formData.accountName,
-        // accountCode: "AUTO_GEN", // Auto-generated
+        accountCode: formData.accountCode,
         categoryId: Number(formData.categoryId),
         primaryDomain: formData.primaryDomain,
         countryId: Number(formData.countryId),
@@ -226,9 +232,9 @@ const EditAccount: React.FC = () => {
         zipcode: formData.zipcode,
         parentAccountId: formData.superior ? Number(formData.superior) : 0,
         refferCode: formData.referrer,
-        userId: 1,
+        userId: formData.userId,
         hierarchyPath: formData.address || "N/A",
-        taxTypeId: 1,
+        taxTypeId: formData.taxTypeId,
         status: formData.status === "Active",
         fullname: formData.contactName,
         email: formData.email,
@@ -307,28 +313,37 @@ const EditAccount: React.FC = () => {
       if (res?.statusCode === 200 && res?.data) {
         const data = res.data;
 
+        const shareValues = (data.share || "")
+          .split(",")
+          .map((item: string) => item.trim().toLowerCase());
+
         setFormData({
           accountName: data.accountName || "",
+          accountCode: data.accountCode || "",
+          userId: Number(data.fk_userid || 1),
+          taxTypeId: Number(data.taxTypeId || 1),
           superior: data.parentAccountId?.toString() || "",
-          referrer: data.reffer || "",
-          contactName: data.fullname || "",
-          phone: data.phone || "",
+          referrer: data.reffer || data.refferCode || "",
+          contactName: data.fullname || data.contactPersonName || "",
+          phone: data.phone || data.contactPersonPhone || "",
           positionDesignation: data.position || "",
           countryId: data.countryId?.toString() || "",
-          stateId: data.stateId || "",
-          cityId: data.cityId || "",
+          stateId: data.stateId?.toString() || "",
+          cityId: data.cityId?.toString() || "",
           zipcode: data.zipcode || "",
-          address: data.address || "",
+          address: data.address || data.hierarchyPath || "",
           contactNumber: data.businessPhone || "",
           supportTimings: data.businessHours || "",
-          username: data.userName || "",
+          username: data.userName || data.usernamesacc || "",
           password: "",
-          email: data.email || "",
+          email: data.email || data.contactPersonEmail || "",
           categoryId: data.categoryId?.toString() || "",
           status: data.status ? "Active" : "Inactive",
-          shareEmail: false,
-          shareWhatsApp: false,
-          shareCopyToClipboard: false,
+          shareEmail: shareValues.includes("email"),
+          shareWhatsApp: shareValues.includes("whatsapp"),
+          shareCopyToClipboard:
+            shareValues.includes("clipboard") ||
+            shareValues.includes("copytoclipboard"),
           primaryDomain: data.primaryDomain || "",
           businessEmail: data.businessEmail || data.email || "",
           businessAddress: data.businessAddress || data.address || "",

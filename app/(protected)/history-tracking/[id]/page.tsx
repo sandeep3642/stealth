@@ -180,7 +180,7 @@ export default function HistoryTracking() {
         setShowDatePicker(false); // Close date picker after fetching
 
         try {
-            const response = await fetch(`${API_BASE_URL}history-tracking`, {
+            const response = await fetch(`${API_BASE_URL}history/history-tracking`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
