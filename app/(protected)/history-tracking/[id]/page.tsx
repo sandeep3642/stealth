@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { useGoogleMapsSdk } from "@/hooks/useGoogleMapsSdk";
 import { useParams, useRouter } from "next/navigation";
-import { historyDataSample } from "./data";
+import { getCarMarkerSvg } from "@/utils/carMarkerIcon";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_JAVA_API_BASE_URL;
 
@@ -157,9 +157,7 @@ export default function HistoryTracking() {
     });
 
     // Data state
-    const [historyData, setHistoryData] = useState<HistoryDataPoint[]>(
-        historyDataSample,
-    );
+    const [historyData, setHistoryData] = useState<HistoryDataPoint[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string>("");
 
@@ -208,11 +206,13 @@ export default function HistoryTracking() {
 
             if (!data || data.length === 0) {
                 setError("No tracking data found for this time period");
-                // setHistoryData([]);
+                setHistoryData([]);
+                setCurrentIndex(0);
+                setIsPlaying(false);
                 return;
             }
 
-            // setHistoryData(data);
+            setHistoryData(data);
             setCurrentIndex(0);
 
             // Fit bounds to show entire route
@@ -227,7 +227,9 @@ export default function HistoryTracking() {
             const errorMessage =
                 err instanceof Error ? err.message : "Failed to fetch history data";
             setError(errorMessage);
-            // setHistoryData([]);
+            setHistoryData([]);
+            setCurrentIndex(0);
+            setIsPlaying(false);
         } finally {
             setIsLoading(false);
         }
@@ -549,14 +551,11 @@ export default function HistoryTracking() {
                                                 lng: historyData[0].longitude,
                                             }}
                                             icon={{
-                                                url:
-                                                    "data:image/svg+xml;utf-8," +
-                                                    encodeURIComponent(`
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-                          <circle cx="16" cy="16" r="12" fill="#10b981" stroke="#ffffff" stroke-width="3"/>
-                          <circle cx="16" cy="16" r="4" fill="white"/>
-                        </svg>
-                      `),
+                                                url: getCarMarkerSvg({
+                                                    color: "#10b981",
+                                                    strokeColor: "#0f172a",
+                                                    size: 44,
+                                                }),
                                             }}
                                         />
                                     )}
@@ -570,14 +569,11 @@ export default function HistoryTracking() {
                                                     lng: historyData[historyData.length - 1].longitude,
                                                 }}
                                                 icon={{
-                                                    url:
-                                                        "data:image/svg+xml;utf-8," +
-                                                        encodeURIComponent(`
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-                          <circle cx="16" cy="16" r="12" fill="#ef4444" stroke="#ffffff" stroke-width="3"/>
-                          <circle cx="16" cy="16" r="4" fill="white"/>
-                        </svg>
-                      `),
+                                                    url: getCarMarkerSvg({
+                                                        color: "#ef4444",
+                                                        strokeColor: "#0f172a",
+                                                        size: 44,
+                                                    }),
                                                 }}
                                             />
                                         )}
@@ -590,14 +586,13 @@ export default function HistoryTracking() {
                                                 lng: currentPoint.longitude,
                                             }}
                                             icon={{
-                                                url:
-                                                    "data:image/svg+xml;utf-8," +
-                                                    encodeURIComponent(`
-                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-                          <circle cx="20" cy="20" r="16" fill="#6366f1" stroke="#ffffff" stroke-width="4"/>
-                          <circle cx="20" cy="20" r="6" fill="white"/>
-                        </svg>
-                      `),
+                                                url: getCarMarkerSvg({
+                                                    color: "#1d4ed8",
+                                                    strokeColor: "#0f172a",
+                                                    isActive: true,
+                                                    size: 48,
+                                                    direction: currentPoint.direction,
+                                                }),
                                             }}
                                         />
                                     )}
@@ -832,14 +827,11 @@ export default function HistoryTracking() {
                                             lng: historyData[0].longitude,
                                         }}
                                         icon={{
-                                            url:
-                                                "data:image/svg+xml;utf-8," +
-                                                encodeURIComponent(`
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-                          <circle cx="16" cy="16" r="12" fill="#10b981" stroke="#ffffff" stroke-width="3"/>
-                          <circle cx="16" cy="16" r="4" fill="white"/>
-                        </svg>
-                      `),
+                                            url: getCarMarkerSvg({
+                                                color: "#10b981",
+                                                strokeColor: "#0f172a",
+                                                size: 44,
+                                            }),
                                         }}
                                     />
                                 )}
@@ -853,14 +845,11 @@ export default function HistoryTracking() {
                                                 lng: historyData[historyData.length - 1].longitude,
                                             }}
                                             icon={{
-                                                url:
-                                                    "data:image/svg+xml;utf-8," +
-                                                    encodeURIComponent(`
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-                          <circle cx="16" cy="16" r="12" fill="#ef4444" stroke="#ffffff" stroke-width="3"/>
-                          <circle cx="16" cy="16" r="4" fill="white"/>
-                        </svg>
-                      `),
+                                                url: getCarMarkerSvg({
+                                                    color: "#ef4444",
+                                                    strokeColor: "#0f172a",
+                                                    size: 44,
+                                                }),
                                             }}
                                         />
                                     )}
@@ -873,14 +862,13 @@ export default function HistoryTracking() {
                                             lng: currentPoint.longitude,
                                         }}
                                         icon={{
-                                            url:
-                                                "data:image/svg+xml;utf-8," +
-                                                encodeURIComponent(`
-                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-                          <circle cx="20" cy="20" r="16" fill="#6366f1" stroke="#ffffff" stroke-width="4"/>
-                          <circle cx="20" cy="20" r="6" fill="white"/>
-                        </svg>
-                      `),
+                                            url: getCarMarkerSvg({
+                                                color: "#1d4ed8",
+                                                strokeColor: "#0f172a",
+                                                isActive: true,
+                                                size: 48,
+                                                direction: currentPoint.direction,
+                                            }),
                                         }}
                                     />
                                 )}

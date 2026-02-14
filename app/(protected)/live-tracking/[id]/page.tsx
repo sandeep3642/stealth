@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useGoogleMapsSdk } from "@/hooks/useGoogleMapsSdk";
 import { useRouter, useParams } from "next/navigation";
+import { getCarMarkerSvg } from "@/utils/carMarkerIcon";
 
 const POLL_INTERVAL = 5000; // 5 seconds
 const API_BASE_URL = "http://fleetbharat.com:8080/api/redis/get";
@@ -68,6 +69,84 @@ interface VehicleData {
   VehicleNo: string;
 }
 
+function toNumber(value: unknown): number {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : 0;
+}
+
+function toBoolean(value: unknown): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "1" || normalized === "true" || normalized === "on";
+  }
+  return false;
+}
+
+function pick<T = unknown>(source: Record<string, any>, ...keys: string[]): T | undefined {
+  for (const key of keys) {
+    if (source[key] !== undefined && source[key] !== null) {
+      return source[key] as T;
+    }
+  }
+  return undefined;
+}
+
+function normalizeVehicleData(raw: unknown): VehicleData | null {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Record<string, any>;
+
+  const latitude = toNumber(pick(obj, "Latitude", "latitude", "lat"));
+  const longitude = toNumber(pick(obj, "Longitude", "longitude", "lng", "lon"));
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+
+  return {
+    DeviceNo: String(pick(obj, "DeviceNo", "deviceNo") ?? ""),
+    Imei: String(pick(obj, "Imei", "imei") ?? ""),
+    Latitude: latitude,
+    Longitude: longitude,
+    Speed: toNumber(pick(obj, "Speed", "speed")),
+    Altitude: toNumber(pick(obj, "Altitude", "altitude")),
+    Direction: toNumber(pick(obj, "Direction", "direction")),
+    Rpm: pick(obj, "Rpm", "rpm") as number | null,
+    Ignition: toBoolean(pick(obj, "Ignition", "ignition")),
+    Ac: toBoolean(pick(obj, "Ac", "ac")),
+    PowerCut: toBoolean(pick(obj, "PowerCut", "powerCut")),
+    LowVoltage: toBoolean(pick(obj, "LowVoltage", "lowVoltage")),
+    DoorLock: toBoolean(pick(obj, "DoorLock", "doorLock")),
+    DoorOpen: toBoolean(pick(obj, "DoorOpen", "doorOpen")),
+    DeviceLock: toBoolean(pick(obj, "DeviceLock", "deviceLock")),
+    FuelCut: toBoolean(pick(obj, "FuelCut", "fuelCut")),
+    GpsFixed: toBoolean(pick(obj, "GpsFixed", "gpsFixed")),
+    Collision: toBoolean(pick(obj, "Collision", "collision")),
+    GpsDate: String(pick(obj, "GpsDate", "gpsDate") ?? ""),
+    Sos: toBoolean(pick(obj, "Sos", "sos")),
+    OverSpeed: toBoolean(pick(obj, "OverSpeed", "overSpeed")),
+    Fatigue: toBoolean(pick(obj, "Fatigue", "fatigue")),
+    Danger: toBoolean(pick(obj, "Danger", "danger")),
+    GnssFault: toBoolean(pick(obj, "GnssFault", "gnssFault")),
+    GnssAntennaDisconnect: toBoolean(
+      pick(obj, "GnssAntennaDisconnect", "gnssAntennaDisconnect"),
+    ),
+    GnssAntennaShort: toBoolean(
+      pick(obj, "GnssAntennaShort", "gnssAntennaShort"),
+    ),
+    PowerUnderVoltage: toBoolean(
+      pick(obj, "PowerUnderVoltage", "powerUnderVoltage"),
+    ),
+    PowerDown: toBoolean(pick(obj, "PowerDown", "powerDown")),
+    PowerDisplayFault: toBoolean(
+      pick(obj, "PowerDisplayFault", "powerDisplayFault"),
+    ),
+    TtsFault: toBoolean(pick(obj, "TtsFault", "ttsFault")),
+    Rollover: toBoolean(pick(obj, "Rollover", "rollover")),
+    ReceivedAt: (pick(obj, "ReceivedAt", "receivedAt") as string | null) ?? null,
+    Id: String(pick(obj, "Id", "id") ?? ""),
+    VehicleNo: String(pick(obj, "VehicleNo", "vehicleNo") ?? ""),
+  };
+}
+
 export default function LiveTracking() {
   const router = useRouter();
   const params = useParams();
@@ -97,15 +176,28 @@ export default function LiveTracking() {
         }
 
         const data = await response.json();
-        const parsedValue: VehicleData = JSON.parse(data.value);
+        const rawPayload =
+          typeof data?.value === "string"
+            ? JSON.parse(data.value)
+            : data?.data && typeof data.data === "object"
+              ? data.data
+              : data;
+        const parsedValue = normalizeVehicleData(rawPayload);
 
         console.log("parsedValue", parsedValue);
+
+        if (!parsedValue) {
+          throw new Error("Invalid live tracking payload");
+        }
 
         if (!cancelled) {
           setVehicleData(parsedValue);
 
           // Add to position history
-          if (parsedValue?.Latitude && parsedValue?.Longitude) {
+          if (
+            Number.isFinite(parsedValue.Latitude) &&
+            Number.isFinite(parsedValue.Longitude)
+          ) {
             setPositionHistory((prev) => {
               const newHistory = [
                 ...prev,
@@ -145,7 +237,7 @@ export default function LiveTracking() {
   const lng = Number(vehicleData?.Longitude);
 
   const mapCenter =
-    lat && lng && isFinite(lat) && isFinite(lng)
+    Number.isFinite(lat) && Number.isFinite(lng)
       ? { lat, lng }
       : { lat: 28.4595, lng: 77.0266 };
 
@@ -525,59 +617,15 @@ export default function LiveTracking() {
                       lng: vehicleData.Longitude,
                     }}
                     icon={{
-                      url: `data:image/svg+xml;utf-8,${encodeURIComponent(`
-                      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-                        <g transform="translate(32, 32)">
-                          <!-- Outer glow -->
-                          <circle cx="0" cy="0" r="28" fill="#10b981" opacity="0.15"/>
-                          <circle cx="0" cy="0" r="20" fill="#10b981" opacity="0.25"/>
-                          
-                          <!-- Rotate the car based on direction -->
-                          <g transform="rotate(${vehicleData.Direction})">
-                            <!-- Car shadow -->
-                            <ellipse cx="0" cy="2" rx="14" ry="6" fill="#000000" opacity="0.2"/>
-                            
-                            <!-- Car body -->
-                            <rect x="-12" y="-7" width="24" height="14" rx="2.5" fill="#10b981" stroke="#059669" stroke-width="1"/>
-                            
-                            <!-- Car cabin/top -->
-                            <path d="M -8,-7 L -8,-11 L -3,-13 L 6,-13 L 11,-11 L 11,-7 Z" fill="#059669" stroke="#047857" stroke-width="0.8"/>
-                            
-                            <!-- Windshield (front) -->
-                            <path d="M 6,-13 L 11,-11 L 11,-7 L 8,-7 Z" fill="#6ee7b7" opacity="0.7"/>
-                            
-                            <!-- Side windows -->
-                            <path d="M -8,-11 L -3,-13 L 3,-13 L 3,-7 L -8,-7 Z" fill="#6ee7b7" opacity="0.5"/>
-                            
-                            <!-- Wheels -->
-                            <circle cx="-8" cy="-8" r="2.5" fill="#1f2937" stroke="#111827" stroke-width="0.5"/>
-                            <circle cx="-8" cy="8" r="2.5" fill="#1f2937" stroke="#111827" stroke-width="0.5"/>
-                            <circle cx="8" cy="-8" r="2.5" fill="#1f2937" stroke="#111827" stroke-width="0.5"/>
-                            <circle cx="8" cy="8" r="2.5" fill="#1f2937" stroke="#111827" stroke-width="0.5"/>
-                            
-                            <!-- Wheel rims -->
-                            <circle cx="-8" cy="-8" r="1.2" fill="#4b5563"/>
-                            <circle cx="-8" cy="8" r="1.2" fill="#4b5563"/>
-                            <circle cx="8" cy="-8" r="1.2" fill="#4b5563"/>
-                            <circle cx="8" cy="8" r="1.2" fill="#4b5563"/>
-                            
-                            <!-- Headlights -->
-                            <circle cx="13" cy="-4" r="1" fill="#fef3c7"/>
-                            <circle cx="13" cy="4" r="1" fill="#fef3c7"/>
-                            
-                            <!-- Direction arrow pointing forward -->
-                            <path d="M 16,0 L 22,0 M 22,0 L 19,-3 M 22,0 L 19,3" 
-                                  stroke="#10b981" 
-                                  stroke-width="2.5" 
-                                  fill="none" 
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"/>
-                          </g>
-                        </g>
-                      </svg>
-                    `)}`,
-                      anchor: new google.maps.Point(32, 32),
-                      scaledSize: new google.maps.Size(64, 64),
+                      url: getCarMarkerSvg({
+                        color: vehicleData.Ignition ? "#10b981" : "#94a3b8",
+                        strokeColor: "#0f172a",
+                        isActive: true,
+                        direction: vehicleData.Direction,
+                        size: 52,
+                      }),
+                      anchor: new google.maps.Point(26, 26),
+                      scaledSize: new google.maps.Size(52, 52),
                     }}
                   />
                 )}
@@ -679,39 +727,15 @@ export default function LiveTracking() {
                       lng: vehicleData.Longitude,
                     }}
                     icon={{
-                      url: `data:image/svg+xml;utf-8,${encodeURIComponent(`
-                      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-                        <g transform="translate(32, 32)">
-                          <circle cx="0" cy="0" r="28" fill="#10b981" opacity="0.15"/>
-                          <circle cx="0" cy="0" r="20" fill="#10b981" opacity="0.25"/>
-                          <g transform="rotate(${vehicleData.Direction})">
-                            <ellipse cx="0" cy="2" rx="14" ry="6" fill="#000000" opacity="0.2"/>
-                            <rect x="-12" y="-7" width="24" height="14" rx="2.5" fill="#10b981" stroke="#059669" stroke-width="1"/>
-                            <path d="M -8,-7 L -8,-11 L -3,-13 L 6,-13 L 11,-11 L 11,-7 Z" fill="#059669" stroke="#047857" stroke-width="0.8"/>
-                            <path d="M 6,-13 L 11,-11 L 11,-7 L 8,-7 Z" fill="#6ee7b7" opacity="0.7"/>
-                            <path d="M -8,-11 L -3,-13 L 3,-13 L 3,-7 L -8,-7 Z" fill="#6ee7b7" opacity="0.5"/>
-                            <circle cx="-8" cy="-8" r="2.5" fill="#1f2937" stroke="#111827" stroke-width="0.5"/>
-                            <circle cx="-8" cy="8" r="2.5" fill="#1f2937" stroke="#111827" stroke-width="0.5"/>
-                            <circle cx="8" cy="-8" r="2.5" fill="#1f2937" stroke="#111827" stroke-width="0.5"/>
-                            <circle cx="8" cy="8" r="2.5" fill="#1f2937" stroke="#111827" stroke-width="0.5"/>
-                            <circle cx="-8" cy="-8" r="1.2" fill="#4b5563"/>
-                            <circle cx="-8" cy="8" r="1.2" fill="#4b5563"/>
-                            <circle cx="8" cy="-8" r="1.2" fill="#4b5563"/>
-                            <circle cx="8" cy="8" r="1.2" fill="#4b5563"/>
-                            <circle cx="13" cy="-4" r="1" fill="#fef3c7"/>
-                            <circle cx="13" cy="4" r="1" fill="#fef3c7"/>
-                            <path d="M 16,0 L 22,0 M 22,0 L 19,-3 M 22,0 L 19,3" 
-                                  stroke="#10b981" 
-                                  stroke-width="2.5" 
-                                  fill="none" 
-                                  stroke-linecap="round"
-                                  stroke-linejoin="round"/>
-                          </g>
-                        </g>
-                      </svg>
-                    `)}`,
-                      anchor: new google.maps.Point(32, 32),
-                      scaledSize: new google.maps.Size(64, 64),
+                      url: getCarMarkerSvg({
+                        color: vehicleData.Ignition ? "#10b981" : "#94a3b8",
+                        strokeColor: "#0f172a",
+                        isActive: true,
+                        direction: vehicleData.Direction,
+                        size: 52,
+                      }),
+                      anchor: new google.maps.Point(26, 26),
+                      scaledSize: new google.maps.Size(52, 52),
                     }}
                   />
                 )}

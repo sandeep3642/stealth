@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { GoogleMap, MarkerF } from "@react-google-maps/api";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { GoogleMap, MarkerF, PolylineF } from "@react-google-maps/api";
 import {
   Activity,
   CarFront,
@@ -28,6 +28,7 @@ import {
   getLiveTrackingByKey,
 } from "@/services/liveTrackingService";
 import { useRouter } from "next/navigation";
+import { getCarMarkerSvg } from "@/utils/carMarkerIcon";
 
 const POLL_MS = 15000;
 const VEHICLE_LIST = DEFAULT_FLEET_VEHICLES.slice(0, 3);
@@ -42,18 +43,6 @@ const STATUS_META = {
   EXPIRED: { color: "#8b5cf6", icon: CircleX },
 };
 
-function getMarkerSvg(status, isActive) {
-  const color = STATUS_META[status]?.color || "#64748b";
-  const ring = isActive ? "#111827" : "#ffffff";
-
-  return `data:image/svg+xml;utf-8,${encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 42 42">
-      <circle cx="21" cy="21" r="17" fill="${color}" stroke="${ring}" stroke-width="4"/>
-      <circle cx="21" cy="21" r="5.5" fill="white" fill-opacity="0.95"/>
-    </svg>
-  `)}`;
-}
-
 export default function FleetDashboard() {
   const mapRef = useRef(null);
   const router = useRouter();
@@ -64,6 +53,7 @@ export default function FleetDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isFleetLoading, setIsFleetLoading] = useState(true);
   const [fleetError, setFleetError] = useState("");
+  const [vehicleTrails, setVehicleTrails] = useState({});
   const { isLoaded, loadError, hasApiKey } = useGoogleMapsSdk();
 
   useEffect(() => {
@@ -91,11 +81,27 @@ export default function FleetDashboard() {
           setFleetData(vehicles);
           setSelectedVehicleId((prev) => {
             if (prev && vehicles.some((v) => v.id === prev)) return prev;
-            return vehicles[0]?.id || null;
+            return null;
           });
           setPopupVehicleId((prev) => {
             if (prev && vehicles.some((v) => v.id === prev)) return prev;
-            return vehicles[0]?.id || null;
+            return null;
+          });
+          setVehicleTrails((prev) => {
+            const next = { ...prev };
+            vehicles.forEach((vehicle) => {
+              const point = {
+                lat: vehicle.position[0],
+                lng: vehicle.position[1],
+              };
+              const trail = next[vehicle.id] ? [...next[vehicle.id]] : [];
+              const last = trail[trail.length - 1];
+              if (!last || last.lat !== point.lat || last.lng !== point.lng) {
+                trail.push(point);
+              }
+              next[vehicle.id] = trail.slice(-40);
+            });
+            return next;
           });
         }
       } catch (error) {
@@ -152,10 +158,7 @@ export default function FleetDashboard() {
   }, [fleetData, filterStatus, searchTerm]);
 
   const selectedVehicle =
-    fleetData.find((vehicle) => vehicle.id === selectedVehicleId) ||
-    filteredFleet[0] ||
-    fleetData[0] ||
-    null;
+    fleetData.find((vehicle) => vehicle.id === selectedVehicleId) || null;
 
   const popupVehicle =
     fleetData.find((vehicle) => vehicle.id === popupVehicleId) || null;
@@ -164,8 +167,10 @@ export default function FleetDashboard() {
     () =>
       selectedVehicle
         ? { lat: selectedVehicle.position[0], lng: selectedVehicle.position[1] }
-        : { lat: 28.4595, lng: 77.0266 },
-    [selectedVehicle],
+        : fleetData[0]
+          ? { lat: fleetData[0].position[0], lng: fleetData[0].position[1] }
+          : { lat: 28.4595, lng: 77.0266 },
+    [selectedVehicle, fleetData],
   );
 
   const mapOptions = useMemo(
@@ -280,7 +285,7 @@ export default function FleetDashboard() {
                     onClick={() => focusVehicle(vehicle, true)}
                     className={`w-full rounded-2xl border bg-white p-4 text-left shadow-sm transition ${
                       active
-                        ? "border-indigo-200 ring-2 ring-indigo-100"
+                        ? "border-blue-700 ring-2 ring-blue-700"
                         : "border-slate-200 hover:border-slate-300"
                     }`}
                   >
@@ -390,22 +395,51 @@ export default function FleetDashboard() {
                   mapRef.current = map;
                 }}
               >
-                {filteredFleet.map((vehicle) => (
-                  <MarkerF
-                    key={vehicle.id}
-                    position={{
-                      lat: vehicle.position[0],
-                      lng: vehicle.position[1],
-                    }}
-                    icon={{
-                      url: getMarkerSvg(
-                        vehicle.status,
-                        selectedVehicle?.id === vehicle.id,
-                      ),
-                    }}
-                    onClick={() => focusVehicle(vehicle, true)}
-                  />
-                ))}
+                {fleetData.map((vehicle) => {
+                  const trail = vehicleTrails[vehicle.id] || [];
+                  return (
+                    <Fragment key={vehicle.id}>
+                      {trail.length > 1 && (
+                        <PolylineF
+                          path={trail}
+                          options={{
+                            strokeColor: "#1e3a8a",
+                            strokeOpacity: 0,
+                            strokeWeight: 3,
+                            icons: [
+                              {
+                                icon: {
+                                  path: "M 0,-1 0,1",
+                                  strokeOpacity: 1,
+                                  scale: 3,
+                                  strokeColor: "#1e3a8a",
+                                },
+                                offset: "0",
+                                repeat: "12px",
+                              },
+                            ],
+                          }}
+                        />
+                      )}
+                      <MarkerF
+                        position={{
+                          lat: vehicle.position[0],
+                          lng: vehicle.position[1],
+                        }}
+                        icon={{
+                          url: getCarMarkerSvg({
+                            color: STATUS_META[vehicle.status]?.color || "#64748b",
+                            isActive: selectedVehicle?.id === vehicle.id,
+                            strokeColor:
+                              selectedVehicle?.id === vehicle.id ? "#1e3a8a" : "#0f172a",
+                            direction: Number(vehicle?.raw?.direction || 0),
+                          }),
+                        }}
+                        onClick={() => focusVehicle(vehicle, true)}
+                      />
+                    </Fragment>
+                  );
+                })}
               </GoogleMap>
 
               <div className="pointer-events-none absolute left-4 top-4 rounded-xl bg-white/95 px-4 py-2 shadow-lg">
@@ -413,7 +447,7 @@ export default function FleetDashboard() {
                   Live Tracking Active
                 </div>
                 <div className="text-xs font-medium text-slate-500">
-                  Monitoring {filteredFleet.length} vehicles
+                  Monitoring {fleetData.length} vehicles
                 </div>
               </div>
 
