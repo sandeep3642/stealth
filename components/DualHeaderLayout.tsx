@@ -54,10 +54,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   const { selectedColor, colorBlock, handleColorChange } = useColor();
   const { isDark } = useTheme();
   const [expandedMenus, setExpandedMenus] = useState<string[]>([
-    "accounts",
-    "users",
-    "assets",
-    "billing",
+
   ]);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] =
