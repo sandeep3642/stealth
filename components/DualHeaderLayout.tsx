@@ -159,7 +159,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           };
         })
         .filter((section) => section.items.length > 0); // Remove empty sections
-      console.log("filtered",filtered)
+      console.log("filtered", filtered);
       setFilteredSections(filtered);
     } else {
       // If no permissions loaded yet, show empty or all menus (depending on your requirement)
@@ -470,10 +470,11 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                       <Link
                         key={item.id}
                         href={item.path || "#"}
-                        className={`text-sm py-1 ${item.active
+                        className={`text-sm py-1 ${
+                          item.active
                             ? `${headerClasses.text} font-semibold`
                             : `${headerClasses.textSecondary} ${headerClasses.hover}`
-                          }`}
+                        }`}
                         onClick={() => setSelectedItemId(item.id)}
                         style={{
                           color: selectedItemId === item.id && selectedColor,
@@ -635,40 +636,40 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         setHeaderClasses(
           isDark
             ? {
-              header: "bg-card", // Remove border-border from here too
-              text: "text-white",
-              textSecondary: "text-white/70",
-              hover: "hover:text-white",
-              inputBg: "bg-background",
-              inputBorder: "border-white/20",
-              inputText: "text-white",
-              inputPlaceholder: "placeholder:text-white/40",
-              hoverBg: "hover:bg-background/50",
-              logo: "bg-primary",
-              logoText: "text-primary-foreground",
-              iconColor: "text-white/70",
-              useCustomBg: false,
-              dropdown: "",
-              dropdownHover: "",
-            }
+                header: "bg-card", // Remove border-border from here too
+                text: "text-white",
+                textSecondary: "text-white/70",
+                hover: "hover:text-white",
+                inputBg: "bg-background",
+                inputBorder: "border-white/20",
+                inputText: "text-white",
+                inputPlaceholder: "placeholder:text-white/40",
+                hoverBg: "hover:bg-background/50",
+                logo: "bg-primary",
+                logoText: "text-primary-foreground",
+                iconColor: "text-white/70",
+                useCustomBg: false,
+                dropdown: "",
+                dropdownHover: "",
+              }
             : {
-              header: secondaryColorHex ? "" : "bg-white", // Remove border-border from here too
-              text: "text-black",
-              textSecondary: "text-black/60",
-              hover: "hover:text-black",
-              inputBg: "bg-background",
-              inputBorder: "border-black/20",
-              inputText: "text-black",
-              inputPlaceholder: "placeholder:text-black/40",
-              hoverBg: "hover:bg-background/50",
-              logo: "bg-primary",
-              logoText: "text-primary-foreground",
-              iconColor: "text-black/70",
-              useCustomBg: !!secondaryColorHex,
-              customBg: secondaryColorHex,
-              dropdown: "",
-              dropdownHover: "",
-            },
+                header: secondaryColorHex ? "" : "bg-white", // Remove border-border from here too
+                text: "text-black",
+                textSecondary: "text-black/60",
+                hover: "hover:text-black",
+                inputBg: "bg-background",
+                inputBorder: "border-black/20",
+                inputText: "text-black",
+                inputPlaceholder: "placeholder:text-black/40",
+                hoverBg: "hover:bg-background/50",
+                logo: "bg-primary",
+                logoText: "text-primary-foreground",
+                iconColor: "text-black/70",
+                useCustomBg: !!secondaryColorHex,
+                customBg: secondaryColorHex,
+                dropdown: "",
+                dropdownHover: "",
+              },
         );
       }
     }, [isDark, secondaryColorHex]);
@@ -770,8 +771,9 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               <div className="absolute right-0 top-full mt-2 w-56 bg-background rounded-lg shadow-lg border z-50">
                 <button
                   onClick={handleLogout}
-                  className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded ${isDark ? "text-foreground" : "text-gray-900"
-                    }`}
+                  className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded ${
+                    isDark ? "text-foreground" : "text-gray-900"
+                  }`}
                 >
                   <LogOut className="w-4 h-4" />
                   Logout
@@ -864,15 +866,17 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
     const sidebarClasses = getSidebarClasses();
     const isOpen = isMobile ? isMobileSidebarOpen : isSidebarOpen;
-    const width = isOpen ? "w-64" : "w-20";
+    const width = isOpen ? "w-64" : "w-22";
 
     return (
       <aside
-        className={`${width} ${sidebarClasses.bg} border-r ${sidebarClasses.border
-          } h-screen fixed left-0 top-0 overflow-y-auto transition-all duration-300 z-50 ${isMobile && !isMobileSidebarOpen
+        className={`${width} ${sidebarClasses.bg} border-r ${
+          sidebarClasses.border
+        } h-screen fixed left-0 top-0 overflow-y-auto transition-all duration-300 z-50 ${
+          isMobile && !isMobileSidebarOpen
             ? "-translate-x-full"
             : "translate-x-0"
-          }`}
+        }`}
         style={
           sidebarClasses.useCustomBg && sidebarClasses.customBg
             ? { backgroundColor: sidebarClasses.customBg }
@@ -882,8 +886,9 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         <div className="p-4 pb-20">
           {/* Logo Section */}
           <div
-            className={`flex items-center ${isOpen ? "justify-between" : "justify-center"
-              } px-3 py-4 mb-6`}
+            className={`flex items-center ${
+              isOpen ? "justify-between" : "justify-center"
+            } px-3 py-4 mb-6`}
           >
             <div
               className={`flex items-center gap-2 ${isOpen ? "" : "flex-col"}`}
@@ -941,33 +946,43 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                         {item.expandable ? (
                           <>
                             <button
-                              onClick={() => isOpen && toggleMenu(item.id)}
-                              className={`w-full flex items-center ${isOpen ? "justify-between" : "justify-center"
-                                } px-3 py-2.5 rounded-lg ${sidebarClasses.menuText
-                                } ${sidebarClasses.menuHover}`}
-                              title={!isOpen ? item.label : ""}
+                              onClick={() => toggleMenu(item.id)}
+                              className={`w-full flex ${
+                                isOpen
+                                  ? "flex-row items-center justify-between"
+                                  : "flex-col items-center justify-center"
+                              } px-3 py-2.5 rounded-lg ${
+                                sidebarClasses.menuText
+                              } ${sidebarClasses.menuHover}`}
                             >
                               <div
-                                className={`flex items-center gap-3 ${isOpen ? "" : "justify-center"
-                                  }`}
+                                className={`flex ${
+                                  isOpen
+                                    ? "flex-row items-center gap-3"
+                                    : "flex-col items-center gap-1"
+                                }`}
                               >
                                 <IconComponent
                                   className={`w-5 h-5 ${sidebarClasses.menuIcon}`}
                                 />
-                                {isOpen && (
-                                  <span className="text-sm font-medium">
-                                    {item.label}
-                                  </span>
-                                )}
+                                <span
+                                  className={`${isOpen ? "text-sm" : "text-[10px]"} font-medium ${!isOpen ? "text-center leading-tight" : ""}`}
+                                >
+                                  {item.label}
+                                </span>
                               </div>
                               {isOpen && (
                                 <ChevronDown
-                                  className={`w-4 h-4 ${sidebarClasses.chevron
-                                    } transition-transform ${isExpanded ? "rotate-180" : ""
-                                    }`}
+                                  className={`w-4 h-4 ${
+                                    sidebarClasses.chevron
+                                  } transition-transform ${
+                                    isExpanded ? "rotate-180" : ""
+                                  }`}
                                 />
                               )}
                             </button>
+
+                            {/* Children when sidebar is OPEN */}
                             {isOpen && isExpanded && item.children && (
                               <div className="ml-11 mt-1 space-y-1">
                                 {item.children.map((child) => {
@@ -997,16 +1012,52 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                 })}
                               </div>
                             )}
+
+                            {/* Children when sidebar is COLLAPSED */}
+                            {!isOpen && isExpanded && item.children && (
+                              <div className="mt-1 space-y-1">
+                                {item.children.map((child) => {
+                                  const ChildIcon = child.icon;
+                                  return (
+                                    <Link
+                                      key={child.id}
+                                      href={child.path}
+                                      onClick={() => {
+                                        setSelectedItemId(child.id);
+                                        if (isMobile)
+                                          setIsMobileSidebarOpen(false);
+                                      }}
+                                      style={{
+                                        color:
+                                          selectedItemId === child.id &&
+                                          selectedColor,
+                                      }}
+                                      className={`flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-lg ${sidebarClasses.menuText} ${sidebarClasses.menuHover}`}
+                                    >
+                                      <ChildIcon
+                                        className={`w-4 h-4 ${sidebarClasses.menuIcon}`}
+                                      />
+                                      <span className="text-[9px] text-center leading-tight">
+                                        {child.label}
+                                      </span>
+                                    </Link>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </>
                         ) : (
                           <Link
                             href={item.path || "#"}
-                            className={`flex items-center gap-3 ${isOpen ? "" : "justify-center"
-                              } px-3 py-2.5 rounded-lg ${item.active
+                            className={`flex ${
+                              isOpen
+                                ? "flex-row items-center gap-3"
+                                : "flex-col items-center gap-1"
+                            } px-3 py-2.5 rounded-lg ${
+                              item.active
                                 ? `${sidebarClasses.activeMenuBg} ${sidebarClasses.activeMenuText}`
                                 : `${sidebarClasses.menuText} ${sidebarClasses.menuHover}`
-                              }`}
-                            title={!isOpen ? item.label : ""}
+                            }`}
                             onClick={() => {
                               setSelectedItemId(item.id);
                               if (isMobile) setIsMobileSidebarOpen(false);
@@ -1017,19 +1068,19 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                             }}
                           >
                             <IconComponent
-                              className={`w-5 h-5 ${item.active
+                              className={`w-5 h-5 ${
+                                item.active
                                   ? sidebarClasses.activeMenuIcon
                                   : sidebarClasses.menuIcon
-                                }`}
+                              }`}
                             />
-                            {isOpen && (
-                              <span
-                                className={`text-sm ${item.active ? "font-semibold" : "font-medium"
-                                  }`}
-                              >
-                                {item.label}
-                              </span>
-                            )}
+                            <span
+                              className={`${isOpen ? "text-sm" : "text-[10px] text-center leading-tight"} ${
+                                item.active ? "font-semibold" : "font-medium"
+                              }`}
+                            >
+                              {item.label}
+                            </span>
                           </Link>
                         )}
                       </div>
@@ -1060,12 +1111,13 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         flex-1 overflow-y-auto
         p-4 md:p-6
         ${menuLayout === "topnav" ? " md:mt-20" : " md:mt-20"}
-        ${menuLayout === "sidebar" && !isMobile
+        ${
+          menuLayout === "sidebar" && !isMobile
             ? isSidebarOpen
               ? "lg:ml-64"
               : "lg:ml-20"
             : ""
-          }
+        }
         transition-all duration-300
       `}
       >
