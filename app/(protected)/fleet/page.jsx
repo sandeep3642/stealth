@@ -509,7 +509,7 @@ export default function FleetDashboard() {
                     </button>
                     <button
                       onClick={() =>
-                        router.push(`/history-tracking/${popupVehicle.id}`)
+                        router.push(`/history-tracking-smooth/${popupVehicle.id}`)
                       }
                       className="w-[48%] rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                     >
