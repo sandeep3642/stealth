@@ -8,6 +8,10 @@ export function proxy(request: NextRequest) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
+    pathname.startsWith("/proxy") ||
+    pathname.startsWith("/vts-proxy") ||
+    pathname.startsWith("/live-tracking-proxy") ||
+    pathname.startsWith("/java-proxy") ||
     pathname === "/favicon.ico" ||
     pathname === "/manifest.json"
   ) {
