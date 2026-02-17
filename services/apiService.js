@@ -2,12 +2,12 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+  baseURL: "/proxy",
 });
 
 // Separate instance for VTS (map) API
 export const vtsApi = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_VTS_API_BASE_URL,
+  baseURL: "/vts-proxy",
 });
 
 // 🟦 Request Interceptor

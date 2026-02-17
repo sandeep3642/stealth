@@ -65,7 +65,7 @@ async function fetchAllVehicles(): Promise<Vehicle[]> {
     "MH12DE1433",
     // Add more as needed
   ];
-  let baseUrl = process.env.NEXT_PUBLIC_VTS_API_BASE_URL || "http://localhost:57678";
+  let baseUrl = "/live-tracking-proxy";
   baseUrl = baseUrl.replace(/\/+$/, "");
   const res = await fetch(
     `${baseUrl}/api/live-tracking/batch?vehicleNos=${vehicleNos.join(",")}`,

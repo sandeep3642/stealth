@@ -125,8 +125,7 @@ async function fetchVehicles(): Promise<Vehicle[]> {
 // Fetch route history (unchanged)
 // ----------------------------------------------------------
 async function fetchRoute(vehicleId: string): Promise<RoutePoint[]> {
-
-  const baseUrl = process.env.NEXT_PUBLIC_VTS_API_BASE_URL || "http://localhost:57678";
+  const baseUrl = process.env.NEXT_PUBLIC_VTS_API_PROXY_BASE_URL || "/vts-proxy";
   const res = await fetch(
     `${baseUrl}/api/vehicles/${encodeURIComponent(vehicleId)}/route`,
     { cache: "no-store" }

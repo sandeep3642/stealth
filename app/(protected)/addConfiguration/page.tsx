@@ -52,7 +52,7 @@ const NewConfiguration: React.FC = () => {
   };
 
   return (
-    <div className={`${isDark ? "dark" : ""} mt-20`}>
+    <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         {/* Header */}
         <div className="max-w-6xl mx-auto mb-8 px-4">

@@ -2,7 +2,7 @@ import { vtsApi } from "./apiService";
 import axios from "axios";
 
 const LIVE_TRACKING_BASE_URL =
-  process.env.NEXT_PUBLIC_LIVE_TRACKING_BASE_URL || "http://fleetbharat.com:8080";
+  "/live-tracking-proxy";
 
 const liveTrackingApi = axios.create({
   baseURL: LIVE_TRACKING_BASE_URL,
@@ -141,14 +141,10 @@ export async function getLiveTrackingByKey(vehicleNo) {
 // Fetch live tracking data for a specific Redis key
 export const getLiveTrackingData = async (key) => {
   if (!key) throw new Error("Redis key is required");
-  let path = `api/redis/get?key=${encodeURIComponent(key)}`;
-  // Remove trailing slash from baseURL and leading slash from path, then join
-  let base = vtsApi.defaults.baseURL ? vtsApi.defaults.baseURL.replace(/\/+$/, '') : '';
-  path = path.replace(/^\/+/, '');
-  const fullUrl = base + '/' + path;
-  console.log("[getLiveTrackingData] Request URL:", fullUrl);
   try {
-    const res = await vtsApi.get(fullUrl);
+    const res = await vtsApi.get("/api/redis/get", {
+      params: { key },
+    });
     return res.data;
   } catch (err) {
     if (err.response) {

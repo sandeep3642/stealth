@@ -24,7 +24,6 @@ import { useRouter, useParams } from "next/navigation";
 import { getCarMarkerSvg } from "@/utils/carMarkerIcon";
 
 const POLL_INTERVAL = 5000; // 5 seconds
-const API_BASE_URL = "http://fleetbharat.com:8080/api/redis/get";
 
 interface Position {
   lat: number;
@@ -167,8 +166,10 @@ export default function LiveTracking() {
 
     const fetchVehicleData = async () => {
       try {
+        const proxyBase =
+          process.env.NEXT_PUBLIC_VTS_API_PROXY_BASE_URL || "/vts-proxy";
         const response = await fetch(
-          `${API_BASE_URL}?key=dashboard::${vehicleId}`,
+          `${proxyBase}/api/redis/get?key=dashboard::${vehicleId}`,
         );
 
         if (!response.ok) {

@@ -290,7 +290,7 @@ const CreateUser: React.FC = () => {
         if (userData.profileImagePath) {
           const imageUrl = userData.profileImagePath.startsWith('http')
             ? userData.profileImagePath
-            : process.env.NEXT_PUBLIC_API_BASE_URL+userData.profileImagePath;
+            : `/proxy/${String(userData.profileImagePath).replace(/^\/+/, "")}`;
           setAvatarPreview(imageUrl);
         }
 
@@ -433,7 +433,7 @@ const CreateUser: React.FC = () => {
       // Load roles for default accountId = 7
       await fetchRolesForAccount(7);
 
-      if (id) {
+      if (id && String(id) !== "0") {
         await fetchUserData(id as string);
       }
     };

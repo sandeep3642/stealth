@@ -127,7 +127,7 @@ const Invoices: React.FC = () => {
   }, [pageNo, pageSize, debouncedQuery, selectedAccount]);
 
   return (
-    <div className={`${isDark ? "dark" : ""} `}>
+    <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div
         className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
       >

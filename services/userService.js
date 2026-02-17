@@ -8,7 +8,12 @@ export const getUsers = async (page, pageSize, searchQuery) => {
 };
 
 export const getUserById = async (id) => {
-  const res = await api.get(`/api/users/${id}?userId=${id}`);
+  const userId = String(id ?? "").trim();
+  if (!userId || userId === "0") {
+    return null;
+  }
+
+  const res = await api.get(`/api/users/${userId}?userId=${userId}`);
   return res.data;
 };
 

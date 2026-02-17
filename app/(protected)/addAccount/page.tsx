@@ -307,7 +307,7 @@ const AddAccount: React.FC = () => {
   }, []);
 
   return (
-    <div className={`${isDark ? "dark" : ""} `}>
+    <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div
         className={`min-h-screen ${isDark ? "bg-background" : ""} p-6`}
       >

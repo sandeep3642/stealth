@@ -23,7 +23,8 @@ import { useGoogleMapsSdk } from "@/hooks/useGoogleMapsSdk";
 import { useParams, useRouter } from "next/navigation";
 import { getCarMarkerSvg } from "@/utils/carMarkerIcon";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_JAVA_API_BASE_URL;
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_JAVA_API_PROXY_BASE_URL || "/java-proxy/";
 
 interface HistoryDataPoint {
     deviceNo: string;

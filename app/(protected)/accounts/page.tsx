@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import CommonTable from "@/components/CommonTable";
-import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
@@ -167,7 +166,7 @@ const Accounts: React.FC = () => {
   }, []);
 
   return (
-    <div className={`${isDark ? "dark" : ""}`}>
+    <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div
         className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
       >
@@ -257,7 +256,6 @@ const Accounts: React.FC = () => {
           isDark={isDark}
         />
       </div>
-      <ThemeCustomizer />
     </div>
   );
 };

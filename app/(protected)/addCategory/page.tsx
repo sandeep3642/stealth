@@ -29,7 +29,7 @@ const AddCategory: React.FC = () => {
   };
 
   return (
-    <div className={`${isDark ? "dark" : ""} mt-20`}>
+    <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className="min-h-screen bg-background flex justify-center p-2">
         <div className="w-full max-w-4xl">
           {/* Header */}
