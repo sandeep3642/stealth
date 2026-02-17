@@ -53,9 +53,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   const { layout: menuLayout, setLayout: setMenuLayout } = useLayout();
   const { selectedColor, colorBlock, handleColorChange } = useColor();
   const { isDark } = useTheme();
-  const [expandedMenus, setExpandedMenus] = useState<string[]>([
-
-  ]);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] =
     useState<boolean>(false);
@@ -69,6 +67,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [secondaryColorHex, setSecondaryColorHex] = useState<string>("");
+  const [primaryColorHex, setPrimaryColorHex] = useState<string>("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -78,6 +77,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           const parsedTheme = JSON.parse(savedTheme);
           applyWhiteLabelColors(parsedTheme, handleColorChange);
           setSecondaryColorHex(parsedTheme.secondaryColorHex || "");
+          setPrimaryColorHex(parsedTheme.primaryColorHex || "");
         } catch (err) {
           console.error("Error applying saved theme:", err);
         }
@@ -127,15 +127,11 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       }
     }
 
-    // run immediately on load
     getPermissionsList();
 
-    // run when localStorage is updated via custom event
     const handlePermissionUpdate = () => getPermissionsList();
     window.addEventListener("permissions-updated", handlePermissionUpdate);
 
-    // also run on route change
-    // so navigating between pages re-filters the rights
     return () =>
       window.removeEventListener("permissions-updated", handlePermissionUpdate);
   }, [pathname]);
@@ -155,14 +151,20 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
             items: filteredItems,
           };
         })
-        .filter((section) => section.items.length > 0); // Remove empty sections
+        .filter((section) => section.items.length > 0);
       console.log("filtered", filtered);
       setFilteredSections(filtered);
     } else {
-      // If no permissions loaded yet, show empty or all menus (depending on your requirement)
       setFilteredSections([]);
     }
   }, [userRights]);
+
+  // Collapse all expanded parent menus whenever the sidebar closes
+  useEffect(() => {
+    if (!isSidebarOpen) {
+      setExpandedMenus([]);
+    }
+  }, [isSidebarOpen]);
 
   const handleLogout = () => {
     const keysToRemove = [
@@ -179,6 +181,30 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     Cookies.remove("authToken", { path: "/" });
 
     window.location.href = "/";
+  };
+
+  /**
+   * CHANGE 1: When sidebar is collapsed, clicking any menu item
+   * expands the sidebar to full width before navigating / toggling.
+   */
+  const handleMenuClick = (itemId: string) => {
+    if (!isMobile && !isSidebarOpen) {
+      // Expand sidebar first, then let the rest of the click handle normally
+      setIsSidebarOpen(true);
+    }
+    setSelectedItemId(itemId);
+  };
+
+  const handleExpandableMenuClick = (menuId: string) => {
+    if (!isMobile && !isSidebarOpen) {
+      // Expand sidebar and open the submenu at the same time
+      setIsSidebarOpen(true);
+      setExpandedMenus((prev) =>
+        prev.includes(menuId) ? prev : [...prev, menuId],
+      );
+    } else {
+      toggleMenu(menuId);
+    }
   };
 
   // Complete menu structure with nested items
@@ -343,7 +369,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
   // Header classes for Top Nav - NEVER uses color block
   const getTopNavHeaderClasses = (): HeaderClasses => {
-    // Default return for SSR
     const defaultClasses = {
       header: "bg-white border-border",
       text: "text-black",
@@ -541,22 +566,32 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
-  // Header for Sidebar Layout (Minimal)
-  // Header for Sidebar Layout (Minimal)
-
+  /**
+   * CHANGE 2: Sidebar color logic
+   *
+   * colorBlock === true:
+   *   - Sidebar background = primaryColorHex
+   *   - Selected menu item text/icon = secondaryColorHex
+   *   - All other text/icons = white (since bg is a color)
+   *
+   * colorBlock === false:
+   *   - Sidebar background = white (light) / dark card (dark)
+   *   - Selected menu item text/icon = secondaryColorHex (if present)
+   *   - All other text/icons = normal black/dark combo
+   */
   const getSidebarClasses = (): SidebarClasses => {
-    if (colorBlock && selectedColor && menuLayout === "sidebar") {
-      // Color block mode ONLY for sidebar layout
+    if (colorBlock && primaryColorHex && menuLayout === "sidebar") {
+      // colorBlock ON: primary color background, secondary color for selected items
       return {
         useCustomBg: true,
-        customBg: selectedColor,
+        customBg: primaryColorHex,
         border: "border-transparent",
         logo: "bg-white/20",
         logoText: "text-white",
         brandText: "text-white",
         sectionTitle: "text-white/60",
         menuText: "text-white",
-        menuIcon: "text-white",
+        menuIcon: "text-white/80",
         menuHover: "hover:bg-white/10",
         activeMenuBg: "bg-white/20",
         activeMenuText: "text-white",
@@ -584,32 +619,45 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         gridHover: "hover:bg-background/50",
       };
     } else {
-      // Use secondaryColorHex for light mode sidebar background
+      // colorBlock OFF, light mode: white sidebar, secondaryColorHex only for selected items
       return {
-        useCustomBg: !!secondaryColorHex,
-        customBg: secondaryColorHex,
-        bg: secondaryColorHex ? "" : "bg-white",
+        useCustomBg: false,
+        bg: "bg-white",
         border: "border-border",
         logo: "bg-primary",
         logoText: "text-primary-foreground",
-        brandText: "text-foreground",
-        sectionTitle: "text-foreground/50",
-        menuText: "text-foreground",
-        menuIcon: "text-foreground/70",
-        menuHover: "hover:bg-background/50",
-        activeMenuBg: "bg-primary/10",
-        activeMenuText: "text-primary",
-        activeMenuIcon: "text-primary",
-        chevron: "text-foreground/40",
-        gridIcon: "text-foreground/50",
-        gridHover: "hover:bg-background/50",
+        brandText: "text-gray-900",
+        sectionTitle: "text-gray-400",
+        menuText: "text-gray-700",
+        menuIcon: "text-gray-500",
+        menuHover: "hover:bg-gray-100",
+        activeMenuBg: "bg-gray-100",
+        activeMenuText: "text-gray-900",
+        activeMenuIcon: "text-gray-900",
+        chevron: "text-gray-400",
+        gridIcon: "text-gray-400",
+        gridHover: "hover:bg-gray-100",
       };
     }
   };
 
+  /**
+   * Helper: returns the inline style for a selected menu item.
+   * - colorBlock ON  → secondaryColorHex (on the primary-colored background)
+   * - colorBlock OFF → no color override; normal black/dark Tailwind classes apply
+   */
+  const getSelectedItemStyle = (itemId: string): React.CSSProperties => {
+    if (selectedItemId !== itemId) return {};
+    // Only apply secondaryColorHex when colorBlock is explicitly enabled
+    if (colorBlock && secondaryColorHex) {
+      return { color: secondaryColorHex };
+    }
+    return {};
+  };
+
   const SidebarHeader: React.FC = () => {
     const [headerClasses, setHeaderClasses] = useState<HeaderClasses>({
-      header: "bg-white", // Remove border-border from here
+      header: "bg-white",
       text: "text-black",
       textSecondary: "text-black/60",
       hover: "hover:text-black",
@@ -633,7 +681,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         setHeaderClasses(
           isDark
             ? {
-                header: "bg-card", // Remove border-border from here too
+                header: "bg-card",
                 text: "text-white",
                 textSecondary: "text-white/70",
                 hover: "hover:text-white",
@@ -650,7 +698,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                 dropdownHover: "",
               }
             : {
-                header: secondaryColorHex ? "" : "bg-white", // Remove border-border from here too
+                header: secondaryColorHex ? "" : "bg-white",
                 text: "text-black",
                 textSecondary: "text-black/60",
                 hover: "hover:text-black",
@@ -797,73 +845,9 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
   // Sidebar Menu Component
   const Sidebar: React.FC = () => {
-    // Sidebar styling - uses color block for sidebar layout OR secondaryColorHex
-    const getSidebarClasses = (): SidebarClasses => {
-      if (colorBlock && selectedColor && menuLayout === "sidebar") {
-        // Color block mode ONLY for sidebar layout
-        return {
-          useCustomBg: true,
-          customBg: selectedColor,
-          border: "border-transparent",
-          logo: "bg-white/20",
-          logoText: "text-white",
-          brandText: "text-white",
-          sectionTitle: "text-white/60",
-          menuText: "text-white",
-          menuIcon: "text-white",
-          menuHover: "hover:bg-white/10",
-          activeMenuBg: "bg-white/20",
-          activeMenuText: "text-white",
-          activeMenuIcon: "text-white",
-          chevron: "text-white/60",
-          gridIcon: "text-white/70",
-          gridHover: "hover:bg-white/10",
-        };
-      } else if (isDark) {
-        return {
-          bg: "bg-card",
-          border: "border-border",
-          logo: "bg-primary",
-          logoText: "text-primary-foreground",
-          brandText: "text-foreground",
-          sectionTitle: "text-foreground",
-          menuText: "text-foreground",
-          menuIcon: "text-foreground/70",
-          menuHover: "hover:bg-background/50",
-          activeMenuBg: "bg-primary/10",
-          activeMenuText: "text-primary",
-          activeMenuIcon: "text-primary",
-          chevron: "text-foreground/40",
-          gridIcon: "text-foreground/50",
-          gridHover: "hover:bg-background/50",
-        };
-      } else {
-        // Use secondaryColorHex for light mode sidebar background
-        return {
-          useCustomBg: !!secondaryColorHex,
-          customBg: secondaryColorHex,
-          bg: secondaryColorHex ? "" : "bg-white",
-          border: "border-border",
-          logo: "bg-primary",
-          logoText: "text-primary-foreground",
-          brandText: "text-foreground",
-          sectionTitle: "text-foreground/50",
-          menuText: "text-foreground",
-          menuIcon: "text-foreground/70",
-          menuHover: "hover:bg-background/50",
-          activeMenuBg: "bg-primary/10",
-          activeMenuText: "text-primary",
-          activeMenuIcon: "text-primary",
-          chevron: "text-foreground/40",
-          gridIcon: "text-foreground/50",
-          gridHover: "hover:bg-background/50",
-        };
-      }
-    };
-
     const sidebarClasses = getSidebarClasses();
     const isOpen = isMobile ? isMobileSidebarOpen : isSidebarOpen;
-    const width = isOpen ? "w-64" : "w-22";
+    const width = isOpen ? "w-64" : "w-20";
 
     return (
       <aside
@@ -923,7 +907,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               </div>
             </div>
           ) : (
-            /* Render filtered sections */
             filteredSections.map((section, index) => (
               <div key={index} className="mb-6">
                 {isOpen && (
@@ -937,13 +920,15 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                   {section.items.map((item) => {
                     const IconComponent = item.icon;
                     const isExpanded = expandedMenus.includes(item.id);
+                    const isItemSelected = selectedItemId === item.id;
 
                     return (
                       <div key={item.id}>
                         {item.expandable ? (
                           <>
+                            {/* CHANGE 1: expandable items expand sidebar if collapsed */}
                             <button
-                              onClick={() => toggleMenu(item.id)}
+                              onClick={() => handleExpandableMenuClick(item.id)}
                               className={`w-full flex ${
                                 isOpen
                                   ? "flex-row items-center justify-between"
@@ -984,24 +969,23 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                               <div className="ml-11 mt-1 space-y-1">
                                 {item.children.map((child) => {
                                   const ChildIcon = child.icon;
+                                  const isChildSelected =
+                                    selectedItemId === child.id;
                                   return (
                                     <Link
                                       key={child.id}
                                       href={child.path}
                                       onClick={() => {
-                                        setSelectedItemId(child.id);
+                                        handleMenuClick(child.id);
                                         if (isMobile)
                                           setIsMobileSidebarOpen(false);
                                       }}
-                                      style={{
-                                        color:
-                                          selectedItemId === child.id &&
-                                          selectedColor,
-                                      }}
+                                      style={getSelectedItemStyle(child.id)}
                                       className={`flex items-center gap-3 px-3 py-2 rounded-lg ${sidebarClasses.menuText} ${sidebarClasses.menuHover} text-sm`}
                                     >
                                       <ChildIcon
                                         className={`w-4 h-4 ${sidebarClasses.menuIcon}`}
+                                        style={getSelectedItemStyle(child.id)}
                                       />
                                       <span>{child.label}</span>
                                     </Link>
@@ -1020,19 +1004,16 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                       key={child.id}
                                       href={child.path}
                                       onClick={() => {
-                                        setSelectedItemId(child.id);
+                                        handleMenuClick(child.id);
                                         if (isMobile)
                                           setIsMobileSidebarOpen(false);
                                       }}
-                                      style={{
-                                        color:
-                                          selectedItemId === child.id &&
-                                          selectedColor,
-                                      }}
+                                      style={getSelectedItemStyle(child.id)}
                                       className={`flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-lg ${sidebarClasses.menuText} ${sidebarClasses.menuHover}`}
                                     >
                                       <ChildIcon
                                         className={`w-4 h-4 ${sidebarClasses.menuIcon}`}
+                                        style={getSelectedItemStyle(child.id)}
                                       />
                                       <span className="text-[9px] text-center leading-tight">
                                         {child.label}
@@ -1044,6 +1025,8 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                             )}
                           </>
                         ) : (
+                          /* CHANGE 1: non-expandable items expand sidebar if collapsed */
+                          /* CHANGE 2: selected item uses secondaryColorHex via getSelectedItemStyle */
                           <Link
                             href={item.path || "#"}
                             className={`flex ${
@@ -1051,29 +1034,27 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                 ? "flex-row items-center gap-3"
                                 : "flex-col items-center gap-1"
                             } px-3 py-2.5 rounded-lg ${
-                              item.active
+                              isItemSelected
                                 ? `${sidebarClasses.activeMenuBg} ${sidebarClasses.activeMenuText}`
                                 : `${sidebarClasses.menuText} ${sidebarClasses.menuHover}`
                             }`}
                             onClick={() => {
-                              setSelectedItemId(item.id);
+                              handleMenuClick(item.id);
                               if (isMobile) setIsMobileSidebarOpen(false);
                             }}
-                            style={{
-                              color:
-                                selectedItemId === item.id && selectedColor,
-                            }}
+                            style={getSelectedItemStyle(item.id)}
                           >
                             <IconComponent
                               className={`w-5 h-5 ${
-                                item.active
+                                isItemSelected
                                   ? sidebarClasses.activeMenuIcon
                                   : sidebarClasses.menuIcon
                               }`}
+                              style={getSelectedItemStyle(item.id)}
                             />
                             <span
                               className={`${isOpen ? "text-sm" : "text-[10px] text-center leading-tight"} ${
-                                item.active ? "font-semibold" : "font-medium"
+                                isItemSelected ? "font-semibold" : "font-medium"
                               }`}
                             >
                               {item.label}

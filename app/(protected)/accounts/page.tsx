@@ -257,6 +257,7 @@ const Accounts: React.FC = () => {
           isDark={isDark}
         />
       </div>
+      <ThemeCustomizer />
     </div>
   );
 };
