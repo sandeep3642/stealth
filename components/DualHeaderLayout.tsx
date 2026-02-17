@@ -183,13 +183,8 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     window.location.href = "/";
   };
 
-  /**
-   * CHANGE 1: When sidebar is collapsed, clicking any menu item
-   * expands the sidebar to full width before navigating / toggling.
-   */
   const handleMenuClick = (itemId: string) => {
     if (!isMobile && !isSidebarOpen) {
-      // Expand sidebar first, then let the rest of the click handle normally
       setIsSidebarOpen(true);
     }
     setSelectedItemId(itemId);
@@ -197,7 +192,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
   const handleExpandableMenuClick = (menuId: string) => {
     if (!isMobile && !isSidebarOpen) {
-      // Expand sidebar and open the submenu at the same time
       setIsSidebarOpen(true);
       setExpandedMenus((prev) =>
         prev.includes(menuId) ? prev : [...prev, menuId],
@@ -367,221 +361,199 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
-  // Header classes for Top Nav - NEVER uses color block
+  // ─────────────────────────────────────────────────────────────
+  // FIX 1: TopNav header classes — respect isDark
+  // ─────────────────────────────────────────────────────────────
   const getTopNavHeaderClasses = (): HeaderClasses => {
-    const defaultClasses = {
-      header: "bg-white border-border",
-      text: "text-black",
-      textSecondary: "text-black/60",
-      hover: "hover:text-black",
-      inputBg: "bg-background",
-      inputBorder: "border-border",
-      inputText: "text-black",
-      hoverBg: "hover:bg-background/50",
-      dropdown: "bg-card border-border",
-      dropdownHover: "hover:bg-background/50",
-      useCustomBg: false,
-    };
-
-    if (typeof window === "undefined") {
-      return defaultClasses;
-    }
-
     if (isDark) {
       return {
         header: "bg-card border-border",
-        text: "text-white",
-        textSecondary: "text-white/70",
-        hover: "hover:text-white",
+        text: "text-foreground",
+        textSecondary: "text-muted-foreground",
+        hover: "hover:text-foreground",
         inputBg: "bg-background",
         inputBorder: "border-border",
-        inputText: "text-white",
-        hoverBg: "hover:bg-background/50",
+        inputText: "text-foreground",
+        hoverBg: "hover:bg-muted",
         dropdown: "bg-card border-border",
-        dropdownHover: "hover:bg-background/50",
+        dropdownHover: "hover:bg-muted",
         useCustomBg: false,
       };
-    } else {
-      return {
-        header: secondaryColorHex ? "" : "bg-white border-border",
-        text: "text-black",
-        textSecondary: "text-black/60",
-        hover: "hover:text-black",
-        inputBg: "bg-background",
-        inputBorder: "border-border",
-        inputText: "text-black",
-        hoverBg: "hover:bg-background/50",
-        dropdown: "bg-card border-border",
-        dropdownHover: "hover:bg-background/50",
-        useCustomBg: !!secondaryColorHex,
-        customBg: secondaryColorHex,
-      };
     }
+
+    // Light mode — respect white-label secondaryColorHex
+    return {
+      header: secondaryColorHex ? "" : "bg-white border-border",
+      text: "text-gray-900",
+      textSecondary: "text-gray-600",
+      hover: "hover:text-gray-900",
+      inputBg: "bg-gray-50",
+      inputBorder: "border-gray-200",
+      inputText: "text-gray-900",
+      hoverBg: "hover:bg-gray-100",
+      dropdown: "bg-white border-gray-200",
+      dropdownHover: "hover:bg-gray-50",
+      useCustomBg: !!secondaryColorHex,
+      customBg: secondaryColorHex,
+    };
   };
 
-  // Header for Top Nav Layout (Horizontal with all menus)
+  // ─────────────────────────────────────────────────────────────
+  // TopNavHeader — wraps in `dark` class when isDark is true
+  // ─────────────────────────────────────────────────────────────
   const TopNavHeader: React.FC = () => {
     const headerClasses = getTopNavHeaderClasses();
     return (
-      <header
-        className={`${headerClasses.header} border-b fixed w-full top-0 z-50`}
-        style={
-          headerClasses.useCustomBg && headerClasses.customBg
-            ? { backgroundColor: headerClasses.customBg }
-            : {}
-        }
-      >
-        <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4">
-          {/* Left side: Logo and Navigation */}
-          <div className="flex items-center gap-4 md:gap-8">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">
-                A
+      // FIX 1: add `dark` class to the wrapper so CSS vars resolve correctly
+      <div className={isDark ? "dark" : ""}>
+        <header
+          className={`${headerClasses.header} border-b fixed w-full top-0 z-50`}
+          style={
+            headerClasses.useCustomBg && headerClasses.customBg
+              ? { backgroundColor: headerClasses.customBg }
+              : {}
+          }
+        >
+          <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4">
+            {/* Left side: Logo and Navigation */}
+            <div className="flex items-center gap-4 md:gap-8">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">
+                  A
+                </div>
+                <span
+                  className={`text-lg md:text-xl font-semibold ${headerClasses.text}`}
+                >
+                  Agentix
+                </span>
               </div>
-              <span
-                className={`text-lg md:text-xl font-semibold ${headerClasses.text}`}
-              >
-                Agentix
-              </span>
-            </div>
 
-            {/* Main Navigation - Hidden on mobile */}
-            <nav className="hidden lg:flex items-center gap-6">
-              {isLoadingPermissions ? (
-                <div className="text-sm text-gray-400">Loading...</div>
-              ) : (
-                filteredSections.map((section) =>
-                  section.items.map((item) => {
-                    if (item.expandable) {
-                      return (
-                        <div key={item.id} className="relative group">
-                          <button
-                            className={`flex items-center gap-2 py-1 text-sm ${headerClasses.textSecondary} ${headerClasses.hover}`}
-                          >
-                            <span>{item.label}</span>
-                            <ChevronDown className="w-3 h-3" />
-                          </button>
-                          {/* Dropdown */}
-                          <div
-                            className={`absolute left-0 top-full mt-2 w-56 ${headerClasses.dropdown} border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50`}
-                          >
-                            {item.children?.map((child) => {
-                              const ChildIcon = child.icon;
-                              return (
-                                <Link
-                                  key={child.id}
-                                  href={child.path}
-                                  className={`flex items-center gap-3 px-4 py-2.5 text-sm ${headerClasses.textSecondary} ${headerClasses.dropdownHover}`}
-                                  onClick={() => setSelectedItemId(child.id)}
-                                  style={{
-                                    color:
-                                      selectedItemId === child.id &&
-                                      selectedColor,
-                                  }}
-                                >
-                                  <ChildIcon className="w-4 h-4" />
-                                  <span>{child.label}</span>
-                                </Link>
-                              );
-                            })}
+              {/* Main Navigation - Hidden on mobile */}
+              <nav className="hidden lg:flex items-center gap-6">
+                {isLoadingPermissions ? (
+                  <div className={`text-sm ${headerClasses.textSecondary}`}>
+                    Loading...
+                  </div>
+                ) : (
+                  filteredSections.map((section) =>
+                    section.items.map((item) => {
+                      if (item.expandable) {
+                        return (
+                          <div key={item.id} className="relative group">
+                            <button
+                              className={`flex items-center gap-2 py-1 text-sm ${headerClasses.textSecondary} ${headerClasses.hover}`}
+                            >
+                              <span>{item.label}</span>
+                              <ChevronDown className="w-3 h-3" />
+                            </button>
+                            {/* Dropdown */}
+                            <div
+                              className={`absolute left-0 top-full mt-2 w-56 ${headerClasses.dropdown} border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50`}
+                            >
+                              {item.children?.map((child) => {
+                                const ChildIcon = child.icon;
+                                return (
+                                  <Link
+                                    key={child.id}
+                                    href={child.path}
+                                    className={`flex items-center gap-3 px-4 py-2.5 text-sm ${headerClasses.textSecondary} ${headerClasses.dropdownHover}`}
+                                    onClick={() => setSelectedItemId(child.id)}
+                                    style={{
+                                      color:
+                                        selectedItemId === child.id &&
+                                        selectedColor,
+                                    }}
+                                  >
+                                    <ChildIcon className="w-4 h-4" />
+                                    <span>{child.label}</span>
+                                  </Link>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
+                        );
+                      }
+                      return (
+                        <Link
+                          key={item.id}
+                          href={item.path || "#"}
+                          className={`text-sm py-1 ${
+                            item.active
+                              ? `${headerClasses.text} font-semibold`
+                              : `${headerClasses.textSecondary} ${headerClasses.hover}`
+                          }`}
+                          onClick={() => setSelectedItemId(item.id)}
+                          style={{
+                            color: selectedItemId === item.id && selectedColor,
+                          }}
+                        >
+                          {item.label}
+                        </Link>
                       );
-                    }
-                    return (
-                      <Link
-                        key={item.id}
-                        href={item.path || "#"}
-                        className={`text-sm py-1 ${
-                          item.active
-                            ? `${headerClasses.text} font-semibold`
-                            : `${headerClasses.textSecondary} ${headerClasses.hover}`
-                        }`}
-                        onClick={() => setSelectedItemId(item.id)}
-                        style={{
-                          color: selectedItemId === item.id && selectedColor,
-                        }}
-                      >
-                        {item.label}
-                      </Link>
-                    );
-                  }),
-                )
-              )}
-            </nav>
-          </div>
-
-          {/* Right side: Search and User controls */}
-          <div className="flex items-center gap-2 md:gap-4">
-            {/* Search - Hidden on small mobile */}
-            <div className="relative hidden sm:block">
-              <Search
-                className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/40`}
-              />
-              <input
-                type="text"
-                placeholder="Search..."
-                className={`pl-10 pr-4 py-2 border ${headerClasses.inputBorder} ${headerClasses.inputBg} ${headerClasses.inputText} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-40 md:w-64`}
-              />
+                    }),
+                  )
+                )}
+              </nav>
             </div>
 
-            {/* Language - Hidden on mobile */}
-            <button
-              className={`hidden md:flex items-center gap-2 text-sm ${headerClasses.textSecondary} ${headerClasses.hover}`}
-            >
-              <Globe className="w-4 h-4" />
-              <span className="hidden xl:inline">English</span>
-            </button>
-
-            {/* Notification */}
-            <button
-              className={`relative p-2 ${headerClasses.hoverBg} rounded-lg`}
-            >
-              <Bell className={`w-5 h-5 ${headerClasses.textSecondary}`} />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-
-            {/* User Avatar */}
-            <button
-              className={`flex items-center gap-2 ${headerClasses.hoverBg} rounded-lg p-2`}
-            >
-              <div className="text-right hidden xl:block">
-                <div className={`text-sm font-medium ${headerClasses.text}`}>
-                  {user?.fullName}
-                </div>
-                <div className={`text-xs ${headerClasses.textSecondary}`}>
-                  {user?.email}
-                </div>
+            {/* Right side: Search and User controls */}
+            <div className="flex items-center gap-2 md:gap-4">
+              {/* Search */}
+              <div className="relative hidden sm:block">
+                <Search
+                  className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${headerClasses.textSecondary}`}
+                />
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className={`pl-10 pr-4 py-2 border ${headerClasses.inputBorder} ${headerClasses.inputBg} ${headerClasses.inputText} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-40 md:w-64`}
+                />
               </div>
 
-              <div
-                className={`w-8 h-8 bg-foreground/10 rounded flex items-center justify-center ${headerClasses.textSecondary} text-sm font-medium`}
+              {/* Language */}
+              <button
+                className={`hidden md:flex items-center gap-2 text-sm ${headerClasses.textSecondary} ${headerClasses.hover}`}
               >
-                <Package className="w-4 h-4" />
-              </div>
-            </button>
+                <Globe className="w-4 h-4" />
+                <span className="hidden xl:inline">English</span>
+              </button>
+
+              {/* Notification */}
+              <button
+                className={`relative p-2 ${headerClasses.hoverBg} rounded-lg`}
+              >
+                <Bell className={`w-5 h-5 ${headerClasses.textSecondary}`} />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              </button>
+
+              {/* User Avatar */}
+              <button
+                className={`flex items-center gap-2 ${headerClasses.hoverBg} rounded-lg p-2`}
+              >
+                <div className="text-right hidden xl:block">
+                  <div className={`text-sm font-medium ${headerClasses.text}`}>
+                    {user?.fullName}
+                  </div>
+                  <div className={`text-xs ${headerClasses.textSecondary}`}>
+                    {user?.email}
+                  </div>
+                </div>
+
+                <div
+                  className={`w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center ${headerClasses.textSecondary} text-sm font-medium`}
+                >
+                  <Package className="w-4 h-4" />
+                </div>
+              </button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      </div>
     );
   };
 
-  /**
-   * CHANGE 2: Sidebar color logic
-   *
-   * colorBlock === true:
-   *   - Sidebar background = primaryColorHex
-   *   - Selected menu item text/icon = secondaryColorHex
-   *   - All other text/icons = white (since bg is a color)
-   *
-   * colorBlock === false:
-   *   - Sidebar background = white (light) / dark card (dark)
-   *   - Selected menu item text/icon = secondaryColorHex (if present)
-   *   - All other text/icons = normal black/dark combo
-   */
   const getSidebarClasses = (): SidebarClasses => {
     if (colorBlock && primaryColorHex && menuLayout === "sidebar") {
-      // colorBlock ON: primary color background, secondary color for selected items
       return {
         useCustomBg: true,
         customBg: primaryColorHex,
@@ -607,19 +579,18 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         logo: "bg-primary",
         logoText: "text-primary-foreground",
         brandText: "text-foreground",
-        sectionTitle: "text-foreground",
+        sectionTitle: "text-muted-foreground",
         menuText: "text-foreground",
-        menuIcon: "text-foreground/70",
-        menuHover: "hover:bg-background/50",
+        menuIcon: "text-muted-foreground",
+        menuHover: "hover:bg-muted",
         activeMenuBg: "bg-primary/10",
         activeMenuText: "text-primary",
         activeMenuIcon: "text-primary",
-        chevron: "text-foreground/40",
-        gridIcon: "text-foreground/50",
-        gridHover: "hover:bg-background/50",
+        chevron: "text-muted-foreground",
+        gridIcon: "text-muted-foreground",
+        gridHover: "hover:bg-muted",
       };
     } else {
-      // colorBlock OFF, light mode: white sidebar, secondaryColorHex only for selected items
       return {
         useCustomBg: false,
         bg: "bg-white",
@@ -641,193 +612,148 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  /**
-   * Helper: returns the inline style for a selected menu item.
-   * - colorBlock ON  → secondaryColorHex (on the primary-colored background)
-   * - colorBlock OFF → no color override; normal black/dark Tailwind classes apply
-   */
   const getSelectedItemStyle = (itemId: string): React.CSSProperties => {
     if (selectedItemId !== itemId) return {};
-    // Only apply secondaryColorHex when colorBlock is explicitly enabled
     if (colorBlock && secondaryColorHex) {
       return { color: secondaryColorHex };
     }
     return {};
   };
 
+  // ─────────────────────────────────────────────────────────────
+  // SidebarHeader — wraps in `dark` class when isDark is true
+  // ─────────────────────────────────────────────────────────────
   const SidebarHeader: React.FC = () => {
-    const [headerClasses, setHeaderClasses] = useState<HeaderClasses>({
-      header: "bg-white",
-      text: "text-black",
-      textSecondary: "text-black/60",
-      hover: "hover:text-black",
-      inputBg: "bg-background",
-      inputBorder: "border-black/20",
-      inputText: "text-black",
-      inputPlaceholder: "placeholder:text-black/40",
-      hoverBg: "hover:bg-background/50",
-      logo: "bg-primary",
-      logoText: "text-primary-foreground",
-      iconColor: "text-black/70",
-      useCustomBg: false,
-      dropdown: "",
-      dropdownHover: "",
-    });
-
     const sidebarClasses = getSidebarClasses();
 
-    useEffect(() => {
-      if (typeof window !== "undefined") {
-        setHeaderClasses(
-          isDark
-            ? {
-                header: "bg-card",
-                text: "text-white",
-                textSecondary: "text-white/70",
-                hover: "hover:text-white",
-                inputBg: "bg-background",
-                inputBorder: "border-white/20",
-                inputText: "text-white",
-                inputPlaceholder: "placeholder:text-white/40",
-                hoverBg: "hover:bg-background/50",
-                logo: "bg-primary",
-                logoText: "text-primary-foreground",
-                iconColor: "text-white/70",
-                useCustomBg: false,
-                dropdown: "",
-                dropdownHover: "",
-              }
-            : {
-                header: secondaryColorHex ? "" : "bg-white",
-                text: "text-black",
-                textSecondary: "text-black/60",
-                hover: "hover:text-black",
-                inputBg: "bg-background",
-                inputBorder: "border-black/20",
-                inputText: "text-black",
-                inputPlaceholder: "placeholder:text-black/40",
-                hoverBg: "hover:bg-background/50",
-                logo: "bg-primary",
-                logoText: "text-primary-foreground",
-                iconColor: "text-black/70",
-                useCustomBg: !!secondaryColorHex,
-                customBg: secondaryColorHex,
-                dropdown: "",
-                dropdownHover: "",
-              },
-        );
-      }
-    }, [isDark, secondaryColorHex]);
+    // FIX 1: derive header colors from isDark directly (no nested useEffect needed)
+    const headerBg = isDark ? "bg-card" : secondaryColorHex ? "" : "bg-white";
+
+    const headerText = isDark ? "text-foreground" : "text-gray-900";
+    const headerTextSecondary = isDark
+      ? "text-muted-foreground"
+      : "text-gray-600";
+    const headerHoverBg = isDark ? "hover:bg-muted" : "hover:bg-gray-100";
+    const headerIconColor = isDark ? "text-muted-foreground" : "text-gray-500";
+    const headerInputBorder = isDark ? "border-border" : "border-gray-200";
+    const headerInputBg = isDark ? "bg-background" : "bg-gray-50";
+    const headerInputText = isDark ? "text-foreground" : "text-gray-900";
+    const headerInputPlaceholder = isDark
+      ? "placeholder:text-muted-foreground"
+      : "placeholder:text-gray-400";
+    const headerLogo = "bg-primary";
+    const headerLogoText = "text-primary-foreground";
+    const useCustomBg = !isDark && !!secondaryColorHex;
 
     return (
-      <header
-        className={`${headerClasses.header}
-        fixed top-0 left-0 right-0 z-50 border-b ${sidebarClasses.border} px-4 md:px-6 py-3 flex items-center justify-between transition-all duration-300
-        ${!isMobile && isSidebarOpen ? "lg:left-64" : ""}
-        ${!isMobile && !isSidebarOpen ? "lg:left-20" : ""}
-      `}
-        style={
-          headerClasses.useCustomBg && headerClasses.customBg
-            ? { backgroundColor: headerClasses.customBg }
-            : {}
-        }
-      >
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => {
-              if (isMobile) {
-                setIsMobileSidebarOpen(true);
-              } else {
-                setIsSidebarOpen(!isSidebarOpen);
-              }
-            }}
-            className={`p-2 ${headerClasses.hoverBg} rounded-lg`}
-          >
-            <Menu
-              className={`w-5 h-5 ${headerClasses.textSecondary} cursor-pointer`}
-            />
-          </button>
-
-          {/* Logo - visible on mobile when sidebar is closed */}
-          <div className="flex items-center gap-2 lg:hidden">
-            <div
-              className={`w-8 h-8 ${headerClasses.logo} rounded-lg flex items-center justify-center ${headerClasses.logoText} font-bold`}
-            >
-              A
-            </div>
-            <span className={`text-lg font-semibold ${headerClasses.text}`}>
-              Agentix
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 md:gap-4">
-          {/* Search - Hidden on small screens */}
-          <div className="relative hidden sm:block">
-            <Search
-              className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${headerClasses.iconColor}`}
-            />
-            <input
-              type="text"
-              placeholder="Search..."
-              className={`pl-10 pr-4 py-2 border ${headerClasses.inputBorder} ${headerClasses.inputBg} ${headerClasses.inputText} ${headerClasses.inputPlaceholder} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-40 md:w-64`}
-            />
-          </div>
-
-          {/* Language - Hidden on mobile */}
-          <button
-            className={`hidden md:flex items-center gap-2 text-sm ${headerClasses.textSecondary} ${headerClasses.hover}`}
-          >
-            <Globe className={`w-4 h-4 ${headerClasses.iconColor}`} />
-            <span>English</span>
-          </button>
-
-          {/* Notification */}
-          <button
-            className={`relative p-2 ${headerClasses.hoverBg} rounded-lg`}
-          >
-            <Bell className={`w-5 h-5 ${headerClasses.iconColor}`} />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
-
-          {/* User Avatar */}
-          <div className="relative">
+      // FIX 1: add `dark` class to the wrapper so CSS vars resolve correctly inside the header
+      <div className={isDark ? "dark" : ""}>
+        <header
+          className={`${headerBg} fixed top-0 left-0 right-0 z-50 border-b ${sidebarClasses.border} px-4 md:px-6 py-3 flex items-center justify-between transition-all duration-300
+            ${!isMobile && isSidebarOpen ? "lg:left-64" : ""}
+            ${!isMobile && !isSidebarOpen ? "lg:left-20" : ""}
+          `}
+          style={
+            useCustomBg && secondaryColorHex
+              ? { backgroundColor: secondaryColorHex }
+              : {}
+          }
+        >
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => setShowProfileMenu((prev) => !prev)}
-              className={`flex items-center gap-2 ${headerClasses.hoverBg} rounded-lg p-2`}
+              onClick={() => {
+                if (isMobile) {
+                  setIsMobileSidebarOpen(true);
+                } else {
+                  setIsSidebarOpen(!isSidebarOpen);
+                }
+              }}
+              className={`p-2 ${headerHoverBg} rounded-lg`}
             >
-              <div
-                className={`w-8 h-8 ${headerClasses.logo} rounded-full flex items-center justify-center ${headerClasses.logoText} text-sm font-medium`}
-              >
-                {getInitials(user?.fullName || "U")}
-              </div>
-
-              <div className="text-right hidden xl:block">
-                <div className={`text-sm font-medium ${headerClasses.text}`}>
-                  {user?.fullName}
-                </div>
-                <div className={`text-xs ${headerClasses.textSecondary}`}>
-                  {user?.email}
-                </div>
-              </div>
+              <Menu
+                className={`w-5 h-5 ${headerTextSecondary} cursor-pointer`}
+              />
             </button>
 
-            {showProfileMenu && (
-              <div className="absolute right-0 top-full mt-2 w-56 bg-background rounded-lg shadow-lg border z-50">
-                <button
-                  onClick={handleLogout}
-                  className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded ${
-                    isDark ? "text-foreground" : "text-gray-900"
-                  }`}
-                >
-                  <LogOut className="w-4 h-4" />
-                  Logout
-                </button>
+            {/* Logo — visible on mobile when sidebar is closed */}
+            <div className="flex items-center gap-2 lg:hidden">
+              <div
+                className={`w-8 h-8 ${headerLogo} rounded-lg flex items-center justify-center ${headerLogoText} font-bold`}
+              >
+                A
               </div>
-            )}
+              <span className={`text-lg font-semibold ${headerText}`}>
+                Agentix
+              </span>
+            </div>
           </div>
-        </div>
-      </header>
+
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Search */}
+            <div className="relative hidden sm:block">
+              <Search
+                className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${headerIconColor}`}
+              />
+              <input
+                type="text"
+                placeholder="Search..."
+                className={`pl-10 pr-4 py-2 border ${headerInputBorder} ${headerInputBg} ${headerInputText} ${headerInputPlaceholder} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-40 md:w-64`}
+              />
+            </div>
+
+            {/* Language */}
+            <button
+              className={`hidden md:flex items-center gap-2 text-sm ${headerTextSecondary} hover:${headerText}`}
+            >
+              <Globe className={`w-4 h-4 ${headerIconColor}`} />
+              <span>English</span>
+            </button>
+
+            {/* Notification */}
+            <button className={`relative p-2 ${headerHoverBg} rounded-lg`}>
+              <Bell className={`w-5 h-5 ${headerIconColor}`} />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            </button>
+
+            {/* User Avatar */}
+            <div className="relative">
+              <button
+                onClick={() => setShowProfileMenu((prev) => !prev)}
+                className={`flex items-center gap-2 ${headerHoverBg} rounded-lg p-2`}
+              >
+                <div
+                  className={`w-8 h-8 ${headerLogo} rounded-full flex items-center justify-center ${headerLogoText} text-sm font-medium`}
+                >
+                  {getInitials(user?.fullName || "U")}
+                </div>
+
+                <div className="text-right hidden xl:block">
+                  <div className={`text-sm font-medium ${headerText}`}>
+                    {user?.fullName}
+                  </div>
+                  <div className={`text-xs ${headerTextSecondary}`}>
+                    {user?.email}
+                  </div>
+                </div>
+              </button>
+
+              {showProfileMenu && (
+                <div
+                  className={`absolute right-0 top-full mt-2 w-56 rounded-lg shadow-lg border z-50 ${isDark ? "bg-card border-border" : "bg-white border-gray-200"}`}
+                >
+                  <button
+                    onClick={handleLogout}
+                    className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded ${headerText}`}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+      </div>
     );
   };
 
@@ -843,238 +769,243 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
-  // Sidebar Menu Component
+  // Sidebar Menu Component — wraps in `dark` class when isDark is true
   const Sidebar: React.FC = () => {
     const sidebarClasses = getSidebarClasses();
     const isOpen = isMobile ? isMobileSidebarOpen : isSidebarOpen;
     const width = isOpen ? "w-64" : "w-20";
 
     return (
-      <aside
-        className={`${width} ${sidebarClasses.bg} border-r ${
-          sidebarClasses.border
-        } h-screen fixed left-0 top-0 overflow-y-auto transition-all duration-300 z-50 ${
-          isMobile && !isMobileSidebarOpen
-            ? "-translate-x-full"
-            : "translate-x-0"
-        }`}
-        style={
-          sidebarClasses.useCustomBg && sidebarClasses.customBg
-            ? { backgroundColor: sidebarClasses.customBg }
-            : {}
-        }
-      >
-        <div className="p-4 pb-20">
-          {/* Logo Section */}
-          <div
-            className={`flex items-center ${
-              isOpen ? "justify-between" : "justify-center"
-            } px-3 py-4 mb-6`}
-          >
+      // FIX 1: add `dark` class so sidebar CSS vars resolve correctly
+      <div className={isDark ? "dark" : ""}>
+        <aside
+          className={`${width} ${sidebarClasses.bg} border-r ${
+            sidebarClasses.border
+          } h-screen fixed left-0 top-0 overflow-y-auto transition-all duration-300 z-50 ${
+            isMobile && !isMobileSidebarOpen
+              ? "-translate-x-full"
+              : "translate-x-0"
+          }`}
+          style={
+            sidebarClasses.useCustomBg && sidebarClasses.customBg
+              ? { backgroundColor: sidebarClasses.customBg }
+              : {}
+          }
+        >
+          <div className="p-4 pb-20">
+            {/* Logo Section */}
             <div
-              className={`flex items-center gap-2 ${isOpen ? "" : "flex-col"}`}
+              className={`flex items-center ${
+                isOpen ? "justify-between" : "justify-center"
+              } px-3 py-4 mb-6`}
             >
               <div
-                className={`w-8 h-8 ${sidebarClasses.logo} rounded-lg flex items-center justify-center ${sidebarClasses.logoText} font-bold`}
+                className={`flex items-center gap-2 ${isOpen ? "" : "flex-col"}`}
               >
-                A
-              </div>
-              {isOpen && (
-                <span
-                  className={`text-xl font-semibold ${sidebarClasses.brandText}`}
+                <div
+                  className={`w-8 h-8 ${sidebarClasses.logo} rounded-lg flex items-center justify-center ${sidebarClasses.logoText} font-bold`}
                 >
-                  Agentix
-                </span>
+                  A
+                </div>
+                {isOpen && (
+                  <span
+                    className={`text-xl font-semibold ${sidebarClasses.brandText}`}
+                  >
+                    Agentix
+                  </span>
+                )}
+              </div>
+
+              {isMobile && isOpen && (
+                <button
+                  onClick={() => setIsMobileSidebarOpen(false)}
+                  className={`p-2 ${sidebarClasses.menuHover} rounded-lg`}
+                >
+                  <X className={`w-5 h-5 ${sidebarClasses.menuIcon}`} />
+                </button>
               )}
             </div>
 
-            {/* Close button for mobile */}
-            {isMobile && isOpen && (
-              <button
-                onClick={() => setIsMobileSidebarOpen(false)}
-                className={`p-2 ${sidebarClasses.menuHover} rounded-lg`}
-              >
-                <X className={`w-5 h-5 ${sidebarClasses.menuIcon}`} />
-              </button>
-            )}
-          </div>
-
-          {/* Loading state */}
-          {isLoadingPermissions ? (
-            <div className="text-center py-4">
-              <div className={`text-sm ${sidebarClasses.menuText}`}>
-                Loading menu...
+            {/* Loading state */}
+            {isLoadingPermissions ? (
+              <div className="text-center py-4">
+                <div className={`text-sm ${sidebarClasses.menuText}`}>
+                  Loading menu...
+                </div>
               </div>
-            </div>
-          ) : (
-            filteredSections.map((section, index) => (
-              <div key={index} className="mb-6">
-                {isOpen && (
-                  <h3
-                    className={`text-xs font-semibold ${sidebarClasses.sectionTitle} uppercase tracking-wider mb-3 px-3`}
-                  >
-                    {section.title}
-                  </h3>
-                )}
-                <nav className="space-y-1">
-                  {section.items.map((item) => {
-                    const IconComponent = item.icon;
-                    const isExpanded = expandedMenus.includes(item.id);
-                    const isItemSelected = selectedItemId === item.id;
+            ) : (
+              filteredSections.map((section, index) => (
+                <div key={index} className="mb-6">
+                  {isOpen && (
+                    <h3
+                      className={`text-xs font-semibold ${sidebarClasses.sectionTitle} uppercase tracking-wider mb-3 px-3`}
+                    >
+                      {section.title}
+                    </h3>
+                  )}
+                  <nav className="space-y-1">
+                    {section.items.map((item) => {
+                      const IconComponent = item.icon;
+                      const isExpanded = expandedMenus.includes(item.id);
+                      const isItemSelected = selectedItemId === item.id;
 
-                    return (
-                      <div key={item.id}>
-                        {item.expandable ? (
-                          <>
-                            {/* CHANGE 1: expandable items expand sidebar if collapsed */}
-                            <button
-                              onClick={() => handleExpandableMenuClick(item.id)}
-                              className={`w-full flex ${
-                                isOpen
-                                  ? "flex-row items-center justify-between"
-                                  : "flex-col items-center justify-center"
-                              } px-3 py-2.5 rounded-lg ${
-                                sidebarClasses.menuText
-                              } ${sidebarClasses.menuHover}`}
-                            >
-                              <div
-                                className={`flex ${
+                      return (
+                        <div key={item.id}>
+                          {item.expandable ? (
+                            <>
+                              <button
+                                onClick={() =>
+                                  handleExpandableMenuClick(item.id)
+                                }
+                                className={`w-full flex ${
                                   isOpen
-                                    ? "flex-row items-center gap-3"
-                                    : "flex-col items-center gap-1"
+                                    ? "flex-row items-center justify-between"
+                                    : "flex-col items-center justify-center"
+                                } px-3 py-2.5 rounded-lg ${
+                                  sidebarClasses.menuText
+                                } ${sidebarClasses.menuHover}`}
+                              >
+                                <div
+                                  className={`flex ${
+                                    isOpen
+                                      ? "flex-row items-center gap-3"
+                                      : "flex-col items-center gap-1"
+                                  }`}
+                                >
+                                  <IconComponent
+                                    className={`w-5 h-5 ${sidebarClasses.menuIcon}`}
+                                  />
+                                  <span
+                                    className={`${isOpen ? "text-sm" : "text-[10px]"} font-medium ${!isOpen ? "text-center leading-tight" : ""}`}
+                                  >
+                                    {item.label}
+                                  </span>
+                                </div>
+                                {isOpen && (
+                                  <ChevronDown
+                                    className={`w-4 h-4 ${
+                                      sidebarClasses.chevron
+                                    } transition-transform ${
+                                      isExpanded ? "rotate-180" : ""
+                                    }`}
+                                  />
+                                )}
+                              </button>
+
+                              {/* Children when sidebar is OPEN */}
+                              {isOpen && isExpanded && item.children && (
+                                <div className="ml-11 mt-1 space-y-1">
+                                  {item.children.map((child) => {
+                                    const ChildIcon = child.icon;
+                                    return (
+                                      <Link
+                                        key={child.id}
+                                        href={child.path}
+                                        onClick={() => {
+                                          handleMenuClick(child.id);
+                                          if (isMobile)
+                                            setIsMobileSidebarOpen(false);
+                                        }}
+                                        style={getSelectedItemStyle(child.id)}
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg ${sidebarClasses.menuText} ${sidebarClasses.menuHover} text-sm`}
+                                      >
+                                        <ChildIcon
+                                          className={`w-4 h-4 ${sidebarClasses.menuIcon}`}
+                                          style={getSelectedItemStyle(child.id)}
+                                        />
+                                        <span>{child.label}</span>
+                                      </Link>
+                                    );
+                                  })}
+                                </div>
+                              )}
+
+                              {/* Children when sidebar is COLLAPSED */}
+                              {!isOpen && isExpanded && item.children && (
+                                <div className="mt-1 space-y-1">
+                                  {item.children.map((child) => {
+                                    const ChildIcon = child.icon;
+                                    return (
+                                      <Link
+                                        key={child.id}
+                                        href={child.path}
+                                        onClick={() => {
+                                          handleMenuClick(child.id);
+                                          if (isMobile)
+                                            setIsMobileSidebarOpen(false);
+                                        }}
+                                        style={getSelectedItemStyle(child.id)}
+                                        className={`flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-lg ${sidebarClasses.menuText} ${sidebarClasses.menuHover}`}
+                                      >
+                                        <ChildIcon
+                                          className={`w-4 h-4 ${sidebarClasses.menuIcon}`}
+                                          style={getSelectedItemStyle(child.id)}
+                                        />
+                                        <span className="text-[9px] text-center leading-tight">
+                                          {child.label}
+                                        </span>
+                                      </Link>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <Link
+                              href={item.path || "#"}
+                              className={`flex ${
+                                isOpen
+                                  ? "flex-row items-center gap-3"
+                                  : "flex-col items-center gap-1"
+                              } px-3 py-2.5 rounded-lg ${
+                                isItemSelected
+                                  ? `${sidebarClasses.activeMenuBg} ${sidebarClasses.activeMenuText}`
+                                  : `${sidebarClasses.menuText} ${sidebarClasses.menuHover}`
+                              }`}
+                              onClick={() => {
+                                handleMenuClick(item.id);
+                                if (isMobile) setIsMobileSidebarOpen(false);
+                              }}
+                              style={getSelectedItemStyle(item.id)}
+                            >
+                              <IconComponent
+                                className={`w-5 h-5 ${
+                                  isItemSelected
+                                    ? sidebarClasses.activeMenuIcon
+                                    : sidebarClasses.menuIcon
+                                }`}
+                                style={getSelectedItemStyle(item.id)}
+                              />
+                              <span
+                                className={`${isOpen ? "text-sm" : "text-[10px] text-center leading-tight"} ${
+                                  isItemSelected
+                                    ? "font-semibold"
+                                    : "font-medium"
                                 }`}
                               >
-                                <IconComponent
-                                  className={`w-5 h-5 ${sidebarClasses.menuIcon}`}
-                                />
-                                <span
-                                  className={`${isOpen ? "text-sm" : "text-[10px]"} font-medium ${!isOpen ? "text-center leading-tight" : ""}`}
-                                >
-                                  {item.label}
-                                </span>
-                              </div>
-                              {isOpen && (
-                                <ChevronDown
-                                  className={`w-4 h-4 ${
-                                    sidebarClasses.chevron
-                                  } transition-transform ${
-                                    isExpanded ? "rotate-180" : ""
-                                  }`}
-                                />
-                              )}
-                            </button>
-
-                            {/* Children when sidebar is OPEN */}
-                            {isOpen && isExpanded && item.children && (
-                              <div className="ml-11 mt-1 space-y-1">
-                                {item.children.map((child) => {
-                                  const ChildIcon = child.icon;
-                                  const isChildSelected =
-                                    selectedItemId === child.id;
-                                  return (
-                                    <Link
-                                      key={child.id}
-                                      href={child.path}
-                                      onClick={() => {
-                                        handleMenuClick(child.id);
-                                        if (isMobile)
-                                          setIsMobileSidebarOpen(false);
-                                      }}
-                                      style={getSelectedItemStyle(child.id)}
-                                      className={`flex items-center gap-3 px-3 py-2 rounded-lg ${sidebarClasses.menuText} ${sidebarClasses.menuHover} text-sm`}
-                                    >
-                                      <ChildIcon
-                                        className={`w-4 h-4 ${sidebarClasses.menuIcon}`}
-                                        style={getSelectedItemStyle(child.id)}
-                                      />
-                                      <span>{child.label}</span>
-                                    </Link>
-                                  );
-                                })}
-                              </div>
-                            )}
-
-                            {/* Children when sidebar is COLLAPSED */}
-                            {!isOpen && isExpanded && item.children && (
-                              <div className="mt-1 space-y-1">
-                                {item.children.map((child) => {
-                                  const ChildIcon = child.icon;
-                                  return (
-                                    <Link
-                                      key={child.id}
-                                      href={child.path}
-                                      onClick={() => {
-                                        handleMenuClick(child.id);
-                                        if (isMobile)
-                                          setIsMobileSidebarOpen(false);
-                                      }}
-                                      style={getSelectedItemStyle(child.id)}
-                                      className={`flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-lg ${sidebarClasses.menuText} ${sidebarClasses.menuHover}`}
-                                    >
-                                      <ChildIcon
-                                        className={`w-4 h-4 ${sidebarClasses.menuIcon}`}
-                                        style={getSelectedItemStyle(child.id)}
-                                      />
-                                      <span className="text-[9px] text-center leading-tight">
-                                        {child.label}
-                                      </span>
-                                    </Link>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          /* CHANGE 1: non-expandable items expand sidebar if collapsed */
-                          /* CHANGE 2: selected item uses secondaryColorHex via getSelectedItemStyle */
-                          <Link
-                            href={item.path || "#"}
-                            className={`flex ${
-                              isOpen
-                                ? "flex-row items-center gap-3"
-                                : "flex-col items-center gap-1"
-                            } px-3 py-2.5 rounded-lg ${
-                              isItemSelected
-                                ? `${sidebarClasses.activeMenuBg} ${sidebarClasses.activeMenuText}`
-                                : `${sidebarClasses.menuText} ${sidebarClasses.menuHover}`
-                            }`}
-                            onClick={() => {
-                              handleMenuClick(item.id);
-                              if (isMobile) setIsMobileSidebarOpen(false);
-                            }}
-                            style={getSelectedItemStyle(item.id)}
-                          >
-                            <IconComponent
-                              className={`w-5 h-5 ${
-                                isItemSelected
-                                  ? sidebarClasses.activeMenuIcon
-                                  : sidebarClasses.menuIcon
-                              }`}
-                              style={getSelectedItemStyle(item.id)}
-                            />
-                            <span
-                              className={`${isOpen ? "text-sm" : "text-[10px] text-center leading-tight"} ${
-                                isItemSelected ? "font-semibold" : "font-medium"
-                              }`}
-                            >
-                              {item.label}
-                            </span>
-                          </Link>
-                        )}
-                      </div>
-                    );
-                  })}
-                </nav>
-              </div>
-            ))
-          )}
-        </div>
-      </aside>
+                                {item.label}
+                              </span>
+                            </Link>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </nav>
+                </div>
+              ))
+            )}
+          </div>
+        </aside>
+      </div>
     );
   };
 
   return (
-    <div className="bg-background h-screen overflow-hidden flex flex-col">
+    // FIX 1: Apply `dark` class at the outermost wrapper level too, so
+    //         the main content area and any portals also get dark vars.
+    <div
+      className={`${isDark ? "dark" : ""} bg-background min-h-screen overflow-hidden flex flex-col`}
+    >
       {/* Render appropriate header based on layout */}
       {menuLayout === "topnav" ? <TopNavHeader /> : <SidebarHeader />}
 
@@ -1084,20 +1015,26 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       {/* Show Sidebar only for sidebar layout */}
       {menuLayout === "sidebar" && <Sidebar />}
 
+      {/*
+        FIX 2: Consistent top spacing so content never hides under the fixed header.
+        The header is ~64px tall (py-3 = 12px top + 12px bottom + ~40px content ≈ 64px).
+        Use pt-16 (64px) on all breakpoints, then shift left for sidebar layouts.
+      */}
       <main
         className={`
-        flex-1 overflow-y-auto
-        p-4 md:p-6
-        ${menuLayout === "topnav" ? " md:mt-20" : " md:mt-20"}
-        ${
-          menuLayout === "sidebar" && !isMobile
-            ? isSidebarOpen
-              ? "lg:ml-64"
-              : "lg:ml-20"
-            : ""
-        }
-        transition-all duration-300
-      `}
+          flex-1 overflow-y-auto
+          pt-16
+          px-4 md:px-6
+          pb-6
+          ${
+            menuLayout === "sidebar" && !isMobile
+              ? isSidebarOpen
+                ? "lg:ml-64"
+                : "lg:ml-20"
+              : ""
+          }
+          transition-all duration-300
+        `}
       >
         {children}
       </main>
