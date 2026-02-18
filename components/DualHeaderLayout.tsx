@@ -361,9 +361,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
-  // ─────────────────────────────────────────────────────────────
-  // FIX 1: TopNav header classes — respect isDark
-  // ─────────────────────────────────────────────────────────────
   const getTopNavHeaderClasses = (): HeaderClasses => {
     if (isDark) {
       return {
@@ -371,7 +368,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         text: "text-foreground",
         textSecondary: "text-muted-foreground",
         hover: "hover:text-foreground",
-        inputBg: "bg-background",
+        // inputBg: "bg-background",
         inputBorder: "border-border",
         inputText: "text-foreground",
         hoverBg: "hover:bg-muted",
@@ -381,13 +378,12 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       };
     }
 
-    // Light mode — respect white-label secondaryColorHex
     return {
       header: secondaryColorHex ? "" : "bg-white border-border",
       text: "text-gray-900",
       textSecondary: "text-gray-600",
       hover: "hover:text-gray-900",
-      inputBg: "bg-gray-50",
+      // inputBg: "bg-gray-50",
       inputBorder: "border-gray-200",
       inputText: "text-gray-900",
       hoverBg: "hover:bg-gray-100",
@@ -399,12 +395,36 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // ─────────────────────────────────────────────────────────────
-  // TopNavHeader — wraps in `dark` class when isDark is true
+  // ACTIVE ITEM STYLE — only the selected item gets the accent color.
+  // Returns an inline style object when the item is active,
+  // or an empty object when it is not — no colour bleeds elsewhere.
   // ─────────────────────────────────────────────────────────────
+  const getActiveItemStyle = (itemId: string): React.CSSProperties => {
+    if (selectedItemId !== itemId) return {};
+
+    // Prefer the white-label secondary colour, fall back to selectedColor
+    const accentColor = secondaryColorHex || selectedColor;
+    if (!accentColor) return {};
+
+    return { color: accentColor };
+  };
+
+  // Same helper but also returns a subtle background tint for sidebar items
+  const getActiveItemBgStyle = (itemId: string): React.CSSProperties => {
+    if (selectedItemId !== itemId) return {};
+
+    const accentColor = secondaryColorHex || selectedColor;
+    if (!accentColor) return {};
+
+    return {
+      color: accentColor,
+      backgroundColor: `${accentColor}1A`, // ~10 % opacity tint
+    };
+  };
+
   const TopNavHeader: React.FC = () => {
     const headerClasses = getTopNavHeaderClasses();
     return (
-      // FIX 1: add `dark` class to the wrapper so CSS vars resolve correctly
       <div className={isDark ? "dark" : ""}>
         <header
           className={`${headerClasses.header} border-b fixed w-full top-0 z-50`}
@@ -452,17 +472,21 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                             >
                               {item.children?.map((child) => {
                                 const ChildIcon = child.icon;
+                                const isChildActive =
+                                  selectedItemId === child.id;
                                 return (
                                   <Link
                                     key={child.id}
                                     href={child.path}
-                                    className={`flex items-center gap-3 px-4 py-2.5 text-sm ${headerClasses.textSecondary} ${headerClasses.dropdownHover}`}
+                                    // FIX: only apply active colour to the selected child;
+                                    // non-selected children keep the default text colour.
+                                    className={`flex items-center gap-3 px-4 py-2.5 text-sm ${
+                                      isChildActive
+                                        ? ""
+                                        : `${headerClasses.textSecondary} ${headerClasses.dropdownHover}`
+                                    }`}
                                     onClick={() => setSelectedItemId(child.id)}
-                                    style={{
-                                      color:
-                                        selectedItemId === child.id &&
-                                        selectedColor,
-                                    }}
+                                    style={getActiveItemStyle(child.id)}
                                   >
                                     <ChildIcon className="w-4 h-4" />
                                     <span>{child.label}</span>
@@ -477,15 +501,15 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                         <Link
                           key={item.id}
                           href={item.path || "#"}
+                          // FIX: active item uses inline style colour only;
+                          // inactive items keep their default class-based colour.
                           className={`text-sm py-1 ${
-                            item.active
+                            selectedItemId === item.id
                               ? `${headerClasses.text} font-semibold`
                               : `${headerClasses.textSecondary} ${headerClasses.hover}`
                           }`}
                           onClick={() => setSelectedItemId(item.id)}
-                          style={{
-                            color: selectedItemId === item.id && selectedColor,
-                          }}
+                          style={getActiveItemStyle(item.id)}
                         >
                           {item.label}
                         </Link>
@@ -506,7 +530,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                 <input
                   type="text"
                   placeholder="Search..."
-                  className={`pl-10 pr-4 py-2 border ${headerClasses.inputBorder} ${headerClasses.inputBg} ${headerClasses.inputText} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-40 md:w-64`}
+                  className={`pl-10 pr-4 py-2 border ${headerClasses.inputBorder}  ${headerClasses.inputText} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-40 md:w-64`}
                 />
               </div>
 
@@ -612,23 +636,13 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const getSelectedItemStyle = (itemId: string): React.CSSProperties => {
-    if (selectedItemId !== itemId) return {};
-    if (colorBlock && secondaryColorHex) {
-      return { color: secondaryColorHex };
-    }
-    return {};
-  };
-
-  // ─────────────────────────────────────────────────────────────
-  // SidebarHeader — wraps in `dark` class when isDark is true
-  // ─────────────────────────────────────────────────────────────
   const SidebarHeader: React.FC = () => {
     const sidebarClasses = getSidebarClasses();
 
-    // FIX 1: derive header colors from isDark directly (no nested useEffect needed)
-    const headerBg = isDark ? "bg-card" : secondaryColorHex ? "" : "bg-white";
-
+    // const headerBg = isDark ? "bg-card" : secondaryColorHex ? "" : "bg-white";
+    const headerBg = isDark ? "bg-card" : "bg-white";
+    // ...
+    const useCustomBg = false; // ❌ Never apply white-label color to the header
     const headerText = isDark ? "text-foreground" : "text-gray-900";
     const headerTextSecondary = isDark
       ? "text-muted-foreground"
@@ -636,17 +650,16 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     const headerHoverBg = isDark ? "hover:bg-muted" : "hover:bg-gray-100";
     const headerIconColor = isDark ? "text-muted-foreground" : "text-gray-500";
     const headerInputBorder = isDark ? "border-border" : "border-gray-200";
-    const headerInputBg = isDark ? "bg-background" : "bg-gray-50";
+    // const headerInputBg = isDark ? "bg-background" : "bg-gray-50";
     const headerInputText = isDark ? "text-foreground" : "text-gray-900";
     const headerInputPlaceholder = isDark
       ? "placeholder:text-muted-foreground"
       : "placeholder:text-gray-400";
     const headerLogo = "bg-primary";
     const headerLogoText = "text-primary-foreground";
-    const useCustomBg = !isDark && !!secondaryColorHex;
+    // const useCustomBg = !isDark && !!secondaryColorHex;
 
     return (
-      // FIX 1: add `dark` class to the wrapper so CSS vars resolve correctly inside the header
       <div className={isDark ? "dark" : ""}>
         <header
           className={`${headerBg} fixed top-0 left-0 right-0 z-50 border-b ${sidebarClasses.border} px-4 md:px-6 py-3 flex items-center justify-between transition-all duration-300
@@ -675,7 +688,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               />
             </button>
 
-            {/* Logo — visible on mobile when sidebar is closed */}
             <div className="flex items-center gap-2 lg:hidden">
               <div
                 className={`w-8 h-8 ${headerLogo} rounded-lg flex items-center justify-center ${headerLogoText} font-bold`}
@@ -697,7 +709,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               <input
                 type="text"
                 placeholder="Search..."
-                className={`pl-10 pr-4 py-2 border ${headerInputBorder} ${headerInputBg} ${headerInputText} ${headerInputPlaceholder} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-40 md:w-64`}
+                className={`pl-10 pr-4 py-2 border ${headerInputBorder}  ${headerInputText} ${headerInputPlaceholder} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-40 md:w-64`}
               />
             </div>
 
@@ -769,14 +781,13 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
-  // Sidebar Menu Component — wraps in `dark` class when isDark is true
+  // Sidebar Menu Component
   const Sidebar: React.FC = () => {
     const sidebarClasses = getSidebarClasses();
     const isOpen = isMobile ? isMobileSidebarOpen : isSidebarOpen;
     const width = isOpen ? "w-64" : "w-20";
 
     return (
-      // FIX 1: add `dark` class so sidebar CSS vars resolve correctly
       <div className={isDark ? "dark" : ""}>
         <aside
           className={`${width} ${sidebarClasses.bg} border-r ${
@@ -853,6 +864,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                         <div key={item.id}>
                           {item.expandable ? (
                             <>
+                              {/* Parent expandable button — never gets accent colour itself */}
                               <button
                                 onClick={() =>
                                   handleExpandableMenuClick(item.id)
@@ -897,6 +909,8 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                 <div className="ml-11 mt-1 space-y-1">
                                   {item.children.map((child) => {
                                     const ChildIcon = child.icon;
+                                    const isChildActive =
+                                      selectedItemId === child.id;
                                     return (
                                       <Link
                                         key={child.id}
@@ -906,12 +920,18 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                           if (isMobile)
                                             setIsMobileSidebarOpen(false);
                                         }}
-                                        style={getSelectedItemStyle(child.id)}
-                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg ${sidebarClasses.menuText} ${sidebarClasses.menuHover} text-sm`}
+                                        // FIX: apply accent colour + background tint ONLY on active child;
+                                        // inactive children use plain class-based colours.
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+                                          isChildActive
+                                            ? "" // colour comes entirely from inline style below
+                                            : `${sidebarClasses.menuText} ${sidebarClasses.menuHover}`
+                                        }`}
+                                        style={getActiveItemBgStyle(child.id)}
                                       >
                                         <ChildIcon
-                                          className={`w-4 h-4 ${sidebarClasses.menuIcon}`}
-                                          style={getSelectedItemStyle(child.id)}
+                                          className="w-4 h-4"
+                                          // Icon inherits the parent `color` via currentColor
                                         />
                                         <span>{child.label}</span>
                                       </Link>
@@ -925,6 +945,8 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                 <div className="mt-1 space-y-1">
                                   {item.children.map((child) => {
                                     const ChildIcon = child.icon;
+                                    const isChildActive =
+                                      selectedItemId === child.id;
                                     return (
                                       <Link
                                         key={child.id}
@@ -934,13 +956,15 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                           if (isMobile)
                                             setIsMobileSidebarOpen(false);
                                         }}
-                                        style={getSelectedItemStyle(child.id)}
-                                        className={`flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-lg ${sidebarClasses.menuText} ${sidebarClasses.menuHover}`}
+                                        // FIX: same pattern — active item only
+                                        className={`flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-lg ${
+                                          isChildActive
+                                            ? ""
+                                            : `${sidebarClasses.menuText} ${sidebarClasses.menuHover}`
+                                        }`}
+                                        style={getActiveItemBgStyle(child.id)}
                                       >
-                                        <ChildIcon
-                                          className={`w-4 h-4 ${sidebarClasses.menuIcon}`}
-                                          style={getSelectedItemStyle(child.id)}
-                                        />
+                                        <ChildIcon className="w-4 h-4" />
                                         <span className="text-[9px] text-center leading-tight">
                                           {child.label}
                                         </span>
@@ -951,6 +975,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                               )}
                             </>
                           ) : (
+                            // Non-expandable top-level item
                             <Link
                               href={item.path || "#"}
                               className={`flex ${
@@ -958,23 +983,22 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                   ? "flex-row items-center gap-3"
                                   : "flex-col items-center gap-1"
                               } px-3 py-2.5 rounded-lg ${
+                                // FIX: only apply active BG/text classes when truly selected;
+                                // inactive items always get the neutral menu classes.
                                 isItemSelected
-                                  ? `${sidebarClasses.activeMenuBg} ${sidebarClasses.activeMenuText}`
+                                  ? "" // visual state comes from inline style below
                                   : `${sidebarClasses.menuText} ${sidebarClasses.menuHover}`
                               }`}
                               onClick={() => {
                                 handleMenuClick(item.id);
                                 if (isMobile) setIsMobileSidebarOpen(false);
                               }}
-                              style={getSelectedItemStyle(item.id)}
+                              // FIX: accent colour (+ subtle bg tint) applied inline, active item only
+                              style={getActiveItemBgStyle(item.id)}
                             >
                               <IconComponent
-                                className={`w-5 h-5 ${
-                                  isItemSelected
-                                    ? sidebarClasses.activeMenuIcon
-                                    : sidebarClasses.menuIcon
-                                }`}
-                                style={getSelectedItemStyle(item.id)}
+                                className="w-5 h-5"
+                                // currentColor picks up the parent inline colour automatically
                               />
                               <span
                                 className={`${isOpen ? "text-sm" : "text-[10px] text-center leading-tight"} ${
@@ -1001,25 +1025,15 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   };
 
   return (
-    // FIX 1: Apply `dark` class at the outermost wrapper level too, so
-    //         the main content area and any portals also get dark vars.
     <div
       className={`${isDark ? "dark" : ""} bg-background min-h-screen overflow-hidden flex flex-col`}
     >
-      {/* Render appropriate header based on layout */}
       {menuLayout === "topnav" ? <TopNavHeader /> : <SidebarHeader />}
 
-      {/* Mobile Sidebar Overlay */}
       <MobileSidebarOverlay />
 
-      {/* Show Sidebar only for sidebar layout */}
       {menuLayout === "sidebar" && <Sidebar />}
 
-      {/*
-        FIX 2: Consistent top spacing so content never hides under the fixed header.
-        The header is ~64px tall (py-3 = 12px top + 12px bottom + ~40px content ≈ 64px).
-        Use pt-16 (64px) on all breakpoints, then shift left for sidebar layouts.
-      */}
       <main
         className={`
           flex-1 overflow-y-auto

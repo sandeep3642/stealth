@@ -29,7 +29,7 @@ export interface HeaderClasses {
   text: string;
   textSecondary: string;
   hover: string;
-  inputBg: string;
+  // inputBg: string;
   inputBorder: string;
   inputText: string;
   hoverBg: string;

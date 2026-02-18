@@ -48,6 +48,6 @@ export function applyWhiteLabelColors(
     root.style.setProperty("--primary", hexToHSL(primaryColorHex));
 
   // 🔹 Update background (for light theme only)
-  if (!isDark && secondaryColorHex)
-    root.style.setProperty("--background", hexToHSL(secondaryColorHex));
+  // if (!isDark && secondaryColorHex)
+    // root.style.setProperty("--background", hexToHSL(secondaryColorHex));
 }
