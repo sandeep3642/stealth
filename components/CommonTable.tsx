@@ -103,11 +103,14 @@ const CommonTable: React.FC<CommonTableProps> = ({
     }
 
     if (column.key === "no") {
-      // For server-side pagination, calculate the correct index
       const actualIndex = isServerSide
         ? (pageNo - 1) * pageSize + idx + 1
         : idx + 1;
-      return <span className="text-sm text-foreground">{actualIndex}</span>;
+      return (
+        <span className={`text-sm ${isDark ? "text-white" : "text-black"}`}>
+          {actualIndex}
+        </span>
+      );
     }
 
     if (column.key === "status") {
@@ -155,6 +158,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
         <span
           className={`inline-flex px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-semibold rounded-md ${getStatusColor(
             value,
+            isDark,
           )}`}
         >
           {displayValue}
@@ -175,9 +179,13 @@ const CommonTable: React.FC<CommonTableProps> = ({
 
     if (column.type === "icon-text") {
       return (
-        <div className="flex items-center gap-1.5 text-sm text-foreground">
+        <div
+          className={`flex items-center gap-1.5 text-sm ${isDark ? "text-white" : "text-black"}`}
+        >
           {column.icon && (
-            <span className="text-foreground">{column.icon}</span>
+            <span className={isDark ? "text-white" : "text-black"}>
+              {column.icon}
+            </span>
           )}
           {value}
         </div>
@@ -189,7 +197,8 @@ const CommonTable: React.FC<CommonTableProps> = ({
         <div className="flex flex-col gap-0.5">
           <span
             className={
-              column.mainStyle || "text-sm font-semibold text-foreground"
+              column.mainStyle ||
+              `text-sm font-semibold ${isDark ? "text-white" : "text-black"}`
             }
           >
             {value?.main}
@@ -197,7 +206,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
           <span
             className={
               column.subStyle ||
-              "text-xs font-bold text-foreground opacity-70 uppercase tracking-wide"
+              `text-xs font-bold uppercase tracking-wide opacity-70 ${isDark ? "text-white" : "text-black"}`
             }
           >
             {value?.sub}
@@ -218,7 +227,11 @@ const CommonTable: React.FC<CommonTableProps> = ({
       });
 
       return (
-        <span className="text-sm text-foreground font-medium">{formatted}</span>
+        <span
+          className={`text-sm font-medium ${isDark ? "text-white" : "text-black"}`}
+        >
+          {formatted}
+        </span>
       );
     }
 
@@ -229,15 +242,18 @@ const CommonTable: React.FC<CommonTableProps> = ({
         fr: "French",
         de: "German",
       };
-      //   return langMap[value] || value;
       return (
-        <span className="text-sm text-foreground">
+        <span className={`text-sm ${isDark ? "text-white" : "text-black"}`}>
           {langMap[value] || value}
         </span>
       );
     }
 
-    return <span className="text-sm text-foreground">{value}</span>;
+    return (
+      <span className={`text-sm ${isDark ? "text-white" : "text-black"}`}>
+        {value}
+      </span>
+    );
   };
 
   // Client-side filtering and pagination (only when NOT server-side)
@@ -258,11 +274,9 @@ const CommonTable: React.FC<CommonTableProps> = ({
         });
       });
 
-  // Use totalRecords from props if server-side, otherwise calculate client-side
   const actualTotalRecords = isServerSide ? totalRecords : filteredData.length;
   const totalPages = Math.ceil(actualTotalRecords / pageSize);
 
-  // For client-side, paginate the data. For server-side, use data as-is
   const paginatedData = isServerSide
     ? data
     : (() => {
@@ -273,7 +287,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
 
   const renderTable = () => (
     <>
-      {/* Table Section - Mobile Responsive */}
+      {/* Table Section */}
       <div className="overflow-x-auto">
         <table
           className={`w-full min-w-[600px] ${variant === "default" ? "border-separate border-spacing-y-2" : ""}`}
@@ -282,8 +296,10 @@ const CommonTable: React.FC<CommonTableProps> = ({
             <tr
               className={
                 variant === "simple"
-                  ? "border-b border-border"
-                  : "bg-background"
+                  ? `border-b border-border ${isDark ? "" : "bg-white"}`
+                  : isDark
+                    ? ""
+                    : "bg-white"
               }
             >
               {columns.map(
@@ -291,7 +307,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
                   columnVisibility[column.key] && (
                     <th
                       key={column.key}
-                      className={`px-3 sm:px-${variant === "simple" ? "4" : "6"} py-3 sm:py-3.5 text-left text-[10px] sm:text-xs font-bold text-foreground uppercase tracking-wide`}
+                      className={`px-3 sm:px-${variant === "simple" ? "4" : "6"} py-3 sm:py-3.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide ${isDark ? "text-white" : "text-black"}`}
                     >
                       {column.label}
                     </th>
@@ -299,7 +315,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
               )}
               {showActions && columnVisibility.actions && (
                 <th
-                  className={`px-3 sm:px-${variant === "simple" ? "4" : "6"} py-3 sm:py-3.5 text-left text-[10px] sm:text-xs font-bold text-foreground uppercase tracking-wide`}
+                  className={`px-3 sm:px-${variant === "simple" ? "4" : "6"} py-3 sm:py-3.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide ${isDark ? "text-white" : "text-black"}`}
                 >
                   ACTION
                 </th>
@@ -307,14 +323,18 @@ const CommonTable: React.FC<CommonTableProps> = ({
             </tr>
           </thead>
 
-          <tbody className={variant === "default" ? "bg-card" : ""}>
+          <tbody
+            className={
+              variant === "default" ? (isDark ? "bg-gray-800" : "bg-white") : ""
+            }
+          >
             {paginatedData.map((row, idx) => (
               <tr
                 key={row.id || idx}
                 className={
                   variant === "simple"
-                    ? "border-b border-border hover:bg-background/50 transition-colors"
-                    : "border border-border rounded-lg"
+                    ? `border-b border-border transition-colors ${isDark ? "hover:bg-background" : "hover:bg-gray-50"}`
+                    : `border border-border rounded-lg ${isDark ? "bg-background" : "bg-white"}`
                 }
               >
                 {columns.map(
@@ -336,7 +356,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
                       {onEdit && (
                         <button
                           onClick={() => onEdit(row)}
-                          className="text-foreground opacity-50 hover:opacity-100 p-1 transition-opacity cursor-pointer"
+                          className={`p-1 transition-opacity cursor-pointer opacity-50 hover:opacity-100 ${isDark ? "text-white" : "text-black"}`}
                         >
                           <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
@@ -359,9 +379,13 @@ const CommonTable: React.FC<CommonTableProps> = ({
         </table>
       </div>
 
-      {/* Footer Section - Mobile Responsive */}
-      <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-        <div className="text-xs sm:text-sm text-foreground font-medium opacity-70">
+      {/* Footer Section */}
+      <div
+        className={`px-3 sm:px-6 py-3 sm:py-4 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 ${isDark ? "" : "bg-white"}`}
+      >
+        <div
+          className={`text-xs sm:text-sm font-medium opacity-70 ${isDark ? "text-white" : "text-black"}`}
+        >
           SHOWING {Math.min(paginatedData.length, pageSize)} OF{" "}
           {actualTotalRecords} RECORDS
         </div>
@@ -430,22 +454,32 @@ const CommonTable: React.FC<CommonTableProps> = ({
   );
 
   const renderHeader = () => (
-    <div className="p-3 sm:p-4 lg:p-6 pb-3 sm:pb-4">
+    <div
+      className={`p-3 sm:p-4 lg:p-6 pb-3 sm:pb-4 ${isDark ? "" : "bg-white"}`}
+    >
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
         <div className="relative flex-1 w-full sm:max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground opacity-40 w-4 h-4" />
+          <Search
+            className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 opacity-40 ${isDark ? "text-white" : "text-black"}`}
+          />
           <input
             type="text"
             placeholder={searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery && setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-background text-foreground placeholder:text-foreground placeholder:opacity-50"
+            className={`w-full pl-10 pr-4 py-2.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder:opacity-50 ${
+              isDark
+                ? "bg-gray-800 text-white placeholder:text-white"
+                : "bg-white text-black placeholder:text-black"
+            }`}
           />
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="text-[10px] sm:text-xs font-medium text-foreground opacity-70 uppercase tracking-wide hidden sm:inline">
+            <span
+              className={`text-[10px] sm:text-xs font-medium uppercase tracking-wide hidden sm:inline opacity-70 ${isDark ? "text-white" : "text-black"}`}
+            >
               VIEW
             </span>
             <select
@@ -454,7 +488,9 @@ const CommonTable: React.FC<CommonTableProps> = ({
                 onPageSizeChange(Number(e.target.value));
                 onPageChange(1);
               }}
-              className="px-2 sm:px-3 py-2 text-xs sm:text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-card text-foreground"
+              className={`px-2 sm:px-3 py-2 text-xs sm:text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                isDark ? "bg-gray-800 text-white" : "bg-white text-black"
+              }`}
             >
               {rowsPerPageOptions.map((option) => (
                 <option key={option} value={option}>
@@ -467,10 +503,14 @@ const CommonTable: React.FC<CommonTableProps> = ({
           <div className="relative">
             <button
               onClick={() => setShowColumnMenu(!showColumnMenu)}
-              className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 text-xs sm:text-sm border border-border rounded-lg bg-card hover:bg-background transition-colors"
+              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 text-xs sm:text-sm border border-border rounded-lg transition-colors ${
+                isDark
+                  ? "bg-gray-800 hover:bg-gray-700 text-white"
+                  : "bg-white hover:bg-gray-50 text-black"
+              }`}
             >
               <svg
-                className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-foreground opacity-70"
+                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-70 ${isDark ? "text-white" : "text-black"}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -482,24 +522,30 @@ const CommonTable: React.FC<CommonTableProps> = ({
                   d="M4 6h16M4 12h16M4 18h16"
                 />
               </svg>
-              <span className="text-foreground font-medium hidden sm:inline">
-                Columns
-              </span>
-              <span className="text-foreground font-medium sm:hidden">Col</span>
-              <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-foreground opacity-70" />
+              <span className="font-medium hidden sm:inline">Columns</span>
+              <span className="font-medium sm:hidden">Col</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 opacity-70 ${isDark ? "text-white" : "text-black"}`}
+              />
             </button>
 
             {showColumnMenu && (
-              <div className="absolute right-0 mt-2 w-48 sm:w-52 bg-[#ffffff] rounded-lg shadow-xl border border-border py-2 z-10 max-h-[300px] overflow-y-auto
-              
-              ">
-                <div className="px-3 sm:px-4 py-2 text-[10px] sm:text-xs font-semibold text-foreground opacity-70 uppercase tracking-wide">
+              <div
+                className={`absolute right-0 mt-2 w-48 sm:w-52 rounded-lg shadow-xl border border-border py-2 z-10 max-h-[300px] overflow-y-auto ${
+                  isDark ? "" : "bg-white"
+                }`}
+              >
+                <div
+                  className={`px-3 sm:px-4 py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-wide opacity-70 ${isDark ? "text-white" : "text-black"}`}
+                >
                   Visibility
                 </div>
                 {columns.map((column) => (
                   <label
                     key={column.key}
-                    className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 cursor-pointer hover:bg-background transition-colors"
+                    className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 cursor-pointer transition-colors ${
+                      isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
+                    }`}
                   >
                     <input
                       type="checkbox"
@@ -508,13 +554,19 @@ const CommonTable: React.FC<CommonTableProps> = ({
                       className="w-3.5 h-3.5 sm:w-4 sm:h-4"
                       style={{ accentColor: selectedColor }}
                     />
-                    <span className="text-xs sm:text-sm text-foreground">
+                    <span
+                      className={`text-xs sm:text-sm ${isDark ? "text-white" : "text-black"}`}
+                    >
                       {column.label}
                     </span>
                   </label>
                 ))}
                 {showActions && (
-                  <label className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 cursor-pointer hover:bg-background transition-colors">
+                  <label
+                    className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 cursor-pointer transition-colors ${
+                      isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"
+                    }`}
+                  >
                     <input
                       type="checkbox"
                       checked={columnVisibility.actions}
@@ -522,7 +574,9 @@ const CommonTable: React.FC<CommonTableProps> = ({
                       className="w-3.5 h-3.5 sm:w-4 sm:h-4"
                       style={{ accentColor: selectedColor }}
                     />
-                    <span className="text-xs sm:text-sm text-foreground">
+                    <span
+                      className={`text-xs sm:text-sm ${isDark ? "text-white" : "text-black"}`}
+                    >
                       Actions
                     </span>
                   </label>
@@ -537,7 +591,9 @@ const CommonTable: React.FC<CommonTableProps> = ({
 
   if (variant === "simple") {
     return (
-      <div className="bg-card rounded-lg sm:rounded-xl shadow-sm border border-border">
+      <div
+        className={`rounded-lg sm:rounded-xl shadow-sm border border-border ${isDark ? "" : "bg-white"}`}
+      >
         {renderHeader()}
         {renderTable()}
       </div>
@@ -546,8 +602,12 @@ const CommonTable: React.FC<CommonTableProps> = ({
 
   // Default variant
   return (
-    <div className="bg-background">
-      <div className="p-3 sm:p-5 mx-auto bg-card rounded-lg sm:rounded-xl shadow-sm border border-border">
+    <div
+      className={`rounded-lg sm:rounded-xl shadow-sm border border-border ${isDark ? "bg-background" : "bg-gray-100"}`}
+    >
+      <div
+        className={`p-3 sm:p-5 mx-auto rounded-lg sm:rounded-xl shadow-sm border border-border ${isDark ? "bg-background" : "bg-white"}`}
+      >
         {renderHeader()}
         {renderTable()}
       </div>

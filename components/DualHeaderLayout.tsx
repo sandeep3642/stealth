@@ -361,6 +361,23 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     );
   };
 
+  // ─────────────────────────────────────────────────────────────
+  // ACTIVE ITEM STYLE — black in light mode, white in dark mode.
+  // No secondary/accent colors used for active state.
+  // ─────────────────────────────────────────────────────────────
+  const getActiveItemStyle = (itemId: string): React.CSSProperties => {
+    if (selectedItemId !== itemId) return {};
+    return { color: isDark ? "#ffffff" : "#000000" };
+  };
+
+  const getActiveItemBgStyle = (itemId: string): React.CSSProperties => {
+    if (selectedItemId !== itemId) return {};
+    return {
+      color: isDark ? "#ffffff" : "#000000",
+      backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
+    };
+  };
+
   const getTopNavHeaderClasses = (): HeaderClasses => {
     if (isDark) {
       return {
@@ -368,7 +385,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         text: "text-foreground",
         textSecondary: "text-muted-foreground",
         hover: "hover:text-foreground",
-        // inputBg: "bg-background",
         inputBorder: "border-border",
         inputText: "text-foreground",
         hoverBg: "hover:bg-muted",
@@ -383,7 +399,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       text: "text-gray-900",
       textSecondary: "text-gray-600",
       hover: "hover:text-gray-900",
-      // inputBg: "bg-gray-50",
       inputBorder: "border-gray-200",
       inputText: "text-gray-900",
       hoverBg: "hover:bg-gray-100",
@@ -391,34 +406,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       dropdownHover: "hover:bg-gray-50",
       useCustomBg: !!secondaryColorHex,
       customBg: secondaryColorHex,
-    };
-  };
-
-  // ─────────────────────────────────────────────────────────────
-  // ACTIVE ITEM STYLE — only the selected item gets the accent color.
-  // Returns an inline style object when the item is active,
-  // or an empty object when it is not — no colour bleeds elsewhere.
-  // ─────────────────────────────────────────────────────────────
-  const getActiveItemStyle = (itemId: string): React.CSSProperties => {
-    if (selectedItemId !== itemId) return {};
-
-    // Prefer the white-label secondary colour, fall back to selectedColor
-    const accentColor = secondaryColorHex || selectedColor;
-    if (!accentColor) return {};
-
-    return { color: accentColor };
-  };
-
-  // Same helper but also returns a subtle background tint for sidebar items
-  const getActiveItemBgStyle = (itemId: string): React.CSSProperties => {
-    if (selectedItemId !== itemId) return {};
-
-    const accentColor = secondaryColorHex || selectedColor;
-    if (!accentColor) return {};
-
-    return {
-      color: accentColor,
-      backgroundColor: `${accentColor}1A`, // ~10 % opacity tint
     };
   };
 
@@ -478,9 +465,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                   <Link
                                     key={child.id}
                                     href={child.path}
-                                    // FIX: only apply active colour to the selected child;
-                                    // non-selected children keep the default text colour.
-                                    className={`flex items-center gap-3 px-4 py-2.5 text-sm ${
+                                    className={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium ${
                                       isChildActive
                                         ? ""
                                         : `${headerClasses.textSecondary} ${headerClasses.dropdownHover}`
@@ -501,11 +486,9 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                         <Link
                           key={item.id}
                           href={item.path || "#"}
-                          // FIX: active item uses inline style colour only;
-                          // inactive items keep their default class-based colour.
-                          className={`text-sm py-1 ${
+                          className={`text-sm py-1 font-medium ${
                             selectedItemId === item.id
-                              ? `${headerClasses.text} font-semibold`
+                              ? "font-semibold"
                               : `${headerClasses.textSecondary} ${headerClasses.hover}`
                           }`}
                           onClick={() => setSelectedItemId(item.id)}
@@ -530,7 +513,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                 <input
                   type="text"
                   placeholder="Search..."
-                  className={`pl-10 pr-4 py-2 border ${headerClasses.inputBorder}  ${headerClasses.inputText} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-40 md:w-64`}
+                  className={`pl-10 pr-4 py-2 border ${headerClasses.inputBorder} ${headerClasses.inputText} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-40 md:w-64`}
                 />
               </div>
 
@@ -602,17 +585,17 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         border: "border-border",
         logo: "bg-primary",
         logoText: "text-primary-foreground",
-        brandText: "text-foreground",
-        sectionTitle: "text-muted-foreground",
-        menuText: "text-foreground",
-        menuIcon: "text-muted-foreground",
-        menuHover: "hover:bg-muted",
-        activeMenuBg: "bg-primary/10",
-        activeMenuText: "text-primary",
-        activeMenuIcon: "text-primary",
-        chevron: "text-muted-foreground",
-        gridIcon: "text-muted-foreground",
-        gridHover: "hover:bg-muted",
+        brandText: "text-white",
+        sectionTitle: "text-gray-400",
+        menuText: "text-gray-300",
+        menuIcon: "text-gray-400",
+        menuHover: "hover:bg-white/10",
+        activeMenuBg: "bg-white/10",
+        activeMenuText: "text-white",
+        activeMenuIcon: "text-white",
+        chevron: "text-gray-400",
+        gridIcon: "text-gray-400",
+        gridHover: "hover:bg-white/10",
       };
     } else {
       return {
@@ -623,12 +606,12 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         logoText: "text-primary-foreground",
         brandText: "text-gray-900",
         sectionTitle: "text-gray-400",
-        menuText: "text-gray-700",
+        menuText: "text-gray-600",
         menuIcon: "text-gray-500",
         menuHover: "hover:bg-gray-100",
         activeMenuBg: "bg-gray-100",
-        activeMenuText: "text-gray-900",
-        activeMenuIcon: "text-gray-900",
+        activeMenuText: "text-black",
+        activeMenuIcon: "text-black",
         chevron: "text-gray-400",
         gridIcon: "text-gray-400",
         gridHover: "hover:bg-gray-100",
@@ -639,25 +622,19 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   const SidebarHeader: React.FC = () => {
     const sidebarClasses = getSidebarClasses();
 
-    // const headerBg = isDark ? "bg-card" : secondaryColorHex ? "" : "bg-white";
     const headerBg = isDark ? "bg-card" : "bg-white";
-    // ...
-    const useCustomBg = false; // ❌ Never apply white-label color to the header
-    const headerText = isDark ? "text-foreground" : "text-gray-900";
-    const headerTextSecondary = isDark
-      ? "text-muted-foreground"
-      : "text-gray-600";
-    const headerHoverBg = isDark ? "hover:bg-muted" : "hover:bg-gray-100";
-    const headerIconColor = isDark ? "text-muted-foreground" : "text-gray-500";
+    const useCustomBg = false;
+    const headerText = isDark ? "text-white" : "text-gray-900";
+    const headerTextSecondary = isDark ? "text-gray-400" : "text-gray-600";
+    const headerHoverBg = isDark ? "hover:bg-white/10" : "hover:bg-gray-100";
+    const headerIconColor = isDark ? "text-gray-400" : "text-gray-500";
     const headerInputBorder = isDark ? "border-border" : "border-gray-200";
-    // const headerInputBg = isDark ? "bg-background" : "bg-gray-50";
-    const headerInputText = isDark ? "text-foreground" : "text-gray-900";
+    const headerInputText = isDark ? "text-white" : "text-gray-900";
     const headerInputPlaceholder = isDark
-      ? "placeholder:text-muted-foreground"
+      ? "placeholder:text-gray-500"
       : "placeholder:text-gray-400";
     const headerLogo = "bg-primary";
     const headerLogoText = "text-primary-foreground";
-    // const useCustomBg = !isDark && !!secondaryColorHex;
 
     return (
       <div className={isDark ? "dark" : ""}>
@@ -666,11 +643,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
             ${!isMobile && isSidebarOpen ? "lg:left-64" : ""}
             ${!isMobile && !isSidebarOpen ? "lg:left-20" : ""}
           `}
-          style={
-            useCustomBg && secondaryColorHex
-              ? { backgroundColor: secondaryColorHex }
-              : {}
-          }
         >
           <div className="flex items-center gap-3">
             <button
@@ -709,13 +681,13 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               <input
                 type="text"
                 placeholder="Search..."
-                className={`pl-10 pr-4 py-2 border ${headerInputBorder}  ${headerInputText} ${headerInputPlaceholder} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-40 md:w-64`}
+                className={`pl-10 pr-4 py-2 border ${headerInputBorder} ${headerInputText} ${headerInputPlaceholder} rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary w-40 md:w-64 ${isDark ? "bg-card" : "bg-white"}`}
               />
             </div>
 
             {/* Language */}
             <button
-              className={`hidden md:flex items-center gap-2 text-sm ${headerTextSecondary} hover:${headerText}`}
+              className={`hidden md:flex items-center gap-2 text-sm ${headerTextSecondary} ${headerHoverBg}`}
             >
               <Globe className={`w-4 h-4 ${headerIconColor}`} />
               <span>English</span>
@@ -751,11 +723,17 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
 
               {showProfileMenu && (
                 <div
-                  className={`absolute right-0 top-full mt-2 w-56 rounded-lg shadow-lg border z-50 ${isDark ? "bg-card border-border" : "bg-white border-gray-200"}`}
+                  className={`absolute right-0 top-full mt-2 w-56 rounded-lg shadow-lg border z-50 ${
+                    isDark
+                      ? "bg-card border-border text-white"
+                      : "bg-white border-gray-200 text-black"
+                  }`}
                 >
                   <button
                     onClick={handleLogout}
-                    className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded ${headerText}`}
+                    className={`w-full flex items-center gap-2 px-4 py-2 text-sm rounded ${
+                      isDark ? "hover:bg-white/10" : "hover:bg-gray-100"
+                    }`}
                   >
                     <LogOut className="w-4 h-4" />
                     Logout
@@ -864,7 +842,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                         <div key={item.id}>
                           {item.expandable ? (
                             <>
-                              {/* Parent expandable button — never gets accent colour itself */}
+                              {/* Parent expandable button — never gets active styling */}
                               <button
                                 onClick={() =>
                                   handleExpandableMenuClick(item.id)
@@ -873,9 +851,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                   isOpen
                                     ? "flex-row items-center justify-between"
                                     : "flex-col items-center justify-center"
-                                } px-3 py-2.5 rounded-lg ${
-                                  sidebarClasses.menuText
-                                } ${sidebarClasses.menuHover}`}
+                                } px-3 py-2.5 rounded-lg ${sidebarClasses.menuText} ${sidebarClasses.menuHover}`}
                               >
                                 <div
                                   className={`flex ${
@@ -920,19 +896,14 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                           if (isMobile)
                                             setIsMobileSidebarOpen(false);
                                         }}
-                                        // FIX: apply accent colour + background tint ONLY on active child;
-                                        // inactive children use plain class-based colours.
-                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium ${
                                           isChildActive
-                                            ? "" // colour comes entirely from inline style below
+                                            ? ""
                                             : `${sidebarClasses.menuText} ${sidebarClasses.menuHover}`
                                         }`}
                                         style={getActiveItemBgStyle(child.id)}
                                       >
-                                        <ChildIcon
-                                          className="w-4 h-4"
-                                          // Icon inherits the parent `color` via currentColor
-                                        />
+                                        <ChildIcon className="w-4 h-4" />
                                         <span>{child.label}</span>
                                       </Link>
                                     );
@@ -956,8 +927,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                           if (isMobile)
                                             setIsMobileSidebarOpen(false);
                                         }}
-                                        // FIX: same pattern — active item only
-                                        className={`flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-lg ${
+                                        className={`flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-lg font-medium ${
                                           isChildActive
                                             ? ""
                                             : `${sidebarClasses.menuText} ${sidebarClasses.menuHover}`
@@ -983,23 +953,17 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                                   ? "flex-row items-center gap-3"
                                   : "flex-col items-center gap-1"
                               } px-3 py-2.5 rounded-lg ${
-                                // FIX: only apply active BG/text classes when truly selected;
-                                // inactive items always get the neutral menu classes.
                                 isItemSelected
-                                  ? "" // visual state comes from inline style below
+                                  ? ""
                                   : `${sidebarClasses.menuText} ${sidebarClasses.menuHover}`
                               }`}
                               onClick={() => {
                                 handleMenuClick(item.id);
                                 if (isMobile) setIsMobileSidebarOpen(false);
                               }}
-                              // FIX: accent colour (+ subtle bg tint) applied inline, active item only
                               style={getActiveItemBgStyle(item.id)}
                             >
-                              <IconComponent
-                                className="w-5 h-5"
-                                // currentColor picks up the parent inline colour automatically
-                              />
+                              <IconComponent className="w-5 h-5" />
                               <span
                                 className={`${isOpen ? "text-sm" : "text-[10px] text-center leading-tight"} ${
                                   isItemSelected
