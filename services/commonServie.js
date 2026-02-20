@@ -113,4 +113,26 @@ export const getFormModulesDropdown = async () => {
     `/api/common/dropdowns/form-modules/dropdown`
   );
   return res.data;
-}
+};
+
+export const getVehicleDropdown = async (accountId) => {
+  const query = accountId ? `?accountId=${accountId}` : "";
+  const res = await api.get(`/api/common/dropdowns/vehicles${query}`);
+  return res.data;
+};
+
+export const getDeviceTypeDropdown = async () => {
+  const res = await api.get(`/api/common/dropdowns/device-types`);
+  return res.data;
+};
+
+export const getHardwareDropdown = async (deviceTypeId) => {
+  const query = deviceTypeId ? `?deviceTypeId=${deviceTypeId}` : "";
+  const res = await api.get(`/api/common/dropdowns/hardware${query}`);
+  return res.data;
+};
+
+export const getSimDropdown = async () => {
+  const res = await api.get(`/api/common/dropdowns/sims`);
+  return res.data;
+};

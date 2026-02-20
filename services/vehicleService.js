@@ -3,7 +3,7 @@ import api from "./apiService";
 
 export const getVehicles = async (page, pageSize,) => {
     const res = await api.get(
-        `/api/vehicle?page=${page}&pageSize=${pageSize}`,
+        `/api/vehicles?page=${page}&pageSize=${pageSize}`,
     );
     return res.data;
 };

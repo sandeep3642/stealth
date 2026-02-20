@@ -136,7 +136,7 @@ const AddEditCategory: React.FC = () => {
             className="bg-card rounded-2xl shadow-lg border-t-4 border-border overflow-hidden"
             style={{ borderTopColor: selectedColor }}
           >
-            <div className="p-8">
+            <div className="p-8 bg-white">
               {/* Section Header */}
               <div className="flex items-start gap-3 mb-6">
                 <div

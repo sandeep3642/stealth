@@ -1,5 +1,5 @@
-import { vtsApi } from "./apiService";
 import axios from "axios";
+import api, { vtsApi } from "./apiService";
 
 const LIVE_TRACKING_BASE_URL =
   "/live-tracking-proxy";
@@ -109,10 +109,9 @@ export async function getLiveTrackingBatch(vehicleNos = DEFAULT_FLEET_VEHICLES) 
   const list = vehicleNos.filter(Boolean);
   if (!list.length) return [];
 
-  const { data } = await liveTrackingApi.get("/api/live-tracking/batch", {
+  const { data } = await api.get("/api/live-tracking/batch", {
     params: { vehicleNos: list.join(",") },
   });
-
   const rows = Array.isArray(data)
     ? data
     : Array.isArray(data?.data)
