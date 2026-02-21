@@ -23,28 +23,13 @@ import {
 } from "@/interfaces/vehicle.interface";
 import {
   getLeasedVendors,
+  getVehicleBrands,
   getVehicleById,
   getVehicleType,
   saveVehicle,
   updateVehicle,
 } from "@/services/vehicleService";
 import { getAllAccounts } from "@/services/commonServie";
-
-async function getVehicleBrands(): Promise<{
-  statusCode: number;
-  data: VehicleBrand[];
-}> {
-  return {
-    statusCode: 200,
-    data: [
-      { id: 1, value: "TATA MOTORS" },
-      { id: 2, value: "EICHER" },
-      { id: 3, value: "ASHOK LEYLAND" },
-      { id: 4, value: "MAHINDRA" },
-      { id: 5, value: "VOLVO" },
-    ],
-  };
-}
 
 // ── Extended FormData to include all API fields ──────────────────────────────
 
@@ -116,10 +101,10 @@ const ProvisionVehicle: React.FC = () => {
           getVehicleBrands(),
           getLeasedVendors(),
         ]);
-        console.log("leasedVendorRes", leasedVendorRes);
+       
         if (accRes.statusCode === 200) setAccounts(accRes.data);
         if (typeRes) setVehicleTypes(typeRes);
-        if (brandRes.statusCode === 200) setVehicleBrands(brandRes.data);
+        if (brandRes) setVehicleBrands(brandRes);
         if (leasedVendorRes) {
           setLeasedVendors(leasedVendorRes);
         }
@@ -202,7 +187,7 @@ const ProvisionVehicle: React.FC = () => {
       setLoading(true);
 
       const payload = {
-        id: isEditMode ? Number(id) : 0,
+        ...(isEditMode && { id: Number(id) }), // ✅ include only if edit mode
         accountId: Number(formData.accountId),
         vehicleNumber: formData.registrationNumber.trim().toUpperCase(),
         vinOrChassisNumber: formData.vinNumber.trim() || "",
@@ -213,11 +198,11 @@ const ProvisionVehicle: React.FC = () => {
         vehicleBrandOemId: Number(formData.vehicleBrandId) || 0,
         ownershipType:
           formData.ownershipBasis.charAt(0).toUpperCase() +
-          formData.ownershipBasis.slice(1).toLowerCase(), // "LEASED" → "Leased"
+          formData.ownershipBasis.slice(1).toLowerCase(), // e.g. "LEASED" → "Leased"
         leasedVendorId:
           formData.ownershipBasis === "LEASED"
             ? Number(formData.leasedVendorId) || 0
-            : 0,
+            : null,
         imageFilePath: formData.imageFilePath || "",
         status: formData.status ? "Active" : "Inactive",
         vehicleClass: formData.vehicleClass || "",
@@ -458,7 +443,7 @@ const ProvisionVehicle: React.FC = () => {
                   </select>
                 </div>
 
-                <div>
+                {/* <div>
                   <label className={labelClass}>Vehicle Brand</label>
                   <select
                     name="vehicleBrandId"
@@ -469,11 +454,11 @@ const ProvisionVehicle: React.FC = () => {
                     <option value="0">Select Brand</option>
                     {vehicleBrands.map((b) => (
                       <option key={b.id} value={b.id}>
-                        {b.value}
+                        {b.name}
                       </option>
                     ))}
                   </select>
-                </div>
+                </div> */}
 
                 <div>
                   <label className={labelClass}>Vehicle Class</label>

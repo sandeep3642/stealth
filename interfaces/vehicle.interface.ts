@@ -80,5 +80,5 @@ export interface VehicleType {
 
 export interface VehicleBrand {
   id: number;
-  value: string;
+  name: string;
 }

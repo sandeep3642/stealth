@@ -9,8 +9,17 @@ import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 import { Truck, ShieldCheck, AlertCircle, Activity } from "lucide-react";
-import { VehicleItem, VehicleSummary } from "@/interfaces/vehicle.interface";
-import { getVehicles } from "@/services/vehicleService";
+import {
+  VehicleBrand,
+  VehicleItem,
+  VehicleSummary,
+  VehicleType,
+} from "@/interfaces/vehicle.interface";
+import {
+  getVehicleBrands,
+  getVehicles,
+  getVehicleType,
+} from "@/services/vehicleService";
 
 async function deleteVehicle(
   vehicleId: number,
@@ -39,7 +48,8 @@ const Vehicles: React.FC = () => {
   const [vehicleToDelete, setVehicleToDelete] = useState<VehicleItem | null>(
     null,
   );
-
+  const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
+  const [vehicleBrands, setVehicleBrands] = useState<VehicleBrand[]>([]);
   const columns = [
     {
       key: "registrationNumber",
@@ -56,37 +66,37 @@ const Vehicles: React.FC = () => {
       label: "VIN / Chassis",
       visible: true,
     },
-    {
-      key: "vehicleBrand",
-      label: "Type & Brand",
-      visible: true,
-      render: (_: string, row: VehicleItem) => (
-        <span>
-          {[row.vehicleType, row.vehicleBrand].filter(Boolean).join(" · ")}
-        </span>
-      ),
-    },
-    {
-      key: "ownershipBasis",
-      label: "Ownership",
-      visible: true,
-      render: (value: string, row: VehicleItem) => (
-        <div>
-          <span
-            className={`text-xs font-semibold px-2 py-0.5 rounded ${
-              value === "OWNED"
-                ? "bg-blue-100 text-blue-700"
-                : "bg-yellow-100 text-yellow-700"
-            }`}
-          >
-            {value}
-          </span>
-          {row.lessorName && (
-            <p className="text-xs text-gray-500 mt-0.5">{row.lessorName}</p>
-          )}
-        </div>
-      ),
-    },
+    // {
+    //   key: "vehicleBrand",
+    //   label: "Type & Brand",
+    //   visible: true,
+    //   render: (_: string, row: VehicleItem) => (
+    //     <span>
+    //       {[row.vehicleType, row.vehicleBrand].filter(Boolean).join(" · ")}
+    //     </span>
+    //   ),
+    // },
+    // {
+    //   key: "ownershipBasis",
+    //   label: "Ownership",
+    //   visible: true,
+    //   render: (value: string, row: VehicleItem) => (
+    //     <div>
+    //       <span
+    //         className={`text-xs font-semibold px-2 py-0.5 rounded ${
+    //           value === "OWNED"
+    //             ? "bg-blue-100 text-blue-700"
+    //             : "bg-yellow-100 text-yellow-700"
+    //         }`}
+    //       >
+    //         {value}
+    //       </span>
+    //       {row.lessorName && (
+    //         <p className="text-xs text-gray-500 mt-0.5">{row.lessorName}</p>
+    //       )}
+    //     </div>
+    //   ),
+    // },
     {
       key: "status",
       label: "Status",
@@ -101,17 +111,6 @@ const Vehicles: React.FC = () => {
     },
   ];
 
-  const getVehicleType = (typeId: number) => {
-    const types: Record<number, string> = {
-      1: "Sedan",
-      2: "SUV",
-      3: "Truck",
-      4: "Hatchback",
-      5: "Mini Truck",
-    };
-    return types[typeId] || "Unknown";
-  };
-
   const getVehicleBrand = (brandId: number) => {
     const brands: Record<number, string> = {
       1: "Tata",
@@ -122,26 +121,53 @@ const Vehicles: React.FC = () => {
     return brands[brandId] || "Unknown";
   };
 
+  const getVehicleTypes = (typeId: number) => {
+    const types: Record<number, string> = {
+      1: "Sedan",
+      2: "SUV",
+      3: "Truck",
+      4: "Hatchback",
+      5: "Mini Truck",
+    };
+    return types[typeId] || "Unknown";
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      const [typeRes, brandRes] = await Promise.all([
+        getVehicleType(),
+        getVehicleBrands(),
+      ]);
+
+      if (typeRes) setVehicleTypes(typeRes);
+      if (brandRes) setVehicleBrands(brandRes);
+    };
+    init();
+  }, []);
+
   const fetchVehicles = async () => {
     try {
       const response = await getVehicles(pageNo, pageSize);
-      console.log("response", response);
 
       if (response && response.items) {
-        // Transform API data to match table schema
-        const mappedData = response.items.map((v: any) => ({
-          vehicleId: v.id,
-          registrationNumber: v.vehicleNumber,
-          vinNumber: v.vinOrChassisNumber,
-          vehicleType: getVehicleType(v.vehicleTypeId), // helper function
-          vehicleBrand: getVehicleBrand(v.vehicleBrandOemId), // helper function
-          ownershipBasis: v.ownershipType.toUpperCase(),
-          lessorName: v.leasedVendorId ? `Vendor #${v.leasedVendorId}` : null,
-          status: v.status,
-          updatedAt: v.registrationDate, // using registration date as last update for now
-        }));
+        const mappedData = response.items.map((v: any) => {
+          const type = vehicleTypes.find((t) => t.id === v.vehicleTypeId);
+          const brand = vehicleBrands.find((b) => b.id === v.vehicleBrandOemId);
 
-        // Compute simple summary
+          return {
+            vehicleId: v.id,
+            registrationNumber: v.vehicleNumber,
+            vinNumber: v.vinOrChassisNumber,
+            vehicleType: type ? type.vehicleTypeName : "Unknown",
+            vehicleBrand: brand ? brand.name : "Unknown",
+            ownershipBasis: v.ownershipType?.toUpperCase() || "UNKNOWN",
+            lessorName: v.leasedVendorId ? `Vendor #${v.leasedVendorId}` : null,
+            status: v.status,
+            updatedAt: v.registrationDate || null,
+          };
+        });
+
+        // Summary
         const totalFleet = response.items.length;
         const inService = response.items.filter(
           (v: any) => v.status === "Active",
@@ -168,7 +194,7 @@ const Vehicles: React.FC = () => {
 
   useEffect(() => {
     fetchVehicles();
-  }, [pageNo, pageSize]);
+  }, [pageNo, pageSize, vehicleTypes, vehicleBrands]);
 
   const handleEdit = (row: VehicleItem) => {
     router.push(`/vehicles/${row.vehicleId}`);
@@ -258,7 +284,7 @@ const Vehicles: React.FC = () => {
           onDelete={handleDelete}
           showActions={true}
           searchPlaceholder="Search vehicles..."
-          rowsPerPageOptions={[5,10, 25, 50, 100]}
+          rowsPerPageOptions={[5, 10, 25, 50, 100]}
           defaultRowsPerPage={10}
           pageNo={pageNo}
           pageSize={pageSize}
