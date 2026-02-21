@@ -45,7 +45,8 @@ import {
 } from "@/services/commonServie";
 import { usePathname } from "next/navigation";
 import { applyWhiteLabelColors } from "@/utils/themeUtils";
-
+// Add these imports at the top
+import { Truck, Smartphone, UserCheck, Link2, ShieldCheck } from "lucide-react";
 const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -157,6 +158,8 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     } else {
       setFilteredSections([]);
     }
+
+    //  setFilteredSections(sidebarSections);
   }, [userRights]);
 
   // Collapse all expanded parent menus whenever the sidebar closes
@@ -227,6 +230,65 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           icon: FileText,
           active: false,
           path: "/report",
+        },
+      ],
+    },
+    {
+      title: "FLEET OPERATIONS",
+      items: [
+        {
+          id: "fleet",
+          label: "Fleet",
+          icon: Truck,
+          active: false,
+          expandable: true,
+          children: [
+            {
+              id: "vehicles",
+              label: "Vehicles",
+              icon: Truck,
+              path: "/vehicles",
+            },
+            {
+              id: "devices",
+              label: "Devices",
+              icon: Smartphone,
+              path: "/devices",
+            },
+            {
+              id: "drivers",
+              label: "Drivers",
+              icon: Users,
+              path: "/driver",
+            },
+          ],
+        },
+        {
+          id: "assignments",
+          label: "Assignments",
+          icon: Link2,
+          active: false,
+          expandable: true,
+          children: [
+            {
+              id: "driver-assignments",
+              label: "Driver Assignments",
+              icon: UserCheck,
+              path: "/fleet/assignments/drivers",
+            },
+            {
+              id: "vehicle-access",
+              label: "Vehicle Access",
+              icon: ShieldCheck,
+              path: "/fleet/assignments/vehicle-access",
+            },
+            {
+              id: "device-assignments",
+              label: "Device Assignments",
+              icon: Link2,
+              path: "/devicemap",
+            },
+          ],
         },
       ],
     },
@@ -338,7 +400,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         },
       ],
     },
-
     {
       title: "SYSTEM SETUP",
       items: [
