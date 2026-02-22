@@ -83,7 +83,10 @@ function toBoolean(value: unknown): boolean {
   return false;
 }
 
-function pick<T = unknown>(source: Record<string, any>, ...keys: string[]): T | undefined {
+function pick<T = unknown>(
+  source: Record<string, any>,
+  ...keys: string[]
+): T | undefined {
   for (const key of keys) {
     if (source[key] !== undefined && source[key] !== null) {
       return source[key] as T;
@@ -140,7 +143,8 @@ function normalizeVehicleData(raw: unknown): VehicleData | null {
     ),
     TtsFault: toBoolean(pick(obj, "TtsFault", "ttsFault")),
     Rollover: toBoolean(pick(obj, "Rollover", "rollover")),
-    ReceivedAt: (pick(obj, "ReceivedAt", "receivedAt") as string | null) ?? null,
+    ReceivedAt:
+      (pick(obj, "ReceivedAt", "receivedAt") as string | null) ?? null,
     Id: String(pick(obj, "Id", "id") ?? ""),
     VehicleNo: String(pick(obj, "VehicleNo", "vehicleNo") ?? ""),
   };
@@ -166,10 +170,25 @@ export default function LiveTracking() {
 
     const fetchVehicleData = async () => {
       try {
-        const proxyBase =
-          process.env.NEXT_PUBLIC_VTS_API_PROXY_BASE_URL || "/vts-proxy";
+        const proxyBase = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+        // 🔑 Get token from localStorage
+        const token = localStorage.getItem("authToken");
+
+        if (!token) {
+          throw new Error("No authentication token found");
+        }
+
+        // 🔥 Include Authorization header
         const response = await fetch(
-          `${proxyBase}/api/redis/get?key=dashboard::${vehicleId}`,
+          `${proxyBase}api/redis/get?key=dashboard::${vehicleId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          },
         );
 
         if (!response.ok) {
@@ -177,12 +196,15 @@ export default function LiveTracking() {
         }
 
         const data = await response.json();
+
+        // 🧩 Handle redis data format
         const rawPayload =
           typeof data?.value === "string"
             ? JSON.parse(data.value)
             : data?.data && typeof data.data === "object"
               ? data.data
               : data;
+
         const parsedValue = normalizeVehicleData(rawPayload);
 
         console.log("parsedValue", parsedValue);
@@ -194,7 +216,7 @@ export default function LiveTracking() {
         if (!cancelled) {
           setVehicleData(parsedValue);
 
-          // Add to position history
+          // 🗺️ Update position history
           if (
             Number.isFinite(parsedValue.Latitude) &&
             Number.isFinite(parsedValue.Longitude)
@@ -308,7 +330,10 @@ export default function LiveTracking() {
   return (
     <div className="relative h-screen w-full overflow-hidden bg-gray-100 sm:p-2 md:p-2">
       {/* Desktop Layout */}
-      <div className="hidden h-full gap-3 lg:flex" style={{ height: "calc(100vh - 120px)" }}>
+      <div
+        className="hidden h-full gap-3 lg:flex"
+        style={{ height: "calc(100vh - 120px)" }}
+      >
         {/* Left Panel - Desktop */}
         <aside className="flex w-full max-w-sm flex-col overflow-y-auto rounded-lg bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 lg:w-[360px]">
           {/* Header */}
@@ -789,13 +814,17 @@ export default function LiveTracking() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                      {loading ? "Loading..." : vehicleData?.VehicleNo || vehicleId}
+                      {loading
+                        ? "Loading..."
+                        : vehicleData?.VehicleNo || vehicleId}
                     </div>
                     <div className="mt-0.5 flex items-baseline gap-2">
                       <span className="text-2xl font-black text-emerald-400">
                         {loading ? "--" : Math.round(vehicleData?.Speed || 0)}
                       </span>
-                      <span className="text-xs font-bold text-gray-500">KM/H</span>
+                      <span className="text-xs font-bold text-gray-500">
+                        KM/H
+                      </span>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -873,7 +902,10 @@ export default function LiveTracking() {
           </div>
 
           {/* Expanded Content */}
-          <div className="overflow-y-auto" style={{ maxHeight: "calc(80vh - 100px)" }}>
+          <div
+            className="overflow-y-auto"
+            style={{ maxHeight: "calc(80vh - 100px)" }}
+          >
             {/* Stats Grid */}
             <div className="grid grid-cols-2 gap-3 border-b border-gray-700/50 p-4">
               <div className="rounded-lg bg-gray-800/50 p-3">
@@ -1059,7 +1091,9 @@ export default function LiveTracking() {
                   </div>
                   <div>
                     <div className="text-sm font-bold text-white">
-                      {loading ? "Loading..." : vehicleData?.DeviceNo || "Unknown"}
+                      {loading
+                        ? "Loading..."
+                        : vehicleData?.DeviceNo || "Unknown"}
                     </div>
                     <div className="text-[10px] text-gray-400">
                       IMEI: {vehicleData?.Imei || "N/A"}
@@ -1069,7 +1103,9 @@ export default function LiveTracking() {
                 <div className="flex items-center justify-between border-t border-gray-700/50 pt-2">
                   <div className="text-[10px] text-gray-400">
                     Last Update:{" "}
-                    {vehicleData?.GpsDate ? formatDate(vehicleData.GpsDate) : "N/A"}
+                    {vehicleData?.GpsDate
+                      ? formatDate(vehicleData.GpsDate)
+                      : "N/A"}
                   </div>
                   <button className="rounded-full bg-emerald-500/10 p-1.5 text-emerald-400 transition hover:bg-emerald-500/20">
                     <Phone className="h-3.5 w-3.5" />

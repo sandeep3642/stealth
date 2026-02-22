@@ -145,52 +145,55 @@ const Vehicles: React.FC = () => {
     init();
   }, []);
 
+
   const fetchVehicles = async () => {
-    try {
-      const response = await getVehicles(pageNo, pageSize);
+  try {
+    const response = await getVehicles(pageNo, pageSize);
+    console.log("response", response);
 
-      if (response && response.items) {
-        const mappedData = response.items.map((v: any) => {
-          const type = vehicleTypes.find((t) => t.id === v.vehicleTypeId);
-          const brand = vehicleBrands.find((b) => b.id === v.vehicleBrandOemId);
+    const vehiclesData = response.data?.data?.vehicles;
+    const summaryData = response.data?.data?.summary;
 
-          return {
-            vehicleId: v.id,
-            registrationNumber: v.vehicleNumber,
-            vinNumber: v.vinOrChassisNumber,
-            vehicleType: type ? type.vehicleTypeName : "Unknown",
-            vehicleBrand: brand ? brand.name : "Unknown",
-            ownershipBasis: v.ownershipType?.toUpperCase() || "UNKNOWN",
-            lessorName: v.leasedVendorId ? `Vendor #${v.leasedVendorId}` : null,
-            status: v.status,
-            updatedAt: v.registrationDate || null,
-          };
-        });
+    if (vehiclesData?.items?.length) {
+      const mappedData = vehiclesData.items.map((v: any) => {
+        const type = vehicleTypes.find((t) => t.id === v.vehicleTypeId);
+        const brand = vehicleBrands.find((b) => b.id === v.vehicleBrandOemId);
 
-        // Summary
-        const totalFleet = response.items.length;
-        const inService = response.items.filter(
-          (v: any) => v.status === "Active",
-        ).length;
-        const offService = totalFleet - inService;
+        return {
+          vehicleId: v.id,
+          registrationNumber: v.vehicleNumber,
+          vinNumber: v.vinOrChassisNumber,
+          vehicleType: type
+            ? type.vehicleTypeName
+            : getVehicleTypes(v.vehicleTypeId),
+          vehicleBrand: brand
+            ? brand.name
+            : getVehicleBrand(v.vehicleBrandOemId),
+          ownershipBasis: v.ownershipType?.toUpperCase() || "UNKNOWN",
+          lessorName: v.leasedVendorId ? `Vendor #${v.leasedVendorId}` : null,
+          status: v.status,
+          updatedAt: v.updatedAt || v.createdAt || null,
+        };
+      });
 
-        setSummaryData({
-          totalFleetSize: totalFleet,
-          inService,
-          offRoadOrOutOfService: offService,
-          activeAccounts: inService,
-        });
+      // ✅ Use summary from response.data.data.summary
+      setSummaryData({
+        totalFleetSize: summaryData.totalFleetSize,
+        inService: summaryData.inService,
+        offRoadOrOutOfService: summaryData.outOfService,
+        activeAccounts: summaryData.inService,
+      });
 
-        setData(mappedData);
-        setTotalRecords(response.totalRecords || totalFleet);
-      } else {
-        toast.error("Failed to fetch vehicles");
-      }
-    } catch (error) {
-      console.error("Error fetching vehicles:", error);
-      toast.error("An error occurred while loading vehicles");
+      setData(mappedData);
+      setTotalRecords(vehiclesData.totalRecords);
+    } else {
+      toast.error("Failed to fetch vehicles");
     }
-  };
+  } catch (error) {
+    console.error("Error fetching vehicles:", error);
+    toast.error("An error occurred while loading vehicles");
+  }
+};
 
   useEffect(() => {
     fetchVehicles();

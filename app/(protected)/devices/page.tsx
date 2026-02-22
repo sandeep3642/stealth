@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import CommonTable from "@/components/CommonTable";
 import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
@@ -17,6 +17,7 @@ import {
   Camera,
   Cpu,
 } from "lucide-react";
+import { getdevices, deleteDevice } from "@/services/deviceService";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface Device {
@@ -218,6 +219,26 @@ const DeviceRegistry: React.FC = () => {
       setIsDeleteDialogOpen(false);
     }
   };
+
+  const fetchDevices = async () => {
+    try {
+      const response = await getdevices(pageNo, pageSize);
+      console.log("response", response);
+
+      if (response && response.items) {
+        // Summary
+      } else {
+        toast.error("Failed to fetch vehicles");
+      }
+    } catch (error) {
+      console.error("Error fetching vehicles:", error);
+      toast.error("An error occurred while loading vehicles");
+    }
+  };
+
+  useEffect(() => {
+    fetchDevices();
+  }, [pageNo, pageSize]);
 
   return (
     <div className={`${isDark ? "dark" : ""} mt-10`}>
