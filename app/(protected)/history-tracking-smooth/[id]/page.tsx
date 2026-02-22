@@ -212,8 +212,7 @@ export default function HistoryTracking() {
 
     setIsLoading(true);
     setError("");
-    setShowDatePicker(false); // Close date picker after fetching
-
+    setShowDatePicker(false);
     try {
       const response = await fetch(`${API_BASE_URL}history/history-tracking`, {
         method: "POST",

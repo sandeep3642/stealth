@@ -28,7 +28,7 @@ const POLL_INTERVAL = 5000; // 5 seconds
 interface Position {
   lat: number;
   lng: number;
-  timestamp: string;
+  timestamp: string | number[];
 }
 
 interface VehicleData {
@@ -50,7 +50,6 @@ interface VehicleData {
   FuelCut: boolean;
   GpsFixed: boolean;
   Collision: boolean;
-  GpsDate: string;
   Sos: boolean;
   OverSpeed: boolean;
   Fatigue: boolean;
@@ -63,9 +62,10 @@ interface VehicleData {
   PowerDisplayFault: boolean;
   TtsFault: boolean;
   Rollover: boolean;
-  ReceivedAt: string | null;
   Id: string;
   VehicleNo: string;
+  GpsDate: string | number[]; // was: string
+  ReceivedAt: string | number[] | null; // was: string | null
 }
 
 function toNumber(value: unknown): number {
@@ -122,7 +122,10 @@ function normalizeVehicleData(raw: unknown): VehicleData | null {
     FuelCut: toBoolean(pick(obj, "FuelCut", "fuelCut")),
     GpsFixed: toBoolean(pick(obj, "GpsFixed", "gpsFixed")),
     Collision: toBoolean(pick(obj, "Collision", "collision")),
-    GpsDate: String(pick(obj, "GpsDate", "gpsDate") ?? ""),
+    GpsDate: (pick(obj, "GpsDate", "gpsDate") as string | number[]) ?? "",
+    ReceivedAt:
+      (pick(obj, "ReceivedAt", "receivedAt") as string | number[] | null) ??
+      null,
     Sos: toBoolean(pick(obj, "Sos", "sos")),
     OverSpeed: toBoolean(pick(obj, "OverSpeed", "overSpeed")),
     Fatigue: toBoolean(pick(obj, "Fatigue", "fatigue")),
@@ -143,8 +146,7 @@ function normalizeVehicleData(raw: unknown): VehicleData | null {
     ),
     TtsFault: toBoolean(pick(obj, "TtsFault", "ttsFault")),
     Rollover: toBoolean(pick(obj, "Rollover", "rollover")),
-    ReceivedAt:
-      (pick(obj, "ReceivedAt", "receivedAt") as string | null) ?? null,
+
     Id: String(pick(obj, "Id", "id") ?? ""),
     VehicleNo: String(pick(obj, "VehicleNo", "vehicleNo") ?? ""),
   };
@@ -299,8 +301,21 @@ export default function LiveTracking() {
     lng: pos.lng,
   }));
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | number[] | null | undefined) => {
     try {
+      if (!dateStr) return "N/A";
+
+      // Handle array format: [year, month, day, hours, minutes, seconds, milliseconds?]
+      if (Array.isArray(dateStr)) {
+        const [year, month, day, hours, minutes, seconds] = dateStr;
+        const date = new Date(year, month - 1, day, hours, minutes, seconds);
+        return date.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      // Handle string format (existing)
       return new Date(dateStr).toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
