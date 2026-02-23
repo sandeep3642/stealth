@@ -1,8 +1,7 @@
 import axios from "axios";
 import api, { vtsApi } from "./apiService";
 
-const LIVE_TRACKING_BASE_URL =
-  "/live-tracking-proxy";
+const LIVE_TRACKING_BASE_URL = "/live-tracking-proxy";
 
 const liveTrackingApi = axios.create({
   baseURL: LIVE_TRACKING_BASE_URL,

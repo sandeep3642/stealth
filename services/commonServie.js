@@ -1,7 +1,7 @@
 import api from "./apiService";
 
 export const getAllAccounts = async () => {
-  const res = await api.get(`/api/common/dropdowns/accounts`);
+  const res = await api.get(`/api/common/dropdowns/accounts?limit=0`);
   return res.data;
 };
 
@@ -116,13 +116,25 @@ export const getFormModulesDropdown = async () => {
 };
 
 export const getVehicleDropdown = async (accountId) => {
-  const query = accountId ? `?accountId=${accountId}` : "";
-  const res = await api.get(`/api/common/dropdowns/vehicles${query}`);
+  const endpoint = accountId
+    ? `/api/common/dropdowns/vehicles/${accountId}`
+    : `/api/common/dropdowns/vehicles`;
+  const res = await api.get(endpoint);
+  return res.data;
+};
+
+export const getVehicleBrandOemDropdown = async () => {
+  const res = await api.get(`/api/Lookup/vehicle-brand-oems`);
   return res.data;
 };
 
 export const getDeviceTypeDropdown = async () => {
   const res = await api.get(`/api/common/dropdowns/device-types`);
+  return res.data;
+};
+
+export const getLookupDeviceTypeDropdown = async () => {
+  const res = await api.get(`/api/Lookup/device-types`);
   return res.data;
 };
 
@@ -132,7 +144,28 @@ export const getHardwareDropdown = async (deviceTypeId) => {
   return res.data;
 };
 
+export const getDeviceDropdown = async (accountId) => {
+  const endpoint = accountId
+    ? `/api/common/dropdowns/devices/${accountId}`
+    : `/api/common/dropdowns/devices`;
+  const res = await api.get(endpoint);
+  return res.data;
+};
+
+export const getOemManufacturersDropdown = async () => {
+  const res = await api.get(`/api/Lookup/oem-manufacturers`);
+  return res.data;
+};
+
 export const getSimDropdown = async () => {
   const res = await api.get(`/api/common/dropdowns/sims`);
+  return res.data;
+};
+
+export const getSimDropdownByAccount = async (accountId) => {
+  const endpoint = accountId
+    ? `/api/common/dropdowns/sims/${accountId}`
+    : `/api/common/dropdowns/sims`;
+  const res = await api.get(endpoint);
   return res.data;
 };

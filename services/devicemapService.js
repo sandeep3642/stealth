@@ -3,12 +3,23 @@ import api from "./apiService";
 export const getDeviceMaps = async ({
   page = 1,
   pageSize = 10,
-  accountId = 1,
+  accountId,
   search = "",
 } = {}) => {
-  const res = await api.get(
-    `/api/vehicle-device-maps/list?page=${page}&pageSize=${pageSize}&accountId=${accountId}&search=${encodeURIComponent(search)}`,
-  );
+  const query = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+
+  if (accountId !== undefined && accountId !== null && Number(accountId) > 0) {
+    query.set("accountId", String(accountId));
+  }
+
+  if (typeof search === "string" && search.trim()) {
+    query.set("search", search.trim());
+  }
+
+  const res = await api.get(`/api/vehicle-device-maps/list?${query.toString()}`);
   return res.data;
 };
 
@@ -16,6 +27,11 @@ export const getDeviceMapById = async (id) => {
   const res = await api.get(`/api/vehicle-device-maps/${id}`);
   return res.data;
 };
+
+export const getAllVehicleDeviceMaps = async (page = 1, pageSize = 10) =>
+  getDeviceMaps({ page, pageSize });
+
+export const getVehicleDeviceMapById = async (id) => getDeviceMapById(id);
 
 export const saveDeviceMap = async (payload) => {
   try {

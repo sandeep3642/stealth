@@ -11,10 +11,10 @@ import {
   updateDeviceMap,
 } from "@/services/devicemapService";
 import {
+  getDeviceDropdown,
   getAllAccounts,
   getDeviceTypeDropdown,
-  getHardwareDropdown,
-  getSimDropdown,
+  getSimDropdownByAccount,
   getVehicleDropdown,
 } from "@/services/commonServie";
 import { toast } from "react-toastify";
@@ -40,6 +40,28 @@ interface DeviceMapFormData {
   createdAt: string;
   updatedBy: number;
   updatedAt: string;
+}
+
+interface CreateDeviceMapPayload {
+  accountId: number;
+  vehicleId: number;
+  deviceId: number;
+  deviceTypeId: number;
+  simId: number;
+  simNumber: string;
+  remarks: string;
+  createdBy: number;
+}
+
+interface UpdateDeviceMapPayload {
+  vehicleId: number;
+  deviceId: number;
+  deviceTypeId: number;
+  simId: number;
+  simNumber: string;
+  remarks: string;
+  isActive: boolean;
+  updatedBy: number;
 }
 
 const AddEditDeviceMap: React.FC = () => {
@@ -107,26 +129,31 @@ const AddEditDeviceMap: React.FC = () => {
     }
   };
 
-  const fetchDropdowns = async (accountId: number, deviceTypeId?: number) => {
+  const fetchDropdowns = async (accountId: number) => {
     try {
-      const [accountsRes, vehiclesRes, typeRes, simRes] = await Promise.all([
+      const [accountsRes, vehiclesRes, typeRes, simRes, hwRes] =
+        await Promise.allSettled([
         getAllAccounts(),
         getVehicleDropdown(accountId),
         getDeviceTypeDropdown(),
-        getSimDropdown(),
+        getSimDropdownByAccount(accountId),
+        getDeviceDropdown(accountId),
       ]);
 
-      setAccounts(toOptions(accountsRes));
-      setVehicles(toOptions(vehiclesRes));
-      setDeviceTypes(toOptions(typeRes));
-      setSims(toOptions(simRes));
-
-      if (deviceTypeId && deviceTypeId > 0) {
-        const hwRes = await getHardwareDropdown(deviceTypeId);
-        setHardware(toOptions(hwRes));
-      } else {
-        const hwRes = await getHardwareDropdown();
-        setHardware(toOptions(hwRes));
+      if (accountsRes.status === "fulfilled") {
+        setAccounts(toOptions(accountsRes.value));
+      }
+      if (vehiclesRes.status === "fulfilled") {
+        setVehicles(toOptions(vehiclesRes.value));
+      }
+      if (typeRes.status === "fulfilled") {
+        setDeviceTypes(toOptions(typeRes.value));
+      }
+      if (simRes.status === "fulfilled") {
+        setSims(toOptions(simRes.value));
+      }
+      if (hwRes.status === "fulfilled") {
+        setHardware(toOptions(hwRes.value));
       }
     } catch (error) {
       console.error("Error fetching dropdowns:", error);
@@ -149,14 +176,20 @@ const AddEditDeviceMap: React.FC = () => {
       setFormData({
         id: Number(data.id || 0),
         accountId: Number(data.accountId || 0),
-        fk_VehicleId: Number(data.fk_VehicleId || 0),
-        fk_devicetypeid: Number(data.fk_devicetypeid || 0),
-        fk_DeviceId: Number(data.fk_DeviceId || 0),
-        fk_simid: Number(data.fk_simid || 0),
-        simnno: String(data.simnno || ""),
+        fk_VehicleId: Number(data.fk_VehicleId ?? data.vehicleId ?? 0),
+        fk_devicetypeid: Number(data.fk_devicetypeid ?? data.deviceTypeId ?? 0),
+        fk_DeviceId: Number(data.fk_DeviceId ?? data.deviceId ?? 0),
+        fk_simid: Number(data.fk_simid ?? data.simId ?? 0),
+        simnno: String(data.simnno ?? data.simNumber ?? ""),
         remarks: String(data.remarks || ""),
-        isActive: Number(data.isActive ?? 1),
-        isDeleted: Number(data.isDeleted ?? 0),
+        isActive:
+          typeof data.isActive === "boolean"
+            ? Number(data.isActive)
+            : Number(data.isActive ?? 1),
+        isDeleted:
+          typeof data.isDeleted === "boolean"
+            ? Number(data.isDeleted)
+            : Number(data.isDeleted ?? 0),
         installationDate: String(
           data.installationDate || new Date().toISOString(),
         ),
@@ -166,10 +199,7 @@ const AddEditDeviceMap: React.FC = () => {
         updatedAt: String(data.updatedAt || new Date().toISOString()),
       });
 
-      await fetchDropdowns(
-        Number(data.accountId || 0),
-        Number(data.fk_devicetypeid || 0),
-      );
+      await fetchDropdowns(Number(data.accountId || 0));
     } catch (error) {
       console.error("Error fetching device map by id:", error);
       toast.error("Failed to fetch device map details");
@@ -220,15 +250,33 @@ const AddEditDeviceMap: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!formData.accountId) return;
-    getVehicleDropdown(formData.accountId)
-      .then((res) => setVehicles(toOptions(res)))
-      .catch(() => {});
+    if (!formData.accountId) {
+      setVehicles([]);
+      setHardware([]);
+      setSims([]);
+      return;
+    }
+
+    Promise.allSettled([
+      getVehicleDropdown(formData.accountId),
+      getDeviceDropdown(formData.accountId),
+      getSimDropdownByAccount(formData.accountId),
+    ]).then(([vehiclesRes, devicesRes, simsRes]) => {
+      if (vehiclesRes.status === "fulfilled") {
+        setVehicles(toOptions(vehiclesRes.value));
+      }
+      if (devicesRes.status === "fulfilled") {
+        setHardware(toOptions(devicesRes.value));
+      }
+      if (simsRes.status === "fulfilled") {
+        setSims(toOptions(simsRes.value));
+      }
+    });
   }, [formData.accountId]);
 
   useEffect(() => {
-    if (!formData.fk_devicetypeid) return;
-    getHardwareDropdown(formData.fk_devicetypeid)
+    if (!formData.accountId) return;
+    getDeviceDropdown(formData.accountId)
       .then((res) => setHardware(toOptions(res)))
       .catch(() => {});
   }, [formData.fk_devicetypeid]);
@@ -241,15 +289,26 @@ const AddEditDeviceMap: React.FC = () => {
     if (!formData.fk_DeviceId) return toast.error("Please select hardware");
 
     const { userId } = getUserData();
-    const nowIso = new Date().toISOString();
-    const payload: DeviceMapFormData = {
-      ...formData,
-      id: isEditMode ? deviceMapId : 0,
-      updatedBy: userId,
-      updatedAt: nowIso,
-      createdBy: isEditMode ? formData.createdBy : userId,
-      createdAt: isEditMode ? formData.createdAt : nowIso,
-      installationDate: formData.installationDate || nowIso,
+    const createPayload: CreateDeviceMapPayload = {
+      accountId: Number(formData.accountId),
+      vehicleId: Number(formData.fk_VehicleId),
+      deviceId: Number(formData.fk_DeviceId),
+      deviceTypeId: Number(formData.fk_devicetypeid),
+      simId: Number(formData.fk_simid),
+      simNumber: String(formData.simnno || ""),
+      remarks: String(formData.remarks || ""),
+      createdBy: Number(userId || 0),
+    };
+
+    const updatePayload: UpdateDeviceMapPayload = {
+      vehicleId: Number(formData.fk_VehicleId),
+      deviceId: Number(formData.fk_DeviceId),
+      deviceTypeId: Number(formData.fk_devicetypeid),
+      simId: Number(formData.fk_simid),
+      simNumber: String(formData.simnno || ""),
+      remarks: String(formData.remarks || ""),
+      isActive: Boolean(formData.isActive),
+      updatedBy: Number(userId || 0),
     };
 
     try {
@@ -257,9 +316,9 @@ const AddEditDeviceMap: React.FC = () => {
       let response;
 
       if (isEditMode) {
-        response = await updateDeviceMap(deviceMapId, payload);
+        response = await updateDeviceMap(deviceMapId, updatePayload);
       } else {
-        response = await saveDeviceMap(payload);
+        response = await saveDeviceMap(createPayload);
       }
 
       if (response?.success || response?.statusCode === 200) {

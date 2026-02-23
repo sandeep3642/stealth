@@ -56,6 +56,7 @@ const DeviceMap: React.FC = () => {
   const [rows, setRows] = useState<DeviceMapRow[]>([]);
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<number>(1);
+  const [summaryCounts, setSummaryCounts] = useState(STATIC_COUNTS);
 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<DeviceMapRow | null>(null);
@@ -105,6 +106,10 @@ const DeviceMap: React.FC = () => {
   });
 
   const getListData = (response: any): any[] => {
+    if (Array.isArray(response?.data?.assignments?.items)) {
+      return response.data.assignments.items;
+    }
+
     if (Array.isArray(response?.data?.pageData?.items)) {
       return response.data.pageData.items;
     }
@@ -122,10 +127,25 @@ const DeviceMap: React.FC = () => {
 
   const getTotalRecords = (response: any, fallbackLength: number): number =>
     Number(
+      response?.data?.assignments?.totalRecords ??
       response?.data?.pageData?.totalRecords ??
         response?.data?.totalRecords ??
         fallbackLength,
     );
+
+  const getSummaryCounts = (response: any) => {
+    const summary = response?.data?.summary;
+    if (summary && typeof summary === "object") {
+      return {
+        totalAssignments: Number(
+          summary.totalAssignments ?? STATIC_COUNTS.totalAssignments,
+        ),
+        active: Number(summary.active ?? STATIC_COUNTS.active),
+        withIssues: Number(summary.withIssues ?? STATIC_COUNTS.withIssues),
+      };
+    }
+    return STATIC_COUNTS;
+  };
 
   const getAccountIdFromStorage = (): number => {
     if (typeof window === "undefined") return 1;
@@ -164,9 +184,9 @@ const DeviceMap: React.FC = () => {
       });
 
       const items = getListData(response);
-      console.log(items);
       setRows(items.map(mapRow));
       setTotalRecords(getTotalRecords(response, items.length));
+      setSummaryCounts(getSummaryCounts(response));
     } catch (error) {
       console.error("Error fetching device maps:", error);
       toast.error("Failed to fetch device mappings");
@@ -279,7 +299,7 @@ const DeviceMap: React.FC = () => {
           <MetricCard
             icon={Link2}
             label="TOTAL ASSIGNMENTS"
-            value={STATIC_COUNTS.totalAssignments}
+            value={summaryCounts.totalAssignments}
             iconBgColor="bg-purple-100 dark:bg-purple-900/30"
             iconColor="text-purple-600 dark:text-purple-400"
             isDark={isDark}
@@ -287,7 +307,7 @@ const DeviceMap: React.FC = () => {
           <MetricCard
             icon={ShieldCheck}
             label="ACTIVE"
-            value={STATIC_COUNTS.active}
+            value={summaryCounts.active}
             iconBgColor="bg-green-100 dark:bg-green-900/30"
             iconColor="text-green-600 dark:text-green-400"
             isDark={isDark}
@@ -295,7 +315,7 @@ const DeviceMap: React.FC = () => {
           <MetricCard
             icon={AlertCircle}
             label="WITH ISSUES"
-            value={STATIC_COUNTS.withIssues}
+            value={summaryCounts.withIssues}
             iconBgColor="bg-orange-100 dark:bg-orange-900/30"
             iconColor="text-orange-600 dark:text-orange-400"
             isDark={isDark}
