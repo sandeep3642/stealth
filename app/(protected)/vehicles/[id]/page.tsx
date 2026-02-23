@@ -31,8 +31,6 @@ import {
 } from "@/services/vehicleService";
 import { getAllAccounts } from "@/services/commonServie";
 
-// ── Extended FormData to include all API fields ──────────────────────────────
-
 const ProvisionVehicle: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
@@ -98,21 +96,22 @@ const ProvisionVehicle: React.FC = () => {
         const [accRes, typeRes, brandRes, leasedVendorRes] = await Promise.all([
           getAllAccounts(),
           getVehicleType(),
-          getVehicleBrands(),
-          getLeasedVendors(),
+          // getVehicleBrands(),
+          // getLeasedVendors(),
         ]);
-       
+
         if (accRes.statusCode === 200) setAccounts(accRes.data);
         if (typeRes) setVehicleTypes(typeRes);
-        if (brandRes) setVehicleBrands(brandRes);
-        if (leasedVendorRes) {
-          setLeasedVendors(leasedVendorRes);
-        }
+        // if (brandRes) setVehicleBrands(brandRes);
+        // if (leasedVendorRes) {
+        //   setLeasedVendors(leasedVendorRes);
+        // }
 
         if (isEditMode) {
           const res = await getVehicleById(id);
-          if (res && res.id) {
-            const d = res;
+          console.log("resresres", res);
+          if (res && res.statusCode === 200) {
+            const d = res.data;
             setFormData({
               // Identification
               accountId: d.accountId,
@@ -162,7 +161,7 @@ const ProvisionVehicle: React.FC = () => {
 
   // ── Form change handler ────────────────────────────────────────────────
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -187,29 +186,29 @@ const ProvisionVehicle: React.FC = () => {
       setLoading(true);
 
       const payload = {
-        ...(isEditMode && { id: Number(id) }), // ✅ include only if edit mode
+        ...(isEditMode && { id: Number(id) }),
         accountId: Number(formData.accountId),
         vehicleNumber: formData.registrationNumber.trim().toUpperCase(),
         vinOrChassisNumber: formData.vinNumber.trim() || "",
-        registrationDate: formData.registrationDate
-          ? new Date(formData.registrationDate).toISOString()
-          : new Date().toISOString(),
         vehicleTypeId: Number(formData.vehicleTypeId),
-        vehicleBrandOemId: Number(formData.vehicleBrandId) || 0,
-        ownershipType:
-          formData.ownershipBasis.charAt(0).toUpperCase() +
-          formData.ownershipBasis.slice(1).toLowerCase(), // e.g. "LEASED" → "Leased"
-        leasedVendorId:
-          formData.ownershipBasis === "LEASED"
-            ? Number(formData.leasedVendorId) || 0
-            : null,
-        imageFilePath: formData.imageFilePath || "",
-        status: formData.status ? "Active" : "Inactive",
-        vehicleClass: formData.vehicleClass || "",
-        rtoPassing: formData.rtoPassing || "",
-        warranty: formData.warranty || "",
-        insurer: formData.insurer || "",
-        vehicleColor: formData.vehicleColor || "",
+        // registrationDate: formData.registrationDate
+        //   ? new Date(formData.registrationDate).toISOString()
+        //   : new Date().toISOString(),
+        // vehicleBrandOemId: Number(formData.vehicleBrandId) || 0,
+        // ownershipType:
+        //   formData.ownershipBasis.charAt(0).toUpperCase() +
+        //   formData.ownershipBasis.slice(1).toLowerCase(),
+        // leasedVendorId:
+        //   formData.ownershipBasis === "LEASED"
+        //     ? Number(formData.leasedVendorId) || 0
+        //     : null,
+        // imageFilePath: formData.imageFilePath || "",
+        // status: formData.status ? "Active" : "Inactive",
+        // vehicleClass: formData.vehicleClass || "",
+        // rtoPassing: formData.rtoPassing || "",
+        // warranty: formData.warranty || "",
+        // insurer: formData.insurer || "",
+        // vehicleColor: formData.vehicleColor || "",
       };
 
       const response = isEditMode
@@ -344,6 +343,7 @@ const ProvisionVehicle: React.FC = () => {
         {/* Form Card */}
         <Card isDark={isDark}>
           <div className="p-4 sm:p-6 space-y-8">
+
             {/* ── VEHICLE IDENTIFICATION ── */}
             <div>
               <SectionHeader icon={Shield} title="Vehicle Identification" />
@@ -403,7 +403,7 @@ const ProvisionVehicle: React.FC = () => {
                     )}
                 </div>
 
-                <div>
+                {/* <div>
                   <label className={labelClass}>Registration Date</label>
                   <input
                     type="date"
@@ -412,7 +412,7 @@ const ProvisionVehicle: React.FC = () => {
                     onChange={handleChange}
                     className={inputClass()}
                   />
-                </div>
+                </div> */}
               </div>
             </div>
 
@@ -444,23 +444,6 @@ const ProvisionVehicle: React.FC = () => {
                 </div>
 
                 {/* <div>
-                  <label className={labelClass}>Vehicle Brand</label>
-                  <select
-                    name="vehicleBrandId"
-                    value={formData.vehicleBrandId}
-                    onChange={handleChange}
-                    className={inputClass()}
-                  >
-                    <option value="0">Select Brand</option>
-                    {vehicleBrands.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                </div> */}
-
-                <div>
                   <label className={labelClass}>Vehicle Class</label>
                   <input
                     type="text"
@@ -470,9 +453,9 @@ const ProvisionVehicle: React.FC = () => {
                     placeholder="e.g. Hatchback, SUV, HCV"
                     className={inputClass()}
                   />
-                </div>
+                </div> */}
 
-                <div>
+                {/* <div>
                   <label className={labelClass}>Vehicle Color</label>
                   <div className="flex gap-2">
                     <input
@@ -494,12 +477,12 @@ const ProvisionVehicle: React.FC = () => {
                       />
                     )}
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
 
-            {/* ── OWNERSHIP ── */}
-            <div>
+            {/* ── OWNERSHIP (commented out) ── */}
+            {/* <div>
               <SectionHeader icon={Building2} title="Ownership" />
               <div className="space-y-4">
                 <div>
@@ -542,10 +525,7 @@ const ProvisionVehicle: React.FC = () => {
                 {formData.ownershipBasis === "LEASED" && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className={labelClass}>
-                        {" "}
-                        Lessor / Leasing Entity
-                      </label>
+                      <label className={labelClass}>Lessor / Leasing Entity</label>
                       <select
                         name="leasedVendorId"
                         value={formData.leasedVendorId || 0}
@@ -563,10 +543,10 @@ const ProvisionVehicle: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
+            </div> */}
 
-            {/* ── COMPLIANCE & DOCUMENTATION ── */}
-            <div>
+            {/* ── COMPLIANCE & DOCUMENTATION (commented out) ── */}
+            {/* <div>
               <SectionHeader
                 icon={FileText}
                 title="Compliance & Documentation"
@@ -608,23 +588,11 @@ const ProvisionVehicle: React.FC = () => {
                     className={inputClass()}
                   />
                 </div>
-
-                {/* <div>
-                  <label className={labelClass}>Image File Path</label>
-                  <input
-                    type="text"
-                    name="imageFilePath"
-                    value={formData.imageFilePath}
-                    onChange={handleChange}
-                    placeholder="e.g. /images/vehicle10.png"
-                    className={inputClass()}
-                  />
-                </div> */}
               </div>
-            </div>
+            </div> */}
 
-            {/* ── OPERATIONAL STATUS ── */}
-            <div>
+            {/* ── OPERATIONAL STATUS (commented out) ── */}
+            {/* <div>
               <SectionHeader icon={Truck} title="Operational Status" />
               <div
                 className={`flex items-center justify-between p-4 rounded-xl border ${
@@ -681,7 +649,8 @@ const ProvisionVehicle: React.FC = () => {
                   </label>
                 </div>
               </div>
-            </div>
+            </div> */}
+
           </div>
         </Card>
       </div>

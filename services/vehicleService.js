@@ -29,7 +29,7 @@ export const getVehicleBrands = async () => {
 
 export const saveVehicle = async (payload) => {
     try {
-        const res = await api.post(`/api/vehicle`, payload);
+        const res = await api.post(`/api/vehicles`, payload);
         return res.data;
     } catch (error) {
         console.error("API Error in saveCategory:", error);
@@ -47,13 +47,13 @@ export const saveVehicle = async (payload) => {
 };
 
 export const getVehicleById = async (id) => {
-    const res = await api.get(`/api/vehicle/${id}`);
+    const res = await api.get(`/api/vehicles/${id}`);
     return res.data;
 };
 
 export const updateVehicle = async (id, payload) => {
     try {
-        const res = await api.put(`/api/vehicle/${id}`, payload);
+        const res = await api.put(`/api/vehicles/${id}`, payload);
         return res.data;
     } catch (error) {
         console.error("API Error in update Vehicle:", error);
