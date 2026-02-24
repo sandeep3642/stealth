@@ -1,14 +1,19 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Layers, User } from "lucide-react";
+import { User } from "lucide-react";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter, useParams } from "next/navigation";
-import ThemeCustomizer from "@/components/ThemeCustomizer";
 
 import { toast } from "react-toastify";
 import { getDriverById, saveDriver, updateDriver } from "@/services/driverService";
+import { getAllAccounts } from "@/services/commonServie";
+
+interface DropdownOption {
+  id: number;
+  value: string;
+}
 
 const AddEditDriver: React.FC = () => {
   const { selectedColor } = useColor();
@@ -23,17 +28,61 @@ const AddEditDriver: React.FC = () => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [mobile, setMobile] = useState("");
-  const [email, setEmail] = useState("");
   const [licenceNo, setLicenceNo] = useState("");
   const [licenceExpiry, setLicenceExpiry] = useState("");
   const [organisationId, setOrganisationId] = useState<number | string>("");
+  const [bloodGroup, setBloodGroup] = useState("");
+  const [emergencyContact, setEmergencyContact] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [driverCode, setDriverCode] = useState("");
+  const [accounts, setAccounts] = useState<DropdownOption[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [fetchingData, setFetchingData] = useState(false);
 
+  const getUserData = () => {
+    if (typeof window === "undefined") return { accountId: 0, userId: 0 };
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      return {
+        accountId: Number(user?.accountId || 0),
+        userId: Number(user?.id || user?.userId || 0),
+      };
+    } catch {
+      return { accountId: 0, userId: 0 };
+    }
+  };
+
+  const toOptions = (response: any): DropdownOption[] => {
+    const data = Array.isArray(response?.data)
+      ? response.data
+      : Array.isArray(response)
+        ? response
+        : [];
+
+    return data.map((item: any) => ({
+      id: Number(item?.id ?? item?.value ?? 0),
+      value: String(item?.value ?? item?.name ?? item?.label ?? item?.id ?? ""),
+    }));
+  };
+
+  const fetchAccounts = async () => {
+    try {
+      const response = await getAllAccounts();
+      setAccounts(toOptions(response));
+    } catch (error) {
+      console.error("Error fetching accounts:", error);
+    }
+  };
+
   useEffect(() => {
+    const { accountId } = getUserData();
+    if (!isEditMode && accountId) {
+      setOrganisationId(accountId);
+    }
+
+    fetchAccounts();
+
     if (isEditMode) {
       fetchDriverData();
     }
@@ -46,16 +95,24 @@ const AddEditDriver: React.FC = () => {
 
       if (response.success && response.data) {
         const driver = Array.isArray(response.data) ? response.data[0] : response.data;
+        const normalizedName = driver.name || "";
+        const [first = "", ...rest] = normalizedName.split(" ");
 
         setDriverCode(driver.driverCode || "");
-        setFirstName(driver.firstName || "");
-        setLastName(driver.lastName || "");
+        setFirstName(driver.firstName || first);
+        setLastName(driver.lastName || rest.join(" "));
         setMobile(driver.mobile || "");
-        setEmail(driver.email || "");
-        setLicenceNo(driver.licenceNo || "");
-        setLicenceExpiry(driver.licenceExpiry ? driver.licenceExpiry.split("T")[0] : "");
-        setOrganisationId(driver.organisationId || "");
-        setIsActive(driver.isActive ?? true);
+        setLicenceNo(driver.licenceNo || driver.licenseNumber || "");
+        setLicenceExpiry(
+          (driver.licenceExpiry || driver.licenseExpiry)
+            ? (driver.licenceExpiry || driver.licenseExpiry).split("T")[0]
+            : "",
+        );
+        setBloodGroup(driver.bloodGroup || "");
+        setEmergencyContact(driver.emergencyContact || "");
+        setOrganisationId(driver.organisationId || driver.accountId || "");
+        const status = String(driver.statusKey || "").toLowerCase();
+        setIsActive(driver.isActive ?? status !== "inactive");
       } else {
         toast.error("Failed to fetch driver data");
         router.back();
@@ -83,15 +140,22 @@ const AddEditDriver: React.FC = () => {
       return;
     }
 
+    const accountIdNumber = Number(organisationId);
     const payload = {
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
+      accountId: accountIdNumber,
+      name: `${firstName.trim()} ${lastName.trim()}`.trim(),
       mobile: mobile.trim(),
-      email: email.trim(),
-      licenceNo: licenceNo.trim(),
-      licenceExpiry: licenceExpiry || null,
-      organisationId: Number(organisationId),
+      licenseNumber: licenceNo.trim(),
+      licenseExpiry: licenceExpiry
+        ? new Date(`${licenceExpiry}T00:00:00.000Z`).toISOString()
+        : null,
+      bloodGroup: bloodGroup.trim() || null,
+      emergencyContact: emergencyContact.trim() || null,
+      statusKey: isActive ? "active" : "inactive",
       isActive,
+      ...(isEditMode
+        ? { updatedBy: accountIdNumber }
+        : { createdBy: accountIdNumber }),
     };
 
     try {
@@ -106,7 +170,7 @@ const AddEditDriver: React.FC = () => {
 
       if (response.success) {
         toast.success(isEditMode ? "Driver updated successfully!" : "Driver created successfully!");
-        router.push("/drivers");
+        router.push("/driver");
       } else {
         toast.error(`Failed: ${response.message}`);
       }
@@ -206,9 +270,11 @@ const AddEditDriver: React.FC = () => {
                   onBlur={(e) => (e.target.style.borderColor = "")}
                 >
                   <option value="">Select Account</option>
-                  <option value="1">Alpha Logistics</option>
-                  <option value="2">Beta Fleet</option>
-                  <option value="3">Gamma Transport</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.value}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -246,7 +312,7 @@ const AddEditDriver: React.FC = () => {
                 </div>
               </div>
 
-              {/* Mobile & Email */}
+              {/* Mobile & Emergency Contact */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
@@ -265,13 +331,13 @@ const AddEditDriver: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    Email Address
+                    Emergency Contact
                   </label>
                   <input
-                    type="email"
-                    placeholder="driver@org.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    type="tel"
+                    placeholder="Emergency mobile number"
+                    value={emergencyContact}
+                    onChange={(e) => setEmergencyContact(e.target.value)}
                     disabled={loading}
                     className={inputClass}
                     onFocus={(e) => (e.target.style.borderColor = selectedColor)}
@@ -280,7 +346,7 @@ const AddEditDriver: React.FC = () => {
                 </div>
               </div>
 
-              {/* Licence No & Licence Expiry */}
+              {/* Licence No, Licence Expiry & Blood Group */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
@@ -305,6 +371,21 @@ const AddEditDriver: React.FC = () => {
                     type="date"
                     value={licenceExpiry}
                     onChange={(e) => setLicenceExpiry(e.target.value)}
+                    disabled={loading}
+                    className={inputClass}
+                    onFocus={(e) => (e.target.style.borderColor = selectedColor)}
+                    onBlur={(e) => (e.target.style.borderColor = "")}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    Blood Group
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. O+"
+                    value={bloodGroup}
+                    onChange={(e) => setBloodGroup(e.target.value)}
                     disabled={loading}
                     className={inputClass}
                     onFocus={(e) => (e.target.style.borderColor = selectedColor)}

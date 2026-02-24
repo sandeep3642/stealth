@@ -6,7 +6,6 @@ import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { useTheme } from "@/context/ThemeContext";
-import { Category } from "@/interfaces/category.interface";
 import { useRouter } from "next/navigation";
 import { FormRights } from "@/interfaces/account.interface";
 import { toast } from "react-toastify";
@@ -14,12 +13,25 @@ import { deleteDriver, getDrivers } from "@/services/driverService";
 import { MetricCard } from "@/components/CommonCard";
 import { AlertTriangle, Building2, CheckCircle, UserRound } from "lucide-react";
 
+interface DriverRow {
+  driverId: number;
+  accountId?: number;
+  name?: string;
+  mobile?: string;
+  licenseNumber?: string;
+  licenceNumber?: string;
+  licenseExpiry?: string;
+  licenceExpiry?: string;
+  isActive?: boolean;
+}
+
 const Drivers: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categories, setCategories] = useState<DriverRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalRecords, setTotalRecords] = useState(0);
   const [categoryRights, setCategoryRights] = useState<FormRights | null>(null);
@@ -32,18 +44,18 @@ const Drivers: React.FC = () => {
 
   // Confirmation dialog state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+  const [categoryToDelete, setCategoryToDelete] = useState<DriverRow | null>(
     null,
   );
 
   const columns = [
     {
-      key: "driverCode",
-      label: "DRIVER CODE",
+      key: "driverId",
+      label: "DRIVER ID",
       visible: true,
     },
     {
-      key: "driverName",
+      key: "name",
       label: "DRIVER NAME",
       visible: true,
     },
@@ -53,12 +65,12 @@ const Drivers: React.FC = () => {
       visible: true,
     },
     {
-      key: "licenceNumber",
+      key: "licenseNumber",
       label: "LICENCE NO.",
       visible: true,
     },
     {
-      key: "licenceExpiry",
+      key: "licenseExpiry",
       label: "LICENCE EXPIRY",
       visible: true,
       render: (value: string) =>
@@ -77,35 +89,25 @@ const Drivers: React.FC = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await getDrivers();
+      const response = await getDrivers(pageNo, pageSize, searchQuery);
       console.log(response);
       if (response.success) {
-        const driverList = response.data || [];
+        const driverList = response?.data?.drivers?.items || [];
         setCategories(driverList);
+        setTotalRecords(response?.data?.drivers?.totalRecords || driverList.length);
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const summary = response?.data?.summary;
 
-        const totalDrivers = driverList.length;
-        const activeDrivers = driverList.filter(
-          (driver: any) => driver?.isActive,
-        ).length;
-        const licenceIssues = driverList.filter((driver: any) => {
-          const licenceNo = driver?.licenceNumber || driver?.licenceNo;
-          const expiryValue = driver?.licenceExpiry;
-          const expiryDate = expiryValue ? new Date(expiryValue) : null;
-          const isExpired =
-            expiryDate instanceof Date &&
-            !Number.isNaN(expiryDate.getTime()) &&
-            expiryDate < today;
-
-          return !licenceNo || isExpired;
-        }).length;
-        const multiTenantOrgs = new Set(
-          driverList
-            .map((driver: any) => driver?.organisationId || driver?.organizationId)
-            .filter(Boolean),
-        ).size;
+        const totalDrivers = summary?.totalDrivers ?? driverList.length;
+        const activeDrivers =
+          summary?.active ??
+          driverList.filter((driver: DriverRow) => driver?.isActive).length;
+        const licenceIssues =
+          summary?.licenseExpiringSoon ??
+          summary?.licenseIssues ??
+          summary?.licenceIssues ??
+          0;
+        const multiTenantOrgs = new Set(driverList.map((driver: DriverRow) => driver?.accountId).filter(Boolean)).size;
 
         setCardCounts({
           totalDrivers,
@@ -123,12 +125,12 @@ const Drivers: React.FC = () => {
     }
   };
 
-  const handleEdit = (row: Category) => {
-    router.push(`/categories/${row.categoryId}`);
+  const handleEdit = (row: DriverRow) => {
+    router.push(`/driver/${row.driverId}`);
   };
 
   // Show confirmation dialog instead of browser confirm
-  const handleDelete = (row: Category) => {
+  const handleDelete = (row: DriverRow) => {
     setCategoryToDelete(row);
     setIsDeleteDialogOpen(true);
   };
@@ -138,16 +140,16 @@ const Drivers: React.FC = () => {
     if (!categoryToDelete) return;
 
     try {
-      const response = await deleteDriver(categoryToDelete.categoryId);
+      const response = await deleteDriver(categoryToDelete.driverId);
       if (response.success) {
-        toast.success("Category deleted successfully!");
+        toast.success("Driver deleted successfully!");
         fetchCategories(); // Refresh list
       } else {
         toast.error(`Failed to delete: ${response.message}`);
       }
     } catch (error) {
-      toast.error("Error deleting category");
-      console.error("Error deleting category:", error);
+      toast.error("Error deleting driver");
+      console.error("Error deleting driver:", error);
     } finally {
       setCategoryToDelete(null);
     }
@@ -164,7 +166,7 @@ const Drivers: React.FC = () => {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [pageNo, pageSize, searchQuery]);
 
   useEffect(() => {
     function getPermissionsList() {
@@ -254,14 +256,17 @@ const Drivers: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             showActions={true}
-            searchPlaceholder="Search categories..."
+            searchPlaceholder="Search drivers..."
             rowsPerPageOptions={[10, 25, 50, 100]}
             defaultRowsPerPage={10}
             pageNo={pageNo}
             pageSize={pageSize}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
-            isServerSide={false}
+            totalRecords={totalRecords}
+            isServerSide={true}
           />
         )}
 
@@ -273,8 +278,8 @@ const Drivers: React.FC = () => {
             setCategoryToDelete(null);
           }}
           onConfirm={confirmDelete}
-          title="Delete Category"
-          message={`Are you sure you want to delete the category "${categoryToDelete?.labelName}"? This action cannot be undone.`}
+          title="Delete Driver"
+          message={`Are you sure you want to delete the driver "${categoryToDelete?.name || "-"}"? This action cannot be undone.`}
           confirmText="Delete"
           cancelText="Cancel"
           type="danger"
