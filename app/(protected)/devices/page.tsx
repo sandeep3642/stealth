@@ -32,40 +32,8 @@ interface Device {
   lastUpdated: string;
 }
 
-// ── Mock Data ──────────────────────────────────────────────────────────────
-const MOCK_DEVICES: Device[] = [
-  {
-    id: "867530912345678",
-    serialId: "GPS-001",
-    category: "GPS",
-    type: "GPS Tracker",
-    network: "Airtel",
-    networkSub: "9876543210",
-    status: "ACTIVE",
-    firmware: "v2.1.4",
-    lastUpdated: "2024-03-10 10:00",
-  },
-  {
-    id: "ADAS-UNIT-9922",
-    serialId: "ADAS-01",
-    category: "ADAS / DMS",
-    type: "ADAS/DMS Unit",
-    network: "N/A (Local / IP)",
-    status: "IN SERVICE",
-    firmware: "v1.8.2",
-    lastUpdated: "2024-03-12 14:30",
-  },
-  {
-    id: "CAM-IND-000123",
-    serialId: "CAM-882",
-    category: "CAMERA",
-    type: "Dashcam",
-    network: "N/A (Local / IP)",
-    status: "OUT_OF_SERVICE",
-    firmware: "v3.0.1",
-    lastUpdated: "2024-03-15 09:15",
-  },
-];
+
+
 
 // ── Category Icon ──────────────────────────────────────────────────────────
 const categoryIcon = (cat: Device["category"]) => {
@@ -87,15 +55,12 @@ const DeviceRegistry: React.FC = () => {
   const [pageSize, setPageSize] = useState(10);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deviceToDelete, setDeviceToDelete] = useState<Device | null>(null);
-
-  // Summary counts
-  const total = MOCK_DEVICES.length;
-  const inService = MOCK_DEVICES.filter(
-    (d) => d.status === "ACTIVE" || d.status === "IN SERVICE",
-  ).length;
-  const outOfService = MOCK_DEVICES.filter(
-    (d) => d.status === "OUT_OF_SERVICE",
-  ).length;
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [summary, setSummary] = useState({
+    totalDevices: 0,
+    inService: 0,
+    outOfService: 0,
+  });
 
   // ── Table columns — same pattern as Vehicles ────────────────────────────
   const columns = [
@@ -105,15 +70,12 @@ const DeviceRegistry: React.FC = () => {
       visible: true,
       render: (value: string, row: Device) => (
         <div>
-          <span
-            className="font-semibold cursor-pointer hover:underline"
+         
+          <p
+           className="font-semibold cursor-pointer hover:underline"
             style={{ color: selectedColor }}
             onClick={() => router.push(`/devices/${value}`)}
-          >
-            {value}
-          </span>
-          <p
-            className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+            // className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
           >
             {row.serialId}
           </p>
@@ -182,9 +144,8 @@ const DeviceRegistry: React.FC = () => {
       visible: true,
       render: (value: string) => (
         <span
-          className={`font-mono text-xs px-2 py-0.5 rounded ${
-            isDark ? "bg-gray-800 text-gray-300" : "bg-gray-100 text-gray-500"
-          }`}
+          className={`font-mono text-xs px-2 py-0.5 rounded ${isDark ? "bg-gray-800 text-gray-300" : "bg-gray-100 text-gray-500"
+            }`}
         >
           {value}
         </span>
@@ -223,16 +184,37 @@ const DeviceRegistry: React.FC = () => {
   const fetchDevices = async () => {
     try {
       const response = await getdevices(pageNo, pageSize);
-      console.log("response", response);
+      console.log("Device API response:", response);
 
-      if (response && response.items) {
-        // Summary
+      const devicesData = response.data?.devices;
+      const summaryData = response.data?.summary;
+
+      if (devicesData?.items?.length) {
+        const mappedDevices = devicesData.items.map((d: any) => ({
+          id: d.id.toString(),
+          serialId: d.deviceNo || "",
+          category: "GPS", // placeholder until you map deviceTypeId
+          type: "Tracker", // or lookup from deviceTypeId
+          network: "N/A",
+          status:
+            d.deviceStatus?.toUpperCase().replace("_", " ") ||
+            "OUT_OF_SERVICE",
+          firmware: "v1.0.0",
+          lastUpdated: d.updatedAt || d.createdAt || "",
+        }));
+
+        setDevices(mappedDevices);
+        setSummary({
+          totalDevices: summaryData.totalDevices || 0,
+          inService: summaryData.inService || 0,
+          outOfService: summaryData.outOfService || 0,
+        });
       } else {
-        toast.error("Failed to fetch vehicles");
+        toast.error("No devices found");
       }
     } catch (error) {
-      console.error("Error fetching vehicles:", error);
-      toast.error("An error occurred while loading vehicles");
+      console.error("Error fetching devices:", error);
+      toast.error("An error occurred while loading devices");
     }
   };
 
@@ -260,7 +242,7 @@ const DeviceRegistry: React.FC = () => {
           <MetricCard
             icon={Monitor}
             label="Total Devices"
-            value={total}
+            value={summary.totalDevices}
             iconBgColor="bg-purple-100"
             iconColor="text-purple-600"
             isDark={isDark}
@@ -268,7 +250,7 @@ const DeviceRegistry: React.FC = () => {
           <MetricCard
             icon={ShieldCheck}
             label="In Service"
-            value={inService}
+            value={summary.inService}
             iconBgColor="bg-green-100"
             iconColor="text-green-600"
             isDark={isDark}
@@ -276,7 +258,7 @@ const DeviceRegistry: React.FC = () => {
           <MetricCard
             icon={AlertCircle}
             label="Out of Service"
-            value={outOfService}
+            value={summary.outOfService}
             iconBgColor="bg-orange-100"
             iconColor="text-orange-600"
             isDark={isDark}
@@ -286,7 +268,7 @@ const DeviceRegistry: React.FC = () => {
         {/* Table */}
         <CommonTable
           columns={columns}
-          data={MOCK_DEVICES}
+          data={devices}
           onEdit={handleEdit}
           onDelete={handleDelete}
           showActions={true}
@@ -296,7 +278,7 @@ const DeviceRegistry: React.FC = () => {
           pageNo={pageNo}
           pageSize={pageSize}
           onPageChange={(page) => setPageNo(page)}
-          totalRecords={MOCK_DEVICES.length}
+          totalRecords={devices.length}
           onPageSizeChange={(size) => {
             setPageSize(size);
             setPageNo(1);

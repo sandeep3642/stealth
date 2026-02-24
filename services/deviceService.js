@@ -8,28 +8,17 @@ export const getdevices = async (page, pageSize,) => {
     return res.data;
 };
 
-export const getVehicleType = async () => {
+export const getDeviceType = async () => {
     const res = await api.get(
-        `/api/VehicleType`,
+        `api/device-types/list?page=0&pageSize=0`,
     );
     return res.data;
 };
 
-export const getLeasedVendors = async () => {
-    const res = await api.get(`/api/Lookup/leased-vendors`);
-    return res.data;
-};
-
-export const getVehicleBrands = async () => {
-    const res = await api.get(`/api/Lookup/vehicle-brand-oems`);
-    return res.data;
-};
-
-
 
 export const saveDevice = async (payload) => {
     try {
-        const res = await api.post(`/api/device`, payload);
+        const res = await api.post(`/api/devices`, payload);
         return res.data;
     } catch (error) {
         console.error("API Error in saveDevice:", error);
@@ -47,13 +36,13 @@ export const saveDevice = async (payload) => {
 };
 
 export const getDeviceById = async (id) => {
-    const res = await api.get(`/api/device/${id}`);
+    const res = await api.get(`/api/devices/${id}`);
     return res.data;
 };
 
 export const updateDevice = async (id, payload) => {
     try {
-        const res = await api.put(`/api/device/${id}`, payload);
+        const res = await api.put(`/api/devices/${id}`, payload);
         return res.data;
     } catch (error) {
         console.error("API Error in update Device:", error);
@@ -72,7 +61,7 @@ export const updateDevice = async (id, payload) => {
 
 export const deleteDevice = async (id) => {
     try {
-        const res = await api.delete(`/api/device/${id}`);
+        const res = await api.delete(`/api/devices/${id}`);
         return res.data;
     } catch (error) {
         return (
