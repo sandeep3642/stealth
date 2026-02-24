@@ -1,5 +1,29 @@
 
 import axios from "axios";
+import Cookies from "js-cookie";
+
+const LOGOUT_KEYS = [
+  "authToken",
+  "darkMode",
+  "permissions",
+  "primaryHsl",
+  "user",
+  "whiteLabelTheme",
+];
+
+let isLogoutInProgress = false;
+
+const handleLogout = () => {
+  if (typeof window === "undefined" || isLogoutInProgress) return;
+
+  isLogoutInProgress = true;
+  LOGOUT_KEYS.forEach((key) => localStorage.removeItem(key));
+  Cookies.remove("authToken", { path: "/" });
+
+  if (window.location.pathname !== "/") {
+    window.location.href = "/";
+  }
+};
 
 const api = axios.create({
   baseURL:process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000",
@@ -39,6 +63,9 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error?.response?.status === 401) {
+      handleLogout();
+    }
     return Promise.reject(error);
   },
 );
