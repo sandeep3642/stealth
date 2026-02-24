@@ -75,10 +75,20 @@ const AddEditFormMasterPage: React.FC = () => {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    const { name, value, type, checked } = e.target;
+    const target = e.target;
+    const { name, value } = target;
+
+    if (target instanceof HTMLInputElement && target.type === "checkbox") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: target.checked,
+      }));
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
