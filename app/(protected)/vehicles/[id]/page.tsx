@@ -93,7 +93,10 @@ const ProvisionVehicle: React.FC = () => {
     const init = async () => {
       setPageLoading(true);
       try {
-        const [accRes, typeRes, brandRes, leasedVendorRes] = await Promise.all([
+        const [accRes, typeRes, 
+          // brandRes, leasedVendorRes
+        
+        ] = await Promise.all([
           getAllAccounts(),
           getVehicleType(),
           // getVehicleBrands(),
