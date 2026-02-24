@@ -70,12 +70,12 @@ const DeviceRegistry: React.FC = () => {
       visible: true,
       render: (value: string, row: Device) => (
         <div>
-         
+
           <p
-           className="font-semibold cursor-pointer hover:underline"
+            className="font-semibold cursor-pointer hover:underline"
             style={{ color: selectedColor }}
             onClick={() => router.push(`/devices/${value}`)}
-            // className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+          // className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
           >
             {row.serialId}
           </p>
@@ -170,10 +170,19 @@ const DeviceRegistry: React.FC = () => {
 
   const confirmDelete = async () => {
     if (!deviceToDelete) return;
+
     try {
-      // TODO: replace with real API call
-      toast.success(`Device "${deviceToDelete.id}" removed successfully!`);
-    } catch {
+      const response = await deleteDevice(deviceToDelete.id);
+      console.log("delete response", response);
+
+      if (response?.success && response?.statusCode === 200) {
+        toast.success(`Device  removed successfully!`);
+        fetchDevices?.();
+      } else {
+        toast.error(response?.message || "Failed to delete device.");
+      }
+    } catch (error) {
+      console.error("Error deleting device:", error);
       toast.error("An error occurred while deleting.");
     } finally {
       setDeviceToDelete(null);
@@ -184,7 +193,7 @@ const DeviceRegistry: React.FC = () => {
   const fetchDevices = async () => {
     try {
       const response = await getdevices(pageNo, pageSize);
-      console.log("Device API response:", response);
+
 
       const devicesData = response.data?.devices;
       const summaryData = response.data?.summary;
@@ -211,10 +220,12 @@ const DeviceRegistry: React.FC = () => {
         });
       } else {
         toast.error("No devices found");
+        setDevices([])
       }
     } catch (error) {
       console.error("Error fetching devices:", error);
       toast.error("An error occurred while loading devices");
+      setDevices([])
     }
   };
 

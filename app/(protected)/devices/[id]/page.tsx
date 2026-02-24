@@ -189,7 +189,8 @@ const ProvisionDevice: React.FC = () => {
 
     try {
       setLoading(true);
-
+      const userData = JSON.parse(localStorage.getItem("user") || "{}");
+      const userId = userData?.userId || null;
       // ── NEW PAYLOAD ──
       const payload = {
         ...(isEditMode && { id: Number(id) }),
@@ -198,7 +199,7 @@ const ProvisionDevice: React.FC = () => {
         deviceTypeId: Number(formData.deviceTypeId),
         deviceNo: formData.deviceNo.trim(),
         deviceImeiOrSerial: formData.deviceImeiOrSerial.trim(),
-        createdBy: Number(formData.createdBy), // TODO: from auth context
+        createdBy: userId,
 
         // COMMENTED OUT — old payload fields
         // organizationId: Number(formData.organizationId),
