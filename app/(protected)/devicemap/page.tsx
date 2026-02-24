@@ -176,12 +176,13 @@ const DeviceMap: React.FC = () => {
   const fetchDeviceMaps = async () => {
     try {
       setLoading(true);
-      const response = await getDeviceMaps({
+      const requestParams = {
         page: pageNo,
         pageSize,
         accountId: selectedAccountId,
         search: debouncedQuery,
-      });
+      } as any;
+      const response = await getDeviceMaps(requestParams);
 
       const items = getListData(response);
       setRows(items.map(mapRow));

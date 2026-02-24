@@ -16,13 +16,13 @@ export const getSimById = async (id) => {
 
 // ── POST create SIM ────────────────────────────────────────────────────────
 export const saveSim = async (payload) => {
-    const response = await api.post(`/sim`, payload);
+    const response = await api.post(`/api/sims`, payload);
     return response.data;
 };
 
 // ── PUT update SIM ─────────────────────────────────────────────────────────
 export const updateSim = async (id, payload) => {
-    const response = await api.put(`/sim/${id}`, payload);
+    const response = await api.put(`api/sims/${id}`, payload);
     return response.data;
 };
 

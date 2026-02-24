@@ -32,7 +32,15 @@ const ProvisionSim: React.FC = () => {
   const [pageLoading, setPageLoading] = useState(false);
 
   const [accounts, setAccounts] = useState<SimAccount[]>([]);
-  const [carriers, setCarriers] = useState<SimCarrier[]>([]);
+ const [carriers, setCarriers] = useState<SimCarrier[]>([
+  { id: 1, name: "BSNL" },
+  { id: 2, name: "Jio" },
+  { id: 3, name: "Airtel" },
+  { id: 4, name: "Vi (Vodafone Idea)" },
+  { id: 5, name: "MTNL" },
+  { id: 6, name: "Tata Docomo" }, // legacy
+  { id: 7, name: "Aircel" },      // legacy
+]);
 
   const [formData, setFormData] = useState<SimFormData>({
     // Hardware Identity
