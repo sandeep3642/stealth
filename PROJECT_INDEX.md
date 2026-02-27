@@ -2784,7 +2784,7 @@ export function useGoogleMapsSdk() {
   const key =
     process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ||
     process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
-    "";
+    "AIzaSyAQvgMBRVkyU6Upw6ONKT0TsNtlHNMfEQg";
 
   const { isLoaded, loadError } = useJsApiLoader({
     id: "fleetbharat-google-map-script",

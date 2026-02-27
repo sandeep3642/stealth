@@ -84,7 +84,7 @@ export default function GeofenceDetailPage() {
   const [isRedrawing, setIsRedrawing] = useState(false);
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "AIzaSyAQvgMBRVkyU6Upw6ONKT0TsNtlHNMfEQg",
     libraries: LIBRARIES,
   });
 
@@ -689,7 +689,7 @@ export default function GeofenceDetailPage() {
           onSelect={(loc) => setCenter({ lat: loc.lat, lng: loc.lng })}
           initialLocation={center || DEFAULT_CENTER}
           isDark={isDark}
-          googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""}
+          googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "AIzaSyAQvgMBRVkyU6Upw6ONKT0TsNtlHNMfEQg"}
         />
       </div>
     </div>

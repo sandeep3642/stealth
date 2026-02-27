@@ -108,7 +108,7 @@ const DefineNewZoneModal: React.FC<Props> = ({
   >(null);
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "AIzaSyAQvgMBRVkyU6Upw6ONKT0TsNtlHNMfEQg",
     libraries: LIBRARIES,
   });
 
