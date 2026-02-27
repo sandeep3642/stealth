@@ -24,7 +24,11 @@ interface Props {
     googleMapsApiKey: string;
 }
 
-const LIBRARIES: ("places")[] = ["places"];
+const LIBRARIES: ("drawing" | "geometry" | "places")[] = [
+    "drawing",
+    "geometry",
+    "places",
+];
 const DEFAULT_CENTER = { lat: 28.4595, lng: 77.0266 };
 
 const DARK_STYLES: google.maps.MapTypeStyle[] = [

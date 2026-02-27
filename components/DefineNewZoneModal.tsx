@@ -71,6 +71,9 @@ interface Props {
   onClose: () => void;
   onSave: (zone: GeofenceZone) => void;
   existingZonesCount: number;
+  accounts: { id: number; value: string }[];
+  selectedAccountId: number;
+  onAccountChange: (accountId: number) => void;
 }
 
 /* ──────────────────────────── component ──────────────────────────── */
@@ -80,6 +83,9 @@ const DefineNewZoneModal: React.FC<Props> = ({
   onClose,
   onSave,
   existingZonesCount,
+  accounts,
+  selectedAccountId,
+  onAccountChange,
 }) => {
   const { isDark } = useTheme();
 
@@ -236,6 +242,23 @@ const DefineNewZoneModal: React.FC<Props> = ({
                   className={inputCls}
                 />
               </div>
+            </div>
+            <div className="mt-3">
+              <label className={labelCls}>
+                ACCOUNT <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={selectedAccountId}
+                onChange={(e) => onAccountChange(Number(e.target.value))}
+                className={inputCls}
+              >
+                <option value={0}>Select account</option>
+                {accounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.value}
+                  </option>
+                ))}
+              </select>
             </div>
           </section>
 
@@ -560,7 +583,7 @@ const DefineNewZoneModal: React.FC<Props> = ({
           </button>
           <button
             onClick={handleCommit}
-            disabled={!uniqueCode || !displayName}
+            disabled={!selectedAccountId || !uniqueCode || !displayName}
             className="flex-[2] py-2.5 rounded-xl font-bold text-sm bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             📋 COMMIT ZONE ENTRY
