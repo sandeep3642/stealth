@@ -1,488 +1,767 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useJsApiLoader } from "@react-google-maps/api";
 import { useTheme } from "@/context/ThemeContext";
-import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Save, Trash2, Layers, Settings } from "lucide-react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Save, Pencil } from "lucide-react";
+import { toast } from "react-toastify";
 import GeofenceMap from "@/components/GeofenceMap";
+import PageHeader from "@/components/PageHeader";
+import MapLocationPicker from "@/components/MapLocationPicker";
 import type {
-    GeofenceZone,
-    GeometryType,
-    ZoneClassification,
-    ZoneStatus,
+  GeofenceZone,
+  GeometryType,
+  ZoneClassification,
+  ZoneStatus,
 } from "@/interfaces/geofence.interface";
+import {
+  createGeofence,
+  getGeofenceById,
+  updateGeofence,
+} from "@/services/geofenceService";
+import { getAllAccounts } from "@/services/commonServie";
 
-/* ──────────────────────────── constants ──────────────────────────── */
-
-const LIBRARIES: ("drawing" | "geometry")[] = ["drawing", "geometry"];
+const LIBRARIES: ("drawing" | "geometry" | "places")[] = [
+  "drawing",
+  "geometry",
+  "places",
+];
 
 const PRESET_COLORS = [
-    "#ef4444", "#f97316", "#eab308", "#22c55e",
-    "#06b6d4", "#3b82f6", "#6366f1", "#8b5cf6",
-    "#ec4899", "#6b7280",
+  "#ef4444",
+  "#f97316",
+  "#eab308",
+  "#22c55e",
+  "#06b6d4",
+  "#3b82f6",
+  "#6366f1",
+  "#8b5cf6",
+  "#ec4899",
+  "#6b7280",
 ];
 
 const CLASSIFICATIONS: ZoneClassification[] = [
-    "Warehouse", "Port", "Client Site", "Depot", "Restricted Area",
+  "Warehouse",
+  "Port",
+  "Client Site",
+  "Depot",
+  "Restricted Area",
 ];
 
-// Replace with your real API service call
-async function fetchZoneById(id: string): Promise<GeofenceZone | null> {
-    const MOCK: Record<string, GeofenceZone> = {
-        "1": {
-            id: "1", code: "GF-001", displayName: "Main Logistics Hub",
-            classification: "Warehouse", geometry: "circle", status: "enabled",
-            color: "#6366f1", center: { lat: 28.7041, lng: 77.1025 }, radius: 3000,
-        },
-        "2": {
-            id: "2", code: "GF-002", displayName: "Delhi Airport Zone",
-            classification: "Port", geometry: "circle", status: "enabled",
-            color: "#10b981", center: { lat: 28.5562, lng: 77.1 }, radius: 2500,
-        },
-        "3": {
-            id: "3", code: "GF-003", displayName: "NH-48 Service Corridor",
-            classification: "Client Site", geometry: "polygon", status: "disabled",
-            color: "#ef4444",
-            paths: [
-                { lat: 28.45, lng: 77.02 }, { lat: 28.46, lng: 77.09 },
-                { lat: 28.42, lng: 77.12 }, { lat: 28.41, lng: 77.05 },
-            ],
-        },
-    };
-    return MOCK[id] ?? null;
-}
-
-/* ──────────────────────────── component ──────────────────────────── */
+const DEFAULT_CENTER = { lat: 28.6139, lng: 77.209 };
 
 export default function GeofenceDetailPage() {
-    const { isDark } = useTheme();
-    const router = useRouter();
-    const params = useParams();
-    const id = params?.id as string;
+  const { isDark } = useTheme();
+  const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const id = params?.id as string;
+  const isCreateMode = id === "0";
 
-    const [zone, setZone] = useState<GeofenceZone | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
-    const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  const [isLocationPickerOpen, setIsLocationPickerOpen] = useState(false);
+  const [accounts, setAccounts] = useState<{ id: number; value: string }[]>([]);
+  const [drawingKey, setDrawingKey] = useState(0);
 
-    // Editable state
-    const [code, setCode] = useState("");
-    const [displayName, setDisplayName] = useState("");
-    const [classification, setClassification] = useState<ZoneClassification>("Warehouse");
-    const [color, setColor] = useState(PRESET_COLORS[0]);
-    const [geometry, setGeometry] = useState<GeometryType>("polygon");
-    const [status, setStatus] = useState<ZoneStatus>("enabled");
+  const [accountId, setAccountId] = useState(0);
+  const [code, setCode] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [classification, setClassification] =
+    useState<ZoneClassification>("Warehouse");
+  const [color, setColor] = useState(PRESET_COLORS[0]);
+  const [geometry, setGeometry] = useState<GeometryType>("polygon");
+  const [status, setStatus] = useState<ZoneStatus>("enabled");
+  const [radius, setRadius] = useState(100);
+  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [paths, setPaths] = useState<{ lat: number; lng: number }[]>([]);
 
-    const { isLoaded } = useJsApiLoader({
-        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
-        libraries: LIBRARIES,
+  // shapeDrawn: true means we have valid shape data (either loaded or drawn)
+  const [shapeDrawn, setShapeDrawn] = useState(false);
+  // isRedrawing: true means drawing tool is active (create mode always, edit mode when user clicks Redraw)
+  const [isRedrawing, setIsRedrawing] = useState(false);
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
+    libraries: LIBRARIES,
+  });
+
+  const onMapLoad = useCallback((m: google.maps.Map) => setMap(m), []);
+
+  // ─── Fetch accounts ───────────────────────────────────────────────────────
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const response = await getAllAccounts();
+        const list = Array.isArray(response?.data) ? response.data : [];
+        setAccounts(list);
+
+        let userAccountId = 0;
+        if (typeof window !== "undefined") {
+          try {
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
+            userAccountId = Number(user?.accountId || 0);
+          } catch {
+            userAccountId = 0;
+          }
+        }
+
+        if (userAccountId > 0) {
+          setAccountId(userAccountId);
+        } else if (list.length > 0) {
+          setAccountId(Number(list[0].id || 0));
+        }
+      } catch (error) {
+        console.error("Error fetching accounts:", error);
+      }
+    };
+
+    fetchAccounts();
+  }, []);
+
+  // ─── Load existing zone ───────────────────────────────────────────────────
+  useEffect(() => {
+    const loadZone = async () => {
+      if (isCreateMode) {
+        const geometryFromQuery = searchParams.get("geometry");
+        if (geometryFromQuery === "circle" || geometryFromQuery === "polygon") {
+          setGeometry(geometryFromQuery);
+        }
+        setCenter(DEFAULT_CENTER);
+        setIsRedrawing(true); // start in drawing mode for create
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await getGeofenceById(id);
+        if (!response?.success) {
+          toast.error(response?.message || "Failed to load geofence");
+          setLoading(false);
+          return;
+        }
+
+        const zone =
+          response?.data?.zone || response?.data?.geofence || response?.data;
+        const coordinates = Array.isArray(zone?.coordinates)
+          ? zone.coordinates
+          : [];
+        const first = coordinates[0];
+        const loadedGeometry: GeometryType =
+          zone?.geometryType === "POLYGON" ? "polygon" : "circle";
+
+        setAccountId((prev) => Number(zone?.accountId || prev || 0));
+        setCode(String(zone?.uniqueCode || ""));
+        setDisplayName(String(zone?.displayName || ""));
+        setClassification(String(zone?.classificationCode || "Warehouse") as ZoneClassification);
+        setColor(zone?.colorTheme || PRESET_COLORS[0]);
+        setGeometry(loadedGeometry);
+        setStatus(zone?.status === "ENABLED" ? "enabled" : "disabled");
+        setRadius(Number(zone?.radiusM || 100));
+        setCenter(
+          first
+            ? { lat: Number(first.latitude), lng: Number(first.longitude) }
+            : null,
+        );
+        setPaths(
+          coordinates.map((coord: { latitude: number; longitude: number }) => ({
+            lat: Number(coord.latitude),
+            lng: Number(coord.longitude),
+          })),
+        );
+        setShapeDrawn(true);
+        setIsRedrawing(false); // edit mode starts in view mode, not drawing
+      } catch (error) {
+        console.error("Error loading geofence:", error);
+        toast.error("Error loading geofence");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadZone();
+  }, [id, isCreateMode, searchParams]);
+
+
+  // ─── When geometry type changes, reset drawing state ─────────────────────
+  useEffect(() => {
+    if (isCreateMode) {
+      setPaths([]);
+      setCenter(null);      // ← ADD
+      setShapeDrawn(false);
+      setIsRedrawing(true);
+      setDrawingKey((prev) => prev + 1);
+    } else if (isRedrawing) {
+      setPaths([]);
+      setCenter(null);      // ← ADD
+      setShapeDrawn(false);
+      setDrawingKey((prev) => prev + 1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [geometry]);
+
+  // ─── Drawing complete handlers ────────────────────────────────────────────
+  const handlePolygonComplete = useCallback(
+    (polygon: google.maps.Polygon) => {
+      const newPaths = polygon
+        .getPath()
+        .getArray()
+        .map((latLng) => ({ lat: latLng.lat(), lng: latLng.lng() }));
+
+      setPaths(newPaths);
+
+      if (newPaths.length > 0) {
+        const lat = newPaths.reduce((s, p) => s + p.lat, 0) / newPaths.length;
+        const lng = newPaths.reduce((s, p) => s + p.lng, 0) / newPaths.length;
+        setCenter({ lat, lng });
+      }
+
+      setShapeDrawn(true);
+      setIsRedrawing(false);
+      polygon.setMap(null);
+    },
+    [],
+  );
+
+  const handleCircleComplete = useCallback(
+    (circle: google.maps.Circle) => {
+      const c = circle.getCenter();
+      if (c) setCenter({ lat: c.lat(), lng: c.lng() });
+      setRadius(Math.round(circle.getRadius()));
+      setShapeDrawn(true);
+      setIsRedrawing(false);
+      circle.setMap(null);
+    },
+    [],
+  );
+
+
+  // Store original shape data for cancel restoration
+  const [originalShape, setOriginalShape] = useState<{
+    center: { lat: number; lng: number } | null;
+    paths: { lat: number; lng: number }[];
+    radius: number;
+  } | null>(null);
+
+  const handleStartRedraw = useCallback(() => {
+    // Save current shape before clearing
+    setOriginalShape({ center, paths, radius });
+    setPaths([]);
+    setCenter(null);
+    setRadius(0);
+    setShapeDrawn(false);
+    setIsRedrawing(true);
+    setDrawingKey((prev) => prev + 1);
+  }, [center, paths, radius]);
+
+  const handleCancelRedraw = useCallback(() => {
+    if (originalShape) {
+      // Restore the saved shape
+      setCenter(originalShape.center);
+      setPaths(originalShape.paths);
+      setRadius(originalShape.radius);
+      setShapeDrawn(true);
+    }
+    setIsRedrawing(false);
+    setOriginalShape(null);
+  }, [originalShape]);
+
+
+  // ─── Preview zone for map rendering ──────────────────────────────────────
+  const previewZone: GeofenceZone = useMemo(
+    () => ({
+      id: id || "preview",
+      code,
+      displayName: displayName || "New Geofence",
+      classification,
+      geometry,
+      status,
+      color,
+      center: geometry === "circle" ? center || undefined : undefined,
+      radius: geometry === "circle" ? radius : undefined,
+      paths: geometry === "polygon" && paths.length > 0 ? paths : undefined,
+    }),
+    [id, code, displayName, classification, geometry, status, color, center, radius, paths],
+  );
+
+  // ─── Save handler ─────────────────────────────────────────────────────────
+  const handleSave = async () => {
+    if (!accountId) {
+      toast.error("Please select an account");
+      return;
+    }
+    if (!code.trim() || !displayName.trim()) {
+      toast.error("Unique code and display name are required");
+      return;
+    }
+    if (!shapeDrawn) {
+      toast.error(
+        geometry === "polygon"
+          ? "Please draw a polygon on the map before saving"
+          : "Please draw a circle on the map before saving",
+      );
+      return;
+    }
+    if (isRedrawing) {
+      toast.error("Please finish drawing your shape on the map before saving");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const classificationCode = classification.toUpperCase().replace(/\s+/g, "_");
+      const geometryType = geometry === "polygon" ? "POLYGON" : "CIRCLE";
+
+      const coordinates =
+        geometry === "polygon"
+          ? paths.map((point) => ({ latitude: point.lat, longitude: point.lng }))
+          : center
+            ? [{ latitude: center.lat, longitude: center.lng }]
+            : [];
+
+      if (coordinates.length === 0) {
+        toast.error("Please draw your geofence on the map before saving");
+        setSaving(false);
+        return;
+      }
+
+      const payload = {
+        accountId: Number(accountId),
+        uniqueCode: code.trim(),
+        displayName: displayName.trim(),
+        description: "",
+        classificationCode,
+        classificationLabel: classification,
+        geometryType,
+        radiusM: geometry === "circle" ? Number(radius || 0) : 0,
+        coordinatesJson: JSON.stringify(coordinates),
+        coordinates,
+        colorTheme: color,
+        opacity: 0.6,
+        isEnabled: status === "enabled",
+      };
+
+      const response = isCreateMode
+        ? await createGeofence(payload)
+        : await updateGeofence(id, payload);
+
+      if (response?.success) {
+        toast.success(
+          isCreateMode ? "Geofence created successfully" : "Geofence updated successfully",
+        );
+        router.push("/geofence");
+      } else {
+        toast.error(response?.message || "Failed to save geofence");
+      }
+    } catch (error) {
+      console.error("Error saving geofence:", error);
+      toast.error("Error saving geofence");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ─── Style helpers ────────────────────────────────────────────────────────
+  const inputCls = `w-full px-4 py-2.5 rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${isDark
+    ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+    : "bg-white border-gray-200 text-gray-900 placeholder-gray-400"
+    }`;
+  const labelCls = `block text-[10px] font-bold tracking-widest mb-1.5 ${isDark ? "text-gray-400" : "text-gray-500"
+    }`;
+
+  if (loading) {
+    return (
+      <div className={`${isDark ? "dark" : ""} flex items-center justify-center h-screen`}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500 mx-auto mb-3" />
+          <p className="text-sm text-gray-400">Loading zone...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const showDrawingTool = isRedrawing && map;
+
+  return (
+    <div className={`${isDark ? "dark" : ""} mt-10`}>
+      <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
+        <PageHeader
+          title={isCreateMode ? "Create Geofence" : "Edit Geofence"}
+          subtitle={
+            isCreateMode
+              ? "Create new geofence with identity and geometry rules."
+              : "Update geofence identity and operational settings."
+          }
+          breadcrumbs={[
+            { label: "Configurations" },
+            { label: "Geofence Library", href: "/geofence" },
+            { label: isCreateMode ? "Create" : code || "Edit" },
+          ]}
+          showButton={true}
+          buttonText={saving ? "Saving..." : isCreateMode ? "Create Geofence" : "Save Changes"}
+          buttonIcon={saving ? undefined : <Save className="w-4 h-4" />}
+          onButtonClick={handleSave}
+          showExportButton={false}
+          showFilterButton={false}
+        />
+
+        <div className="flex flex-1 overflow-hidden">
+          {/* ── Sidebar ── */}
+          <aside
+            className={`w-[420px] flex-shrink-0 flex flex-col border-r overflow-y-auto ${isDark ? "bg-background border-gray-800" : "bg-white border-gray-200"
+              }`}
+          >
+            <div className="px-5 py-5 space-y-6">
+              {/* Identity */}
+              <section>
+                <h3 className={`text-[10px] font-bold tracking-widest mb-3 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                  IDENTITY & REGISTRY
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className={labelCls}>ACCOUNT</label>
+                    <select value={accountId} onChange={(e) => setAccountId(Number(e.target.value))} className={inputCls}>
+                      <option value={0}>Select account</option>
+                      {accounts.map((account) => (
+                        <option key={account.id} value={account.id}>{account.value}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>UNIQUE CODE</label>
+                    <input type="text" value={code} onChange={(e) => setCode(e.target.value)} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>DISPLAY NAME</label>
+                    <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className={inputCls} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>LOCATION (CENTER)</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        step="0.000001"
+                        placeholder="Latitude"
+                        value={center?.lat ?? ""}
+                        onChange={(e) =>
+                          setCenter((prev) => ({
+                            lat: Number(e.target.value || 0),
+                            lng: prev?.lng ?? DEFAULT_CENTER.lng,
+                          }))
+                        }
+                        className={inputCls}
+                      />
+                      <input
+                        type="number"
+                        step="0.000001"
+                        placeholder="Longitude"
+                        value={center?.lng ?? ""}
+                        onChange={(e) =>
+                          setCenter((prev) => ({
+                            lat: prev?.lat ?? DEFAULT_CENTER.lat,
+                            lng: Number(e.target.value || 0),
+                          }))
+                        }
+                        className={inputCls}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsLocationPickerOpen(true)}
+                      className={`mt-2 px-3 py-2 rounded-lg text-xs font-semibold border ${isDark
+                        ? "border-gray-700 text-gray-300 hover:bg-gray-800"
+                        : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                        }`}
+                    >
+                      Pick on Map
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              {/* Zone Config */}
+              <section>
+                <h3 className={`text-[10px] font-bold tracking-widest mb-3 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                  ZONE CONFIG
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className={labelCls}>CLASSIFICATION</label>
+                    <select
+                      value={classification}
+                      onChange={(e) => setClassification(e.target.value as ZoneClassification)}
+                      className={inputCls}
+                    >
+                      {CLASSIFICATIONS.map((item) => (
+                        <option key={item} value={item}>{item}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className={labelCls}>GEOMETRY TYPE</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {(["circle", "polygon"] as GeometryType[]).map((item) => (
+                        <button
+                          type="button"
+                          key={item}
+                          onClick={() => setGeometry(item)}
+                          className={`px-4 py-2 rounded-lg border text-sm font-semibold transition-colors ${geometry === item
+                            ? "border-indigo-500 text-indigo-600 bg-indigo-50 dark:bg-indigo-950"
+                            : isDark
+                              ? "border-gray-700 text-gray-300 hover:border-gray-500"
+                              : "border-gray-200 text-gray-700 hover:border-gray-400"
+                            }`}
+                        >
+                          {item.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                    {!isCreateMode && (
+                      <p className={`mt-1.5 text-[10px] ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                        Changing geometry type will require you to redraw the shape.
+                      </p>
+                    )}
+                  </div>
+
+                  {geometry === "circle" && (
+                    <div>
+                      <label className={labelCls}>RADIUS (M)</label>
+                      <input
+                        type="number"
+                        value={radius}
+                        onChange={(e) => setRadius(Number(e.target.value || 0))}
+                        className={inputCls}
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className={labelCls}>STATUS</label>
+                    <select value={status} onChange={(e) => setStatus(e.target.value as ZoneStatus)} className={inputCls}>
+                      <option value="enabled">Enabled</option>
+                      <option value="disabled">Disabled</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className={labelCls}>COLOR THEME</label>
+                    <div className="flex flex-wrap gap-2">
+                      {PRESET_COLORS.map((item) => (
+                        <button
+                          type="button"
+                          key={item}
+                          onClick={() => setColor(item)}
+                          className="w-8 h-8 rounded-lg transition-transform hover:scale-110"
+                          style={{
+                            background: item,
+                            boxShadow: color === item ? `0 0 0 2px white, 0 0 0 4px ${item}` : "none",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Drawing / Shape status panel */}
+              <section>
+                <div
+                  className={`rounded-lg p-3 text-xs border space-y-2 ${isRedrawing
+                    ? isDark
+                      ? "bg-amber-950 border-amber-800 text-amber-300"
+                      : "bg-amber-50 border-amber-200 text-amber-700"
+                    : shapeDrawn
+                      ? isDark
+                        ? "bg-green-950 border-green-800 text-green-400"
+                        : "bg-green-50 border-green-200 text-green-700"
+                      : isDark
+                        ? "bg-indigo-950 border-indigo-800 text-indigo-400"
+                        : "bg-indigo-50 border-indigo-200 text-indigo-700"
+                    }`}
+                >
+                  {isRedrawing ? (
+                    <>
+                      <p>
+                        🖊️ Drawing mode active — click on the map to draw your{" "}
+                        <strong>{geometry === "circle" ? "circle" : "polygon"}</strong>.{" "}
+                        {geometry === "polygon"
+                          ? "Click to add points, double-click to finish."
+                          : "Click center then drag to set radius."}
+                      </p>
+                      {!isCreateMode && (
+                        <button
+                          type="button"
+                          onClick={handleCancelRedraw}
+                          className="underline font-semibold"
+                        >
+                          Cancel redraw
+                        </button>
+                      )}
+                    </>
+                  ) : shapeDrawn ? (
+                    <div className="flex items-center justify-between">
+                      <span>✅ Shape ready.</span>
+                      <button
+                        type="button"
+                        onClick={handleStartRedraw}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-colors ${isDark
+                          ? "border-green-700 text-green-300 hover:bg-green-900"
+                          : "border-green-400 text-green-700 hover:bg-green-100"
+                          }`}
+                      >
+                        <Pencil className="w-3 h-3" />
+                        Redraw Shape
+                      </button>
+                    </div>
+                  ) : (
+                    <p>⚠️ No shape drawn yet. Click on the map to begin.</p>
+                  )}
+                </div>
+              </section>
+            </div>
+          </aside>
+
+          {/* ── Map ── */}
+          <main className="flex-1 relative">
+            {isLoaded ? (
+              <>
+                <GeofenceMap
+                  key={isRedrawing ? "drawing" : "viewing"}   // ← ADD THIS
+                  zones={isRedrawing ? [] : [previewZone]}
+                  isDark={isDark}
+                  onMapLoad={onMapLoad}
+                  zoom={13}
+                  center={center || DEFAULT_CENTER}
+                />
+
+                {showDrawingTool && (
+                  <DrawingManagerOverlay
+                    key={drawingKey}
+                    map={map}
+                    geometry={geometry}
+                    color={color}
+                    onPolygonComplete={handlePolygonComplete}
+                    onCircleComplete={handleCircleComplete}
+                  />
+                )}
+
+                {/* Drawing mode indicator overlay on map */}
+                {isRedrawing && (
+                  <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+                    <div className="bg-amber-500 text-white text-xs font-semibold px-4 py-1.5 rounded-full shadow-lg">
+                      ✏️ Drawing mode — draw your {geometry} on the map
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500" />
+              </div>
+            )}
+
+            {/* Zoom controls */}
+            <div className="absolute bottom-8 right-3 flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => map?.setZoom((map.getZoom() ?? 13) + 1)}
+                className="w-9 h-9 flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg shadow text-gray-700 dark:text-gray-300 font-bold text-lg"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                onClick={() => map?.setZoom((map.getZoom() ?? 13) - 1)}
+                className="w-9 h-9 flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg shadow text-gray-700 dark:text-gray-300 font-bold text-lg"
+              >
+                -
+              </button>
+            </div>
+          </main>
+        </div>
+
+        <MapLocationPicker
+          isOpen={isLocationPickerOpen}
+          onClose={() => setIsLocationPickerOpen(false)}
+          onSelect={(loc) => setCenter({ lat: loc.lat, lng: loc.lng })}
+          initialLocation={center || DEFAULT_CENTER}
+          isDark={isDark}
+          googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? ""}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ─── DrawingManagerOverlay ────────────────────────────────────────────────
+interface DrawingManagerOverlayProps {
+  map: google.maps.Map;
+  geometry: GeometryType;
+  color: string;
+  onPolygonComplete: (polygon: google.maps.Polygon) => void;
+  onCircleComplete: (circle: google.maps.Circle) => void;
+}
+
+function DrawingManagerOverlay({
+  map,
+  geometry,
+  color,
+  onPolygonComplete,
+  onCircleComplete,
+}: DrawingManagerOverlayProps) {
+  useEffect(() => {
+    if (!map || typeof google === "undefined") return;
+
+    const shapeOptions = {
+      fillColor: color,
+      strokeColor: color,
+      fillOpacity: 0.35,
+      strokeWeight: 2,
+      editable: false,
+      clickable: false,
+    };
+
+    const dm = new google.maps.drawing.DrawingManager({
+      drawingMode:
+        geometry === "circle"
+          ? google.maps.drawing.OverlayType.CIRCLE
+          : google.maps.drawing.OverlayType.POLYGON,
+      drawingControl: false,
+      polygonOptions: shapeOptions,
+      circleOptions: shapeOptions,
     });
 
-    // Load zone once
-    React.useEffect(() => {
-        fetchZoneById(id).then((z) => {
-            if (z) {
-                setZone(z);
-                setCode(z.code);
-                setDisplayName(z.displayName);
-                setClassification(z.classification);
-                setColor(z.color);
-                setGeometry(z.geometry);
-                setStatus(z.status);
-            }
-            setLoading(false);
-        });
-    }, [id]);
+    dm.setMap(map);
 
-    const onMapLoad = useCallback(
-        (m: google.maps.Map) => {
-            setMap(m);
-            if (zone?.center) m.panTo(zone.center);
-        },
-        [zone],
+    const polygonListener = google.maps.event.addListener(
+      dm,
+      "polygoncomplete",
+      (polygon: google.maps.Polygon) => {
+        onPolygonComplete(polygon);
+        dm.setDrawingMode(null);
+        dm.setMap(null);
+      },
     );
 
-    const handleSave = async () => {
-        setSaving(true);
-        // TODO: call your updateGeofence(id, payload) service here
-        await new Promise((r) => setTimeout(r, 800));
-        setSaving(false);
-        router.push("/geofence");
-    };
-
-    /* ── style helpers ── */
-    const inputCls = `w-full px-4 py-2.5 rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${isDark
-            ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-            : "bg-white border-gray-200 text-gray-900 placeholder-gray-400"
-        }`;
-    const labelCls = `block text-[10px] font-bold tracking-widest mb-1.5 ${isDark ? "text-gray-400" : "text-gray-500"
-        }`;
-
-    /* ── loading / not found ── */
-    if (loading) {
-        return (
-            <div className={`${isDark ? "dark" : ""} flex items-center justify-center h-screen`}>
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500 mx-auto mb-3" />
-                    <p className="text-sm text-gray-400">Loading zone…</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (!zone) {
-        return (
-            <div className={`${isDark ? "dark" : ""} flex items-center justify-center h-screen`}>
-                <div className="text-center text-gray-400">
-                    <p className="text-5xl mb-3">🗺</p>
-                    <p className="font-semibold text-lg">Zone not found</p>
-                    <button
-                        onClick={() => router.push("/geofence")}
-                        className="mt-4 px-5 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold"
-                    >
-                        Back to Library
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    // Live preview zone with current edits
-    const previewZone: GeofenceZone = {
-        ...zone,
-        code,
-        displayName,
-        classification,
-        color,
-        geometry,
-        status,
-    };
-
-    /* ── main render ── */
-    return (
-        <div className={`${isDark ? "dark" : ""} flex flex-col mt-10`}>
-            {/* ── Header ── */}
-            <header
-                className={`flex items-center justify-between px-6 py-3 border-b flex-shrink-0 ${isDark ? "bg-background border-gray-800" : "bg-white border-gray-200"
-                    }`}
-            >
-                {/* Left: back + title */}
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => router.push("/geofence")}
-                        className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${isDark ? "text-gray-400 hover:text-foreground" : "text-gray-500 hover:text-gray-900"
-                            }`}
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        Back
-                    </button>
-                    <span className={isDark ? "text-gray-700" : "text-gray-300"}>|</span>
-                    <div>
-                        <h1
-                            className={`text-base font-black tracking-tight ${isDark ? "text-foreground" : "text-gray-900"}`}
-                        >
-                            {zone.displayName}
-                        </h1>
-                        <p className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}>
-                            {zone.code} · {zone.classification}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Centre: breadcrumb */}
-                <nav
-                    className={`hidden md:flex items-center gap-1 text-xs ${isDark ? "text-gray-400" : "text-gray-500"
-                        }`}
-                >
-                    <button onClick={() => router.push("/")}>🏠</button>
-                    <span>›</span>
-                    <button onClick={() => router.push("/geofence")}>Geofence Library</button>
-                    <span>›</span>
-                    <span className={`font-semibold ${isDark ? "text-foreground" : "text-gray-800"}`}>
-                        {zone.code}
-                    </span>
-                </nav>
-
-                {/* Right: actions */}
-                <div className="flex items-center gap-2">
-                    <button
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${isDark
-                                ? "border-red-900 text-red-400 hover:bg-red-900/20"
-                                : "border-red-200 text-red-600 hover:bg-red-50"
-                            }`}
-                    >
-                        <Trash2 className="w-4 h-4" />
-                        Delete
-                    </button>
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
-                    >
-                        {saving ? (
-                            <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                        ) : (
-                            <Save className="w-4 h-4" />
-                        )}
-                        Save Changes
-                    </button>
-                </div>
-            </header>
-
-            {/* ── Body ── */}
-            <div className="flex flex-1 overflow-hidden">
-                {/* ── Left: Edit form ── */}
-                <aside
-                    className={`w-[420px] flex-shrink-0 flex flex-col border-r overflow-y-auto ${isDark ? "bg-background border-gray-800" : "bg-white border-gray-200"
-                        }`}
-                >
-                    <div className="px-5 py-5 space-y-6">
-                        {/* ── Identity ── */}
-                        <section>
-                            <div className="flex items-center gap-2 mb-4">
-                                <span className="text-gray-400 text-xs">ℹ</span>
-                                <h3 className={`text-[10px] font-bold tracking-widest ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                                    IDENTITY &amp; REGISTRY
-                                </h3>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className={labelCls}>UNIQUE CODE</label>
-                                    <input
-                                        type="text"
-                                        value={code}
-                                        onChange={(e) => setCode(e.target.value)}
-                                        className={inputCls}
-                                    />
-                                </div>
-                                <div>
-                                    <label className={labelCls}>DISPLAY NAME</label>
-                                    <input
-                                        type="text"
-                                        value={displayName}
-                                        onChange={(e) => setDisplayName(e.target.value)}
-                                        className={inputCls}
-                                    />
-                                </div>
-                            </div>
-                        </section>
-
-                        {/* ── Classification ── */}
-                        <section>
-                            <div className="flex items-center gap-2 mb-3">
-                                <span className="text-gray-400 text-xs">◈</span>
-                                <h3 className={`text-[10px] font-bold tracking-widest ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                                    ZONE CLASSIFICATION
-                                </h3>
-                            </div>
-                            <select
-                                value={classification}
-                                onChange={(e) => setClassification(e.target.value as ZoneClassification)}
-                                className={inputCls}
-                            >
-                                {CLASSIFICATIONS.map((c) => (
-                                    <option key={c} value={c}>{c}</option>
-                                ))}
-                            </select>
-                            <p className="text-xs text-gray-400 mt-1.5">
-                                Used for automated trip reporting and safety rules.
-                            </p>
-                        </section>
-
-                        {/* ── Color theme ── */}
-                        <section>
-                            <div className="flex items-center gap-2 mb-3">
-                                <span className="text-gray-400 text-xs">◉</span>
-                                <h3 className={`text-[10px] font-bold tracking-widest ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                                    GEOFENCE COLOR THEME
-                                </h3>
-                            </div>
-                            <div
-                                className={`flex flex-wrap gap-2 p-3 rounded-xl border border-dashed ${isDark ? "border-gray-700 bg-gray-800/40" : "border-gray-200 bg-gray-50"
-                                    }`}
-                            >
-                                {PRESET_COLORS.map((c) => (
-                                    <button
-                                        key={c}
-                                        onClick={() => setColor(c)}
-                                        className="w-10 h-10 rounded-xl transition-all hover:scale-110 active:scale-95"
-                                        style={{
-                                            background: c,
-                                            boxShadow:
-                                                color === c ? `0 0 0 2px white, 0 0 0 4px ${c}` : "none",
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* ── Geometry type ── */}
-                        <section>
-                            <div className="flex items-center gap-2 mb-3">
-                                <span className="text-gray-400 text-xs">◈</span>
-                                <h3 className={`text-[10px] font-bold tracking-widest ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                                    GEOMETRY TYPE
-                                </h3>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                {(["circle", "polygon"] as GeometryType[]).map((g) => (
-                                    <button
-                                        key={g}
-                                        onClick={() => setGeometry(g)}
-                                        className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all ${geometry === g
-                                                ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/10"
-                                                : isDark
-                                                    ? "border-gray-700 hover:border-gray-600"
-                                                    : "border-gray-200 hover:border-gray-300"
-                                            }`}
-                                    >
-                                        <span
-                                            className={`text-xl ${geometry === g ? "text-indigo-500" : isDark ? "text-gray-400" : "text-gray-400"
-                                                }`}
-                                        >
-                                            {g === "circle" ? "○" : "⬠"}
-                                        </span>
-                                        <div className="text-left">
-                                            <p
-                                                className={`text-xs font-bold uppercase ${geometry === g ? "text-indigo-600" : isDark ? "text-gray-300" : "text-gray-700"
-                                                    }`}
-                                            >
-                                                {g}
-                                            </p>
-                                            <p className="text-[10px] text-gray-400">
-                                                {g === "circle" ? "RADIUS ZONE" : "CUSTOM AREA"}
-                                            </p>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        </section>
-
-                        {/* ── Lifecycle status ── */}
-                        <section>
-                            <div
-                                className={`flex items-center justify-between px-4 py-3 rounded-xl ${isDark ? "bg-gray-800" : "bg-gray-50"
-                                    }`}
-                            >
-                                <div>
-                                    <p className={`text-[10px] font-bold tracking-widest ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                                        LIFECYCLE STATUS
-                                    </p>
-                                    <p className="text-[10px] text-gray-400 mt-0.5">
-                                        ENABLE ZONE FOR ACTIVE BEHAVIORAL MONITORING.
-                                    </p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span
-                                        className={`text-[10px] font-bold ${status === "enabled" ? "text-emerald-600" : "text-gray-400"
-                                            }`}
-                                    >
-                                        {status === "enabled" ? "ENABLED" : "DISABLED"}
-                                    </span>
-                                    <button
-                                        onClick={() =>
-                                            setStatus((s) => (s === "enabled" ? "disabled" : "enabled"))
-                                        }
-                                        className={`relative w-10 h-6 rounded-full transition-colors ${status === "enabled"
-                                                ? "bg-indigo-500"
-                                                : isDark ? "bg-gray-700" : "bg-gray-300"
-                                            }`}
-                                    >
-                                        <span
-                                            className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-transform duration-200 ${status === "enabled" ? "translate-x-5" : "translate-x-1"
-                                                }`}
-                                        />
-                                    </button>
-                                </div>
-                            </div>
-                        </section>
-                    </div>
-
-                    {/* ── Form footer ── */}
-                    <div
-                        className={`flex items-center gap-3 px-5 py-4 border-t mt-auto sticky bottom-0 ${isDark ? "border-gray-800 bg-background" : "border-gray-100 bg-white"
-                            }`}
-                    >
-                        <button
-                            onClick={() => router.push("/geofence")}
-                            className={`flex-1 py-2.5 rounded-xl font-semibold text-sm border transition-colors ${isDark
-                                    ? "border-gray-700 text-gray-300 hover:bg-gray-800"
-                                    : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                                }`}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="flex-[2] py-2.5 rounded-xl font-bold text-sm bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
-                        >
-                            {saving && (
-                                <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                            )}
-                            Save Changes
-                        </button>
-                    </div>
-                </aside>
-
-                {/* ── Right: Map preview ── */}
-                <main className="flex-1 relative">
-                    {isLoaded ? (
-                        <GeofenceMap
-                            zones={[previewZone]}
-                            isDark={isDark}
-                            onMapLoad={onMapLoad}
-                            zoom={13}
-                            center={zone.center ?? { lat: 28.6139, lng: 77.209 }}
-                        />
-                    ) : (
-                        <div className="flex items-center justify-center h-full">
-                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500" />
-                        </div>
-                    )}
-
-                    {/* Top-right tools */}
-                    <div className="absolute top-3 right-3 flex flex-col gap-2">
-                        <button className="w-9 h-9 flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg shadow text-gray-500 dark:text-gray-300">
-                            <Layers className="w-4 h-4" />
-                        </button>
-                    </div>
-
-                    {/* Zoom */}
-                    <div className="absolute bottom-8 right-3 flex flex-col gap-1">
-                        <button
-                            onClick={() => map?.setZoom((map.getZoom() ?? 13) + 1)}
-                            className="w-9 h-9 flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg shadow text-gray-700 dark:text-gray-300 font-bold text-lg"
-                        >
-                            +
-                        </button>
-                        <button
-                            onClick={() => map?.setZoom((map.getZoom() ?? 13) - 1)}
-                            className="w-9 h-9 flex items-center justify-center bg-white dark:bg-gray-800 rounded-lg shadow text-gray-700 dark:text-gray-300 font-bold text-lg"
-                        >
-                            −
-                        </button>
-                    </div>
-
-                    {/* Settings FAB */}
-                    <button className="absolute bottom-8 right-14 w-10 h-10 flex items-center justify-center bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-colors">
-                        <Settings className="w-5 h-5" />
-                    </button>
-
-                    {/* Live preview label */}
-                    <div
-                        className={`absolute top-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm shadow ${isDark ? "bg-gray-900/80 text-gray-300" : "bg-white/90 text-gray-700"
-                            }`}
-                    >
-                        <span
-                            className="w-2 h-2 rounded-full animate-pulse"
-                            style={{ background: color }}
-                        />
-                        LIVE PREVIEW
-                    </div>
-                </main>
-            </div>
-        </div>
+    const circleListener = google.maps.event.addListener(
+      dm,
+      "circlecomplete",
+      (circle: google.maps.Circle) => {
+        onCircleComplete(circle);
+        dm.setDrawingMode(null);
+        dm.setMap(null);
+      },
     );
+
+    return () => {
+      google.maps.event.removeListener(polygonListener);
+      google.maps.event.removeListener(circleListener);
+      dm.setMap(null);
+    };
+  }, [map, geometry, color, onPolygonComplete, onCircleComplete]);
+
+  return null;
 }
