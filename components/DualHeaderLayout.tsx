@@ -288,6 +288,12 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               icon: Link2,
               path: "/devicemap",
             },
+            {
+              id: "vehicle-geofence",
+              label: "Vehicle Geofence",
+              icon: Link2,
+              path: "/vehicle-geofence",
+            },
           ],
         },
       ],

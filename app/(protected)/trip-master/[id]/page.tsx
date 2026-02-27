@@ -3,13 +3,13 @@
 import React, { useMemo, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Save, Trash2, X } from "lucide-react";
 import type { Trip, TripCycle, TripNotifications, TripStop } from "@/interfaces/trip.interface";
 import { DRIVERS, VEHICLES, VEHICLE_ICON } from "@/interfaces/trip.interface";
 
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
-type RouteMode = "master-route" | "custom-route" | "one-off-scheduled";
+type RouteMode = "master-route" | "weekly" | "custom-route" | "one-off-scheduled";
 type VehicleClass = "truck" | "traveller" | "bus";
 
 const MASTER_ROUTES = [
@@ -18,6 +18,13 @@ const MASTER_ROUTES = [
   "NCR Milk Distribution",
   "Industrial Night Shuttle",
 ];
+
+const SCHEDULING_OPTIONS = [
+  { id: "master-route", label: "Master Route", sub: "Fixed Path" },
+  { id: "weekly", label: "Weekly", sub: "Repeating Cycle" },
+  { id: "custom-route", label: "Custom Route", sub: "On Demand" },
+  { id: "one-off-scheduled", label: "One-Off", sub: "Scheduled" },
+] as const;
 
 const makeStop = (): TripStop => ({
   id: Date.now().toString() + Math.random(),
@@ -63,6 +70,7 @@ export default function CreateTripPage() {
     smsAlerts: false,
     trackingLink: true,
   });
+  const [otpNumbers, setOtpNumbers] = useState<string[]>([""]);
   const [saving, setSaving] = useState(false);
 
   const inputCls = `w-full px-4 py-2.5 rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
@@ -91,7 +99,20 @@ export default function CreateTripPage() {
     setWeeklyRotation((prev) => ({ ...prev, [day]: !prev[day] }));
   };
 
+  const addOtpNumber = () => {
+    setOtpNumbers((prev) => [...prev, ""]);
+  };
+
+  const updateOtpNumber = (idx: number, value: string) => {
+    setOtpNumbers((prev) => prev.map((num, i) => (i === idx ? value : num)));
+  };
+
+  const removeOtpNumber = (idx: number) => {
+    setOtpNumbers((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)));
+  };
+
   const routeLabel = useMemo(() => {
+    if (routeMode === "weekly") return "Weekly Cycle";
     if (routeMode === "master-route") return masterRoute;
     if (routeMode === "custom-route") return customRouteName || "Custom Route";
     return "One-off Scheduled";
@@ -104,6 +125,10 @@ export default function CreateTripPage() {
     if (source) return source;
     return "Delhi";
   }, [stops]);
+
+  const showWeeklyRotation = routeMode === "weekly";
+  const showMasterRoute = routeMode === "master-route";
+  const showCustomRoute = routeMode === "custom-route";
 
   const isValid =
     tripName.trim() &&
@@ -147,29 +172,17 @@ export default function CreateTripPage() {
       createdAt: new Date().toISOString(),
     };
 
-    console.log("Deploying trip:", { ...trip, routeMode, routeLabel, weeklyRotation });
+    console.log("Deploying trip:", {
+      ...trip,
+      routeMode,
+      routeLabel,
+      weeklyRotation,
+      otpNumbers: notif.otpDriver ? otpNumbers.filter((num) => num.trim()) : [],
+    });
     await new Promise((r) => setTimeout(r, 700));
     setSaving(false);
     router.push("/trips");
   };
-
-  const NotifItem = ({ field, label }: { field: keyof TripNotifications; label: string }) => (
-    <button
-      type="button"
-      onClick={() => setNotif((p) => ({ ...p, [field]: !p[field] }))}
-      className={`px-3 py-2 rounded-lg border text-xs font-semibold transition-colors ${
-        notif[field]
-          ? isDark
-            ? "border-emerald-800 bg-emerald-900/20 text-emerald-400"
-            : "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : isDark
-            ? "border-gray-700 text-gray-400 hover:border-gray-600"
-            : "border-gray-200 text-gray-600 hover:border-gray-300"
-      }`}
-    >
-      {label}
-    </button>
-  );
 
   return (
     <div className={`${isDark ? "dark" : ""} flex flex-col min-h-screen mt-10`}>
@@ -293,12 +306,18 @@ export default function CreateTripPage() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {([
-                  { id: "master-route", label: "Master Route", sub: "Fixed Path" },
-                  { id: "custom-route", label: "Custom Route", sub: "On Demand" },
-                  { id: "one-off-scheduled", label: "One-Off", sub: "Scheduled" },
-                ] as const).map((opt) => (
+            </section>
+
+            <section className={cardCls}>
+              <div className="flex items-center gap-2 mb-5">
+                <span className={`text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md ${isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-100 text-indigo-700"}`}>03</span>
+                <h3 className={sectionTitleCls}>TRIP CYCLE & TIMELINE</h3>
+                <div className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`} />
+              </div>
+
+              <label className={labelCls}>TRIP TYPE</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                {SCHEDULING_OPTIONS.map((opt) => (
                   <button
                     key={opt.id}
                     type="button"
@@ -319,34 +338,30 @@ export default function CreateTripPage() {
                   </button>
                 ))}
               </div>
-            </section>
 
-            <section className={cardCls}>
-              <div className="flex items-center gap-2 mb-5">
-                <span className={`text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md ${isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-100 text-indigo-700"}`}>03</span>
-                <h3 className={sectionTitleCls}>TRIP CYCLE & TIMELINE</h3>
-                <div className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`} />
-              </div>
-
-              <label className={labelCls}>WEEKLY ROTATION</label>
-              <div className="grid grid-cols-7 gap-2 mb-5">
-                {WEEK_DAYS.map((day) => (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => toggleWeekDay(day)}
-                    className={`rounded-lg px-2 py-2 text-xs font-bold border transition-colors ${
-                      weeklyRotation[day]
-                        ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300"
-                        : isDark
-                          ? "border-gray-700 text-gray-400"
-                          : "border-gray-200 text-gray-500"
-                    }`}
-                  >
-                    {day}
-                  </button>
-                ))}
-              </div>
+              {showWeeklyRotation && (
+                <>
+                  <label className={labelCls}>WEEKLY ROTATION</label>
+                  <div className="grid grid-cols-7 gap-2 mb-5">
+                    {WEEK_DAYS.map((day) => (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleWeekDay(day)}
+                        className={`rounded-lg px-2 py-2 text-xs font-bold border transition-colors ${
+                          weeklyRotation[day]
+                            ? "border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300"
+                            : isDark
+                              ? "border-gray-700 text-gray-400"
+                              : "border-gray-200 text-gray-500"
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
@@ -359,33 +374,33 @@ export default function CreateTripPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>SELECT MASTER PIPELINE</label>
-                  <select
-                    value={masterRoute}
-                    onChange={(e) => setMasterRoute(e.target.value)}
-                    className={inputCls}
-                    disabled={routeMode !== "master-route"}
-                  >
-                    {MASTER_ROUTES.map((route) => (
-                      <option key={route} value={route}>
-                        {route}
-                      </option>
-                    ))}
-                  </select>
+              {(showMasterRoute || showCustomRoute) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {showMasterRoute && (
+                    <div>
+                      <label className={labelCls}>SELECT MASTER PIPELINE</label>
+                      <select value={masterRoute} onChange={(e) => setMasterRoute(e.target.value)} className={inputCls}>
+                        {MASTER_ROUTES.map((route) => (
+                          <option key={route} value={route}>
+                            {route}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  {showCustomRoute && (
+                    <div>
+                      <label className={labelCls}>CUSTOM ROUTE NAME</label>
+                      <input
+                        value={customRouteName}
+                        onChange={(e) => setCustomRouteName(e.target.value)}
+                        className={inputCls}
+                        placeholder="Enter custom route"
+                      />
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className={labelCls}>CUSTOM ROUTE NAME</label>
-                  <input
-                    value={customRouteName}
-                    onChange={(e) => setCustomRouteName(e.target.value)}
-                    className={inputCls}
-                    disabled={routeMode !== "custom-route"}
-                    placeholder="Enter custom route"
-                  />
-                </div>
-              </div>
+              )}
             </section>
 
             <section className={cardCls}>
@@ -446,13 +461,62 @@ export default function CreateTripPage() {
                 <div className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`} />
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <NotifItem field="whatsappDriver" label="WA Driver" />
-                <NotifItem field="whatsappConsignee" label="WA Consignee" />
-                <NotifItem field="otpDriver" label="OTP Driver" />
-                <NotifItem field="otpConsignee" label="OTP Consignee" />
-                <NotifItem field="smsAlerts" label="SMS Alerts" />
-                <NotifItem field="trackingLink" label="Tracking Link" />
+              <div className={`rounded-xl border p-4 ${isDark ? "border-gray-700 bg-gray-800/30" : "border-gray-200 bg-gray-50"}`}>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={notif.otpDriver}
+                    onChange={(e) =>
+                      setNotif((prev) => ({
+                        ...prev,
+                        otpDriver: e.target.checked,
+                        otpConsignee: e.target.checked,
+                      }))
+                    }
+                    className="w-4 h-4 accent-indigo-600"
+                  />
+                  <div>
+                    <p className={`text-sm font-semibold ${isDark ? "text-foreground" : "text-gray-900"}`}>Enable OTP Notification</p>
+                    <p className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"}`}>OTP on hone par niche multiple mobile numbers add karein.</p>
+                  </div>
+                </label>
+
+                {notif.otpDriver && (
+                  <div className="mt-4 space-y-3">
+                    {otpNumbers.map((number, idx) => (
+                      <div key={`otp-number-${idx}`} className="flex items-center gap-2">
+                        <input
+                          type="tel"
+                          value={number}
+                          onChange={(e) => updateOtpNumber(idx, e.target.value)}
+                          className={inputCls}
+                          placeholder="Enter mobile number"
+                        />
+                        {otpNumbers.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeOtpNumber(idx)}
+                            className={`p-2 rounded-lg border ${isDark ? "border-gray-700 text-gray-400 hover:text-red-400" : "border-gray-200 text-gray-500 hover:text-red-500"}`}
+                            aria-label="Remove number"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={addOtpNumber}
+                      className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg border ${
+                        isDark ? "border-gray-700 text-indigo-400 hover:border-indigo-700" : "border-gray-200 text-indigo-600 hover:border-indigo-300"
+                      }`}
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add Number
+                    </button>
+                  </div>
+                )}
               </div>
             </section>
           </div>
