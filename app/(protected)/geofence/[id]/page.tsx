@@ -21,12 +21,11 @@ import {
   updateGeofence,
 } from "@/services/geofenceService";
 import { getAllAccounts } from "@/services/commonServie";
-
-const LIBRARIES: ("drawing" | "geometry" | "places")[] = [
-  "drawing",
-  "geometry",
-  "places",
-];
+import {
+  getGoogleMapsApiKey,
+  GOOGLE_MAPS_LIBRARIES,
+  GOOGLE_MAPS_SCRIPT_ID,
+} from "@/hooks/googleMapsConfig";
 
 const PRESET_COLORS = [
   "#ef4444",
@@ -84,8 +83,9 @@ export default function GeofenceDetailPage() {
   const [isRedrawing, setIsRedrawing] = useState(false);
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "AIzaSyAQvgMBRVkyU6Upw6ONKT0TsNtlHNMfEQg",
-    libraries: LIBRARIES,
+    id: GOOGLE_MAPS_SCRIPT_ID,
+    googleMapsApiKey: getGoogleMapsApiKey(),
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
   const onMapLoad = useCallback((m: google.maps.Map) => setMap(m), []);
@@ -689,7 +689,7 @@ export default function GeofenceDetailPage() {
           onSelect={(loc) => setCenter({ lat: loc.lat, lng: loc.lng })}
           initialLocation={center || DEFAULT_CENTER}
           isDark={isDark}
-          googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "AIzaSyAQvgMBRVkyU6Upw6ONKT0TsNtlHNMfEQg"}
+          googleMapsApiKey={getGoogleMapsApiKey()}
         />
       </div>
     </div>

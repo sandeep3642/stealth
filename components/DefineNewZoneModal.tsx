@@ -10,6 +10,11 @@ import {
 } from "@react-google-maps/api";
 import { useTheme } from "@/context/ThemeContext";
 import { X, MapPin } from "lucide-react";
+import {
+  getGoogleMapsApiKey,
+  GOOGLE_MAPS_LIBRARIES,
+  GOOGLE_MAPS_SCRIPT_ID,
+} from "@/hooks/googleMapsConfig";
 import type {
   GeofenceZone,
   GeometryType,
@@ -17,8 +22,6 @@ import type {
 } from "@/interfaces/geofence.interface";
 
 /* ──────────────────────────── constants ──────────────────────────── */
-
-const LIBRARIES: ("drawing" | "geometry")[] = ["drawing", "geometry"];
 
 const MAP_CONTAINER_STYLE: React.CSSProperties = {
   width: "100%",
@@ -108,8 +111,9 @@ const DefineNewZoneModal: React.FC<Props> = ({
   >(null);
 
   const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "AIzaSyAQvgMBRVkyU6Upw6ONKT0TsNtlHNMfEQg",
-    libraries: LIBRARIES,
+    id: GOOGLE_MAPS_SCRIPT_ID,
+    googleMapsApiKey: getGoogleMapsApiKey(),
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
   const handleCircleComplete = useCallback((circle: google.maps.Circle) => {

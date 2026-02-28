@@ -1,19 +1,19 @@
 "use client";
 
 import { useJsApiLoader } from "@react-google-maps/api";
-
-const GOOGLE_MAP_LIBRARIES = [];
+import {
+  getGoogleMapsApiKey,
+  GOOGLE_MAPS_LIBRARIES,
+  GOOGLE_MAPS_SCRIPT_ID,
+} from "./googleMapsConfig";
 
 export function useGoogleMapsSdk() {
-  const key =
-    process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY ||
-    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
-    "AIzaSyAQvgMBRVkyU6Upw6ONKT0TsNtlHNMfEQg";
+  const key = getGoogleMapsApiKey();
 
   const { isLoaded, loadError } = useJsApiLoader({
-    id: "fleetbharat-google-map-script",
+    id: GOOGLE_MAPS_SCRIPT_ID,
     googleMapsApiKey: key,
-    libraries: GOOGLE_MAP_LIBRARIES,
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
   return {

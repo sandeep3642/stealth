@@ -8,6 +8,11 @@ import {
     Autocomplete,
 } from "@react-google-maps/api";
 import { MapPin, X, Check, Loader2, Search } from "lucide-react";
+import {
+    getGoogleMapsApiKey,
+    GOOGLE_MAPS_LIBRARIES,
+    GOOGLE_MAPS_SCRIPT_ID,
+} from "@/hooks/googleMapsConfig";
 
 export interface PickedLocation {
     lat: number;
@@ -24,7 +29,6 @@ interface Props {
     googleMapsApiKey: string;
 }
 
-const LIBRARIES: ("places")[] = ["places"];
 const DEFAULT_CENTER = { lat: 28.4595, lng: 77.0266 };
 
 const DARK_STYLES: google.maps.MapTypeStyle[] = [
@@ -61,8 +65,9 @@ export default function MapLocationPicker({
     googleMapsApiKey,
 }: Props) {
     const { isLoaded, loadError } = useJsApiLoader({
-        googleMapsApiKey,
-        libraries: LIBRARIES,
+        id: GOOGLE_MAPS_SCRIPT_ID,
+        googleMapsApiKey: googleMapsApiKey || getGoogleMapsApiKey(),
+        libraries: GOOGLE_MAPS_LIBRARIES,
     });
 
     const [markerPos, setMarkerPos]     = useState<google.maps.LatLngLiteral>(initialLocation);
