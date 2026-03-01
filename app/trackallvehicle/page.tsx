@@ -1,9 +1,8 @@
 "use client";
 
+import { useRef } from "react";
 import FleetMap from "@/components/maps/FleetMap";
-import React, { useRef } from "react";
 import type { Vehicle } from "@/lib/mapTypes";
-import { getLiveTrackingData } from "@/services/liveTrackingService";
 
 // Helper: safely convert to number
 function toNum(value: any): number | undefined {

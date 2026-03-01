@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import MapLoader from "./MapLoader";
-import VehicleMap from "./VehicleMap";
-import PlaybackControls from "./PlaybackControls";
-import { useVehiclesLive } from "./hooks/useVehiclesLive";
-import { useRoutePlayback } from "./hooks/useRoutePlayback";
 import type { RoutePoint, Vehicle } from "@/lib/mapTypes";
+import { useRoutePlayback } from "./hooks/useRoutePlayback";
+import { useVehiclesLive } from "./hooks/useVehiclesLive";
+import MapLoader from "./MapLoader";
+import PlaybackControls from "./PlaybackControls";
+import VehicleMap from "./VehicleMap";
 
 type Props = {
   fetchVehicles: () => Promise<Vehicle[]>;

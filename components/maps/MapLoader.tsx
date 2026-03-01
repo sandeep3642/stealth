@@ -1,10 +1,10 @@
 "use client";
-import React from "react";
 import { useLoadScript } from "@react-google-maps/api";
+import React from "react";
 import {
-  getGoogleMapsApiKey,
   GOOGLE_MAPS_LIBRARIES,
   GOOGLE_MAPS_SCRIPT_ID,
+  getGoogleMapsApiKey,
 } from "@/hooks/googleMapsConfig";
 
 export default function MapLoader({ children }: { children: React.ReactNode }) {
