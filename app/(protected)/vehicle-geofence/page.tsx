@@ -202,10 +202,10 @@ const VehicleGeofencePage: React.FC = () => {
         className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
       >
         <PageHeader
-          title="Vehicle Geofence Map"
+          title="Vehicle Geofence"
           subtitle="Manage vehicle and geofence assignment mappings."
           breadcrumbs={[
-            { label: "Assignments" },
+            { label: "Fleet" },
             { label: "Vehicle Geofence" },
           ]}
           showButton={false}

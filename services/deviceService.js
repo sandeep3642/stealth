@@ -21,6 +21,14 @@ const getStoredAccountId = () => {
   return Number(user?.accountId || 0);
 };
 
+/**
+ * @param {{
+ *   page?: number;
+ *   pageSize?: number;
+ *   accountId?: number;
+ *   search?: string;
+ * }} [options]
+ */
 export const getdevices = async ({
   page = 1,
   pageSize = 10,

@@ -47,7 +47,7 @@ const ProvisionDevice: React.FC = () => {
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
-  const isEditMode = id && id !== "0";
+  const isEditMode = Boolean(id && id !== "0");
 
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(false);

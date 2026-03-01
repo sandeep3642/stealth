@@ -247,9 +247,9 @@ const DeviceMap: React.FC = () => {
         className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
       >
         <PageHeader
-          title="Device Map"
+          title="Vehicle Device Mapping"
           subtitle="Manage mapped devices and assignment health."
-          breadcrumbs={[{ label: "Accounts" }, { label: "Device Map" }]}
+          breadcrumbs={[{ label: "Fleet" }, { label: "Vehicle Device Mapping" }]}
           showButton={false}
         />
 
@@ -291,7 +291,7 @@ const DeviceMap: React.FC = () => {
             className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
           >
             <Plus className="w-4 h-4" />
-            Assign Device
+            Add Vehicle Device Mapping
           </button>
         </div>
 

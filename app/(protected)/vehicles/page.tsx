@@ -220,11 +220,11 @@ const Vehicles: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title="Fleet Registry"
+          title="Vehicle"
           subtitle="Provision and manage organizational vehicles and asset identities."
-          breadcrumbs={[{ label: "Fleet" }, { label: "Fleet Registry" }]}
+          breadcrumbs={[{ label: "Fleet" }, { label: "Vehicle" }]}
           showButton={true}
-          buttonText="Provision New Vehicle"
+          buttonText="Add Vehicle"
           buttonRoute="/vehicles/0"
           showExportButton={true}
           ExportbuttonText="Export"

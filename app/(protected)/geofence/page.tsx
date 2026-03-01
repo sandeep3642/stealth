@@ -194,11 +194,11 @@ export default function GeofencePage() {
       >
         <div className="mb-4 sm:mb-6">
           <PageHeader
-            title="Geofence Library"
+            title="Geofence Master"
             subtitle="Manage geofence identities, geometry, and active status."
             breadcrumbs={[
-              { label: "Configurations" },
-              { label: "Geofence Library" },
+              { label: "Fleet" },
+              { label: "Geofence Master" },
             ]}
             showButton={true}
             buttonText="Add Geofence"

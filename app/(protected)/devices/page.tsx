@@ -305,11 +305,11 @@ const DeviceRegistry: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title="Device Registry"
+          title="Device"
           subtitle="Full traceability of device identity, connectivity, and provisioning status."
-          breadcrumbs={[{ label: "Fleet" }, { label: "Device Registry" }]}
+          breadcrumbs={[{ label: "Fleet" }, { label: "Device" }]}
           showButton={true}
-          buttonText="Provision New Device"
+          buttonText="Add Device"
           buttonRoute="/devices/0"
           showExportButton={false}
           showFilterButton={false}

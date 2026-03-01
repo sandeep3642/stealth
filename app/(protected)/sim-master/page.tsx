@@ -147,15 +147,14 @@ const SimMaster: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title="SIM Lifecycle Ledger"
+          title="SIM Master"
           subtitle="Manage global SIM inventory, carrier contracts, and MSISDN mappings."
           breadcrumbs={[
             { label: "Fleet" },
-            { label: "Telematics" },
             { label: "SIM Master" },
           ]}
           showButton={true}
-          buttonText="Provision SIM"
+          buttonText="Add SIM"
           buttonRoute="/sim-master/0"
           showExportButton={true}
           ExportbuttonText="Export"

@@ -245,21 +245,39 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           children: [
             {
               id: "vehicles",
-              label: "Vehicles",
+              label: "Vehicle",
               icon: Truck,
               path: "/vehicles",
             },
             {
               id: "devices",
-              label: "Devices",
+              label: "Device",
               icon: Smartphone,
               path: "/devices",
             },
             {
-              id: "drivers",
-              label: "Drivers",
-              icon: Users,
-              path: "/driver",
+              id: "geofence-master",
+              label: "Geofence Master",
+              icon: Map,
+              path: "/geofence",
+            },
+            {
+              id: "vehicle-device-mapping",
+              label: "Vehicle Device Mapping",
+              icon: Link2,
+              path: "/devicemap",
+            },
+            {
+              id: "sim-master",
+              label: "SIM Master",
+              icon: Smartphone,
+              path: "/sim-master",
+            },
+            {
+              id: "vehicle-geofence",
+              label: "Vehicle Geofence",
+              icon: Link2,
+              path: "/vehicle-geofence",
             },
           ],
         },
@@ -331,6 +349,12 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               label: "Configuration",
               icon: Settings,
               path: "/configuration",
+            },
+            {
+              id: "form-master",
+              label: "Form Master",
+              icon: FileText,
+              path: "/formmaster",
             },
             {
               id: "white-label",

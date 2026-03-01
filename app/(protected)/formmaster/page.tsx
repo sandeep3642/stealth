@@ -108,7 +108,7 @@ const FormMasterPage: React.FC = () => {
         <PageHeader
           title="Form Master"
           subtitle="Manage application forms, modules, routes, and visibility."
-          breadcrumbs={[{ label: "Users" }, { label: "Form Master" }]}
+          breadcrumbs={[{ label: "Configurations" }, { label: "Form Master" }]}
           showButton={true}
           buttonText="Add Form"
           buttonRoute="/formmaster/0"
