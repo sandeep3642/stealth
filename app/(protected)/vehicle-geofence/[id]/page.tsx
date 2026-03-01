@@ -90,11 +90,13 @@ const AddEditVehicleGeofence: React.FC = () => {
 
   const fetchDropdowns = async (accountId: number) => {
     try {
-      const [accountsRes, vehiclesRes, geofencesRes] = await Promise.allSettled([
-        getAllAccounts(),
-        getVehicleDropdown(accountId),
-        getGeofenceDropdown(accountId),
-      ]);
+      const [accountsRes, vehiclesRes, geofencesRes] = await Promise.allSettled(
+        [
+          getAllAccounts(),
+          getVehicleDropdown(accountId),
+          getGeofenceDropdown(accountId),
+        ],
+      );
 
       if (accountsRes.status === "fulfilled") {
         setAccounts(toOptions(accountsRes.value));
@@ -180,7 +182,9 @@ const AddEditVehicleGeofence: React.FC = () => {
   }, [formData.accountId]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
   ) => {
     const { name, value } = e.target;
     const numberFields = ["accountId", "vehicleId", "geofenceId"];
@@ -385,7 +389,8 @@ const AddEditVehicleGeofence: React.FC = () => {
                         Assignment Status
                       </h3>
                       <p className="text-sm text-foreground opacity-60">
-                        Inactive assignment will be excluded from active mapping.
+                        Inactive assignment will be excluded from active
+                        mapping.
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -409,7 +414,9 @@ const AddEditVehicleGeofence: React.FC = () => {
                       >
                         <span
                           className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                            formData.isActive ? "translate-x-8" : "translate-x-1"
+                            formData.isActive
+                              ? "translate-x-8"
+                              : "translate-x-1"
                           }`}
                         />
                       </button>

@@ -93,9 +93,10 @@ const ProvisionVehicle: React.FC = () => {
     const init = async () => {
       setPageLoading(true);
       try {
-        const [accRes, typeRes, 
+        const [
+          accRes,
+          typeRes,
           // brandRes, leasedVendorRes
-        
         ] = await Promise.all([
           getAllAccounts(),
           getVehicleType(),
@@ -164,7 +165,7 @@ const ProvisionVehicle: React.FC = () => {
 
   // ── Form change handler ────────────────────────────────────────────────
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -346,7 +347,6 @@ const ProvisionVehicle: React.FC = () => {
         {/* Form Card */}
         <Card isDark={isDark}>
           <div className="p-4 sm:p-6 space-y-8">
-
             {/* ── VEHICLE IDENTIFICATION ── */}
             <div>
               <SectionHeader icon={Shield} title="Vehicle Identification" />
@@ -653,7 +653,6 @@ const ProvisionVehicle: React.FC = () => {
                 </div>
               </div>
             </div> */}
-
           </div>
         </Card>
       </div>

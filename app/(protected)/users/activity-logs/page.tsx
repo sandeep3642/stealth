@@ -175,7 +175,6 @@ const ActivityLogs: React.FC = () => {
           onPageSizeChange={handlePageSizeChange}
         />
       </div>
-      
     </div>
   );
 };

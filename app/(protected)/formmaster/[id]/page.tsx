@@ -6,11 +6,7 @@ import { toast } from "react-toastify";
 import { FileText } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useColor } from "@/context/ColorContext";
-import {
-  createForm,
-  getFormById,
-  updateForm,
-} from "@/services/formService";
+import { createForm, getFormById, updateForm } from "@/services/formService";
 import { FormMasterPayload } from "@/interfaces/form.interface";
 
 const defaultFormData: FormMasterPayload = {
@@ -174,7 +170,10 @@ const AddEditFormMasterPage: React.FC = () => {
                   className="p-2 rounded-lg"
                   style={{ backgroundColor: `${selectedColor}20` }}
                 >
-                  <FileText className="w-5 h-5" style={{ color: selectedColor }} />
+                  <FileText
+                    className="w-5 h-5"
+                    style={{ color: selectedColor }}
+                  />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-foreground mb-1">

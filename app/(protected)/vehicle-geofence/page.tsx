@@ -204,7 +204,10 @@ const VehicleGeofencePage: React.FC = () => {
         <PageHeader
           title="Vehicle Geofence Map"
           subtitle="Manage vehicle and geofence assignment mappings."
-          breadcrumbs={[{ label: "Assignments" }, { label: "Vehicle Geofence" }]}
+          breadcrumbs={[
+            { label: "Assignments" },
+            { label: "Vehicle Geofence" },
+          ]}
           showButton={false}
         />
 

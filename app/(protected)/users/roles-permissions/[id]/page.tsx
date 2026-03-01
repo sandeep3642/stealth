@@ -50,7 +50,8 @@ const AddRole: React.FC = () => {
 
   // Updated: Handle row-wise "All" checkbox
   const handlePermissionChange = (index: number, field: keyof Permission) => {
-    if (!["read", "write", "update", "delete", "export", "all"].includes(field)) return;
+    if (!["read", "write", "update", "delete", "export", "all"].includes(field))
+      return;
 
     setFormData((prev) => {
       const updatedPermissions = prev.permissions.map((perm, i) => {
@@ -70,15 +71,15 @@ const AddRole: React.FC = () => {
           } else {
             // If any individual permission is clicked
             const updatedPerm = { ...perm, [field]: !perm[field] };
-            
+
             // Auto-update "all" checkbox based on other permissions
-            const allPermissionsTrue = 
-              updatedPerm.read && 
-              updatedPerm.write && 
-              updatedPerm.update && 
-              updatedPerm.delete && 
+            const allPermissionsTrue =
+              updatedPerm.read &&
+              updatedPerm.write &&
+              updatedPerm.update &&
+              updatedPerm.delete &&
               updatedPerm.export;
-            
+
             return {
               ...updatedPerm,
               all: allPermissionsTrue,
@@ -106,7 +107,7 @@ const AddRole: React.FC = () => {
       field === "all"
     ) {
       const allChecked = formData.permissions.every((p) => p[field]);
-      
+
       setFormData((prev) => ({
         ...prev,
         permissions: prev.permissions.map((p) => {
@@ -127,15 +128,15 @@ const AddRole: React.FC = () => {
               ...p,
               [field]: !allChecked,
             };
-            
+
             // Auto-update "all" checkbox based on other permissions
-            const allPermissionsTrue = 
-              updatedPerm.read && 
-              updatedPerm.write && 
-              updatedPerm.update && 
-              updatedPerm.delete && 
+            const allPermissionsTrue =
+              updatedPerm.read &&
+              updatedPerm.write &&
+              updatedPerm.update &&
+              updatedPerm.delete &&
               updatedPerm.export;
-            
+
             return {
               ...updatedPerm,
               all: allPermissionsTrue,
@@ -192,11 +193,11 @@ const AddRole: React.FC = () => {
 
               if (right) {
                 // Check if all permissions are true to set "all" flag
-                const allPermissionsTrue = 
-                  right.canRead && 
-                  right.canWrite && 
-                  right.canUpdate && 
-                  right.canDelete && 
+                const allPermissionsTrue =
+                  right.canRead &&
+                  right.canWrite &&
+                  right.canUpdate &&
+                  right.canDelete &&
                   right.canExport;
 
                 return {
@@ -625,8 +626,9 @@ const AddRole: React.FC = () => {
                       <th className="text-center py-3 px-4">
                         <div className="flex flex-col items-center gap-1">
                           <span
-                            className={`font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"
-                              }`}
+                            className={`font-semibold text-sm ${
+                              isDark ? "text-gray-300" : "text-gray-700"
+                            }`}
                           >
                             DELETE
                           </span>
@@ -660,8 +662,9 @@ const AddRole: React.FC = () => {
                       <th className="text-center py-3 px-4">
                         <div className="flex flex-col items-center gap-1">
                           <span
-                            className={`font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"
-                              }`}
+                            className={`font-semibold text-sm ${
+                              isDark ? "text-gray-300" : "text-gray-700"
+                            }`}
                           >
                             ALL
                           </span>
@@ -764,7 +767,6 @@ const AddRole: React.FC = () => {
           </Card>
         </div>
       </div>
-      
     </div>
   );
 };

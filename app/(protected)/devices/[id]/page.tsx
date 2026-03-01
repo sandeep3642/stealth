@@ -1,19 +1,23 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useTheme } from "@/context/ThemeContext";
-import { useColor } from "@/context/ColorContext";
+import { Building2, Layers, Smartphone } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { Smartphone, Building2, Layers } from "lucide-react";
 import { Card } from "@/components/CommonCard";
+import { useColor } from "@/context/ColorContext";
+import { useTheme } from "@/context/ThemeContext";
 import { SimAccount } from "@/interfaces/sim.interface";
 import {
   getAllAccounts,
   getDeviceTypeDropdown,
   getOemManufacturersDropdown,
 } from "@/services/commonServie";
-import { getDeviceById, saveDevice, updateDevice } from "@/services/deviceService";
+import {
+  getDeviceById,
+  saveDevice,
+  updateDevice,
+} from "@/services/deviceService";
 
 interface DeviceFormData {
   accountId: number;
@@ -104,7 +108,10 @@ const ProvisionDevice: React.FC = () => {
           setAccounts(accRes.data);
         }
 
-        if (deviceTypeRes?.statusCode === 200 && Array.isArray(deviceTypeRes?.data)) {
+        if (
+          deviceTypeRes?.statusCode === 200 &&
+          Array.isArray(deviceTypeRes?.data)
+        ) {
           setDeviceTypes(
             deviceTypeRes.data.map((item: any) => ({
               id: Number(item?.id || 0),
@@ -113,7 +120,10 @@ const ProvisionDevice: React.FC = () => {
           );
         }
 
-        if (manufacturerRes?.statusCode === 200 && Array.isArray(manufacturerRes?.data)) {
+        if (
+          manufacturerRes?.statusCode === 200 &&
+          Array.isArray(manufacturerRes?.data)
+        ) {
           setManufacturers(manufacturerRes.data);
         }
 
@@ -202,7 +212,13 @@ const ProvisionDevice: React.FC = () => {
             }
           : {
               accountId: Number(formData.accountId),
-              createdBy: Number(formData.accountId || accountId || userId || formData.createdBy || 0),
+              createdBy: Number(
+                formData.accountId ||
+                  accountId ||
+                  userId ||
+                  formData.createdBy ||
+                  0,
+              ),
             }),
       };
 
@@ -462,7 +478,10 @@ const ProvisionDevice: React.FC = () => {
                         )?.value || "—",
                     },
                     { label: "Device No.", value: formData.deviceNo || "—" },
-                    { label: "IMEI / Serial", value: formData.deviceImeiOrSerial },
+                    {
+                      label: "IMEI / Serial",
+                      value: formData.deviceImeiOrSerial,
+                    },
                   ].map(({ label, value }) => (
                     <div
                       key={label}

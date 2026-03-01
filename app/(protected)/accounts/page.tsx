@@ -164,7 +164,6 @@ const Accounts: React.FC = () => {
 
     getPermissionsList();
   }, []);
-  
 
   return (
     <div className={`${isDark ? "dark" : ""} mt-10`}>

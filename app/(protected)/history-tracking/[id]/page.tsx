@@ -191,18 +191,21 @@ export default function HistoryTracking() {
         throw new Error("Authentication token not found");
       }
 
-      const response = await fetch(`${API_BASE_URL}api/v1/history/history-tracking`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // ✅ Added
+      const response = await fetch(
+        `${API_BASE_URL}api/v1/history/history-tracking`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // ✅ Added
+          },
+          body: JSON.stringify({
+            vehicleNo: vehicleId,
+            start: formatDateForAPI(startDate),
+            end: formatDateForAPI(endDate),
+          }),
         },
-        body: JSON.stringify({
-          vehicleNo: vehicleId,
-          start: formatDateForAPI(startDate),
-          end: formatDateForAPI(endDate),
-        }),
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

@@ -2,7 +2,9 @@ import api from "./apiService";
 
 // ✅ Get Configurations (List with pagination)
 export const getConfigurations = async (page = 1, pageSize = 10) => {
-  const res = await api.get(`/api/account-configurations?page=${page}&pageSize=${pageSize}`);
+  const res = await api.get(
+    `/api/account-configurations?page=${page}&pageSize=${pageSize}`,
+  );
   return res.data;
 };
 
@@ -70,10 +72,9 @@ export const deleteConfiguration = async (id) => {
 // ✅ Update Configuration Status (PATCH)
 export const updateConfigurationStatus = async (id, isActive) => {
   try {
-    const res = await api.put(
-      `/api/account-configurations/${id}`,
-      { isActive }
-    );
+    const res = await api.put(`/api/account-configurations/${id}`, {
+      isActive,
+    });
     return res.data;
   } catch (error) {
     return (

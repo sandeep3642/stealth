@@ -14,13 +14,14 @@ const Auth = () => {
     <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
       {/* Card Wrapper */}
       <div className="flex flex-col lg:flex-row w-full max-w-6xl bg-white shadow-2xl rounded-2xl overflow-hidden">
-
         {/* Left Panel */}
         <div className="hidden lg:flex lg:w-1/2 relative min-h-[600px] bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500">
           <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-white">
             <div className="space-y-6 text-center">
               <h1 className="text-4xl font-bold">Super Admin Portal</h1>
-              <p className="text-lg text-purple-100">Manage, Monitor, and Maintain with Ultimate Control</p>
+              <p className="text-lg text-purple-100">
+                Manage, Monitor, and Maintain with Ultimate Control
+              </p>
               <div className="grid grid-cols-3 gap-4 mt-12">
                 {[...Array(9)].map((_, i) => (
                   <div
@@ -40,11 +41,15 @@ const Auth = () => {
             {currentView === "login" && (
               <LoginComponent
                 onSwitchToRegister={() => setCurrentView("register")}
-                onSwitchToForgotPassword={() => setCurrentView("forgot-password")}
+                onSwitchToForgotPassword={() =>
+                  setCurrentView("forgot-password")
+                }
               />
             )}
             {currentView === "register" && (
-              <RegisterComponent onSwitchToLogin={() => setCurrentView("login")} />
+              <RegisterComponent
+                onSwitchToLogin={() => setCurrentView("login")}
+              />
             )}
             {currentView === "forgot-password" && (
               <ForgetPassword onBackToLogin={() => setCurrentView("login")} />

@@ -42,11 +42,14 @@ export interface ConfigurationResponse {
   success: boolean;
   statusCode: number;
   message: string;
-  data: {
-    page?: number;
-    pageSize?: number;
-    totalRecords?: number;
-    totalPages?: number;
-    items?: Configuration[];
-  } | Configuration | null;
+  data:
+    | {
+        page?: number;
+        pageSize?: number;
+        totalRecords?: number;
+        totalPages?: number;
+        items?: Configuration[];
+      }
+    | Configuration
+    | null;
 }

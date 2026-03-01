@@ -610,7 +610,6 @@ const ProvisionBranding: React.FC = () => {
           </div>
         </div>
       </div>
-      
     </div>
   );
 };

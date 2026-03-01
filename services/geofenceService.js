@@ -47,7 +47,7 @@ export const createGeofence = async (payload) => {
     const resolvedAccountId = Number(accountId || 0);
     const finalPayload = {
       ...payload,
-      
+
       createdBy: Number(payload?.createdBy || resolvedAccountId || 0),
     };
     const res = await api.post(`/api/geofences`, finalPayload);

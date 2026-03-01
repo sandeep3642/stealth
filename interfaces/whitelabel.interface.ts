@@ -52,4 +52,3 @@ export interface WhiteLabelResponse {
   message: string;
   data: WhiteLabel | null;
 }
-

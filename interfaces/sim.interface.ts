@@ -21,12 +21,12 @@ export interface SimSummary {
 
 // ── List item (mapped from GET /sim paginated response) ────────────────────
 export interface SimItem {
-  simId: number;          // API: simId
-  iccid: string;          // API: iccid
-  msisdn: string;         // API: msisdn
-  imsi: string;           // API: imsi
-  carrier: string;        // derived: carrier name string for display
-  statusKey: string;      // API: statusKey → "active" | "inactive"
+  simId: number; // API: simId
+  iccid: string; // API: iccid
+  msisdn: string; // API: msisdn
+  imsi: string; // API: imsi
+  carrier: string; // derived: carrier name string for display
+  statusKey: string; // API: statusKey → "active" | "inactive"
   expiryAt: string | null; // API: expiryAt
   updatedAt: string | null; // API: updatedAt
 }
@@ -34,16 +34,16 @@ export interface SimItem {
 // ── Form data (used in ProvisionSim add/edit form) ─────────────────────────
 export interface SimFormData {
   // Hardware Identity
-  accountId: number;        // API: accountId
-  iccid: string;            // API: iccid
-  msisdn: string;           // API: msisdn
-  imsi: string;             // API: imsi (NOT imsiCode)
+  accountId: number; // API: accountId
+  iccid: string; // API: iccid
+  msisdn: string; // API: msisdn
+  imsi: string; // API: imsi (NOT imsiCode)
 
   // Carrier Details
   networkProviderId: number; // API: networkProviderId (NOT carrierId)
-  activatedAt: string;       // API: activatedAt (NOT activatedOn)  — stored as YYYY-MM-DD for input[type=date]
-  expiryAt: string;          // API: expiryAt (NOT contractExpiry)  — stored as YYYY-MM-DD for input[type=date]
+  activatedAt: string; // API: activatedAt (NOT activatedOn)  — stored as YYYY-MM-DD for input[type=date]
+  expiryAt: string; // API: expiryAt (NOT contractExpiry)  — stored as YYYY-MM-DD for input[type=date]
 
   // Status
-  statusKey: string;         // API: statusKey → "active" | "inactive" (NOT boolean status)
+  statusKey: string; // API: statusKey → "active" | "inactive" (NOT boolean status)
 }

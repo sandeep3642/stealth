@@ -85,7 +85,6 @@ const Drivers: React.FC = () => {
     },
   ];
 
-
   const fetchCategories = async () => {
     try {
       setLoading(true);
@@ -94,7 +93,9 @@ const Drivers: React.FC = () => {
       if (response.success) {
         const driverList = response?.data?.drivers?.items || [];
         setCategories(driverList);
-        setTotalRecords(response?.data?.drivers?.totalRecords || driverList.length);
+        setTotalRecords(
+          response?.data?.drivers?.totalRecords || driverList.length,
+        );
 
         const summary = response?.data?.summary;
 
@@ -107,7 +108,11 @@ const Drivers: React.FC = () => {
           summary?.licenseIssues ??
           summary?.licenceIssues ??
           0;
-        const multiTenantOrgs = new Set(driverList.map((driver: DriverRow) => driver?.accountId).filter(Boolean)).size;
+        const multiTenantOrgs = new Set(
+          driverList
+            .map((driver: DriverRow) => driver?.accountId)
+            .filter(Boolean),
+        ).size;
 
         setCardCounts({
           totalDrivers,
@@ -207,7 +212,7 @@ const Drivers: React.FC = () => {
           showButton={true}
           buttonText="Add Driver"
           buttonRoute="/driver/0"
-        // showWriteButton={driverRights?.canWrite || false}
+          // showWriteButton={driverRights?.canWrite || false}
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <MetricCard
@@ -249,7 +254,6 @@ const Drivers: React.FC = () => {
             <p>Loading drivers...</p>
           </div>
         ) : (
-
           <CommonTable
             columns={columns}
             data={categories}

@@ -73,43 +73,43 @@ const SimMaster: React.FC = () => {
   ];
 
   const fetchSims = async () => {
-  try {
-    const response = await getSims(pageNo, pageSize);
-    console.log("sim response", response);
+    try {
+      const response = await getSims(pageNo, pageSize);
+      console.log("sim response", response);
 
-    const simsData = response.data?.sims;
-    const summary = response.data?.summary;
+      const simsData = response.data?.sims;
+      const summary = response.data?.summary;
 
-    if (simsData?.items?.length) {
-      const mappedData = simsData.items.map((s: any) => ({
-        simId: s.simId,
-        iccid: s.iccid,
-        msisdn: s.msisdn || "",
-        imsiCode: s.imsi || "",
-        carrier: s.networkProviderId || "",
-        status: s.statusKey,
-        contractExpiry: s.expiryAt || null,
-        updatedAt: s.updatedAt || s.createdAt || null,
-      }));
+      if (simsData?.items?.length) {
+        const mappedData = simsData.items.map((s: any) => ({
+          simId: s.simId,
+          iccid: s.iccid,
+          msisdn: s.msisdn || "",
+          imsiCode: s.imsi || "",
+          carrier: s.networkProviderId || "",
+          status: s.statusKey,
+          contractExpiry: s.expiryAt || null,
+          updatedAt: s.updatedAt || s.createdAt || null,
+        }));
 
-      setSummaryData({
-        totalSims: summary.totalSims,
-        enabled: summary.active,
-        // disabled: summary.inactive,
-        disabled: summary.expired,
-        activeCarriers:summary.active,
-      });
+        setSummaryData({
+          totalSims: summary.totalSims,
+          enabled: summary.active,
+          // disabled: summary.inactive,
+          disabled: summary.expired,
+          activeCarriers: summary.active,
+        });
 
-      setData(mappedData);
-      setTotalRecords(simsData.totalRecords);
-    } else {
-      toast.error("No SIMs found");
+        setData(mappedData);
+        setTotalRecords(simsData.totalRecords);
+      } else {
+        toast.error("No SIMs found");
+      }
+    } catch (error) {
+      console.error("Error fetching SIMs:", error);
+      toast.error("An error occurred while loading SIMs");
     }
-  } catch (error) {
-    console.error("Error fetching SIMs:", error);
-    toast.error("An error occurred while loading SIMs");
-  }
-};
+  };
 
   useEffect(() => {
     fetchSims();

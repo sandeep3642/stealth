@@ -29,7 +29,7 @@ export function hexToHSL(hex: string) {
 
 export function applyWhiteLabelColors(
   whiteLabel: any,
-  handleColorChange?: (hex: string) => void
+  handleColorChange?: (hex: string) => void,
 ) {
   if (!whiteLabel) return;
 

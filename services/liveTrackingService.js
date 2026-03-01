@@ -39,7 +39,8 @@ function normalizeStatus(rawStatus, speed, ignition) {
 
   if (status.includes("BREAK")) return "BREAKDOWN";
   if (status.includes("EXPIRE")) return "EXPIRED";
-  if (status.includes("OFFLINE") || status.includes("NO_SIGNAL")) return "OFFLINE";
+  if (status.includes("OFFLINE") || status.includes("NO_SIGNAL"))
+    return "OFFLINE";
   if (status.includes("PARK")) return "PARKED";
   if (status.includes("IDL")) return "IDLING";
   if (status.includes("MOVE") || status.includes("RUN")) return "MOVING";
@@ -54,21 +55,29 @@ function normalizeLiveTrackingRecord(record, fallbackVehicleNo = "", idx = 0) {
     pickFirst(record, ["lat", "latitude", "gpsLat", "gpsLatitude", "y"]),
   );
   const lng = asNumber(
-    pickFirst(record, ["lng", "lon", "longitude", "gpsLng", "gpsLongitude", "x"]),
+    pickFirst(record, [
+      "lng",
+      "lon",
+      "longitude",
+      "gpsLng",
+      "gpsLongitude",
+      "x",
+    ]),
   );
 
   if (lat === null || lng === null) return null;
 
-  const vehicleNo = asString(
-    pickFirst(record, [
-      "vehicleNo",
-      "vehicleNumber",
-      "registrationNo",
-      "registrationNumber",
-      "vehicle",
-      "vehicleno",
-    ]),
-  ) || fallbackVehicleNo;
+  const vehicleNo =
+    asString(
+      pickFirst(record, [
+        "vehicleNo",
+        "vehicleNumber",
+        "registrationNo",
+        "registrationNumber",
+        "vehicle",
+        "vehicleno",
+      ]),
+    ) || fallbackVehicleNo;
 
   const speed =
     asNumber(pickFirst(record, ["speed", "speedKmph", "velocity", "spd"])) ?? 0;
@@ -97,14 +106,17 @@ function normalizeLiveTrackingRecord(record, fallbackVehicleNo = "", idx = 0) {
       asString(pickFirst(record, ["driverName", "driver", "driverFullName"])) ||
       "Unknown Driver",
     lastUpdate:
-      asString(pickFirst(record, ["lastUpdate", "updatedAt", "timestamp", "gpsTime"])) ||
-      "Live",
+      asString(
+        pickFirst(record, ["lastUpdate", "updatedAt", "timestamp", "gpsTime"]),
+      ) || "Live",
     position: [lat, lng],
     raw: record,
   };
 }
 
-export async function getLiveTrackingBatch(vehicleNos = DEFAULT_FLEET_VEHICLES) {
+export async function getLiveTrackingBatch(
+  vehicleNos = DEFAULT_FLEET_VEHICLES,
+) {
   const list = vehicleNos.filter(Boolean);
   if (!list.length) return [];
 
@@ -120,7 +132,9 @@ export async function getLiveTrackingBatch(vehicleNos = DEFAULT_FLEET_VEHICLES) 
         : [];
 
   return rows
-    .map((row, index) => normalizeLiveTrackingRecord(row, list[index] || "", index))
+    .map((row, index) =>
+      normalizeLiveTrackingRecord(row, list[index] || "", index),
+    )
     .filter(Boolean);
 }
 

@@ -7,7 +7,11 @@ import { useTheme } from "@/context/ThemeContext";
 import { useRouter, useParams } from "next/navigation";
 
 import { toast } from "react-toastify";
-import { getDriverById, saveDriver, updateDriver } from "@/services/driverService";
+import {
+  getDriverById,
+  saveDriver,
+  updateDriver,
+} from "@/services/driverService";
 import { getAllAccounts } from "@/services/commonServie";
 
 interface DropdownOption {
@@ -94,7 +98,9 @@ const AddEditDriver: React.FC = () => {
       const response = await getDriverById(driverId);
 
       if (response.success && response.data) {
-        const driver = Array.isArray(response.data) ? response.data[0] : response.data;
+        const driver = Array.isArray(response.data)
+          ? response.data[0]
+          : response.data;
         const normalizedName = driver.name || "";
         const [first = "", ...rest] = normalizedName.split(" ");
 
@@ -104,7 +110,7 @@ const AddEditDriver: React.FC = () => {
         setMobile(driver.mobile || "");
         setLicenceNo(driver.licenceNo || driver.licenseNumber || "");
         setLicenceExpiry(
-          (driver.licenceExpiry || driver.licenseExpiry)
+          driver.licenceExpiry || driver.licenseExpiry
             ? (driver.licenceExpiry || driver.licenseExpiry).split("T")[0]
             : "",
         );
@@ -169,7 +175,11 @@ const AddEditDriver: React.FC = () => {
       }
 
       if (response.success) {
-        toast.success(isEditMode ? "Driver updated successfully!" : "Driver created successfully!");
+        toast.success(
+          isEditMode
+            ? "Driver updated successfully!"
+            : "Driver created successfully!",
+        );
         router.push("/driver");
       } else {
         toast.error(`Failed: ${response.message}`);
@@ -206,7 +216,6 @@ const AddEditDriver: React.FC = () => {
     <div className={`${isDark ? "dark" : ""}`}>
       <div className="min-h-screen bg-background flex justify-center p-2">
         <div className="w-full max-w-4xl">
-
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-6 px-4 sm:px-0">
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
@@ -220,7 +229,6 @@ const AddEditDriver: React.FC = () => {
             style={{ borderTopColor: selectedColor }}
           >
             <div className="p-8">
-
               {/* Section Header */}
               <div className="flex items-start gap-3 mb-6">
                 <div
@@ -291,7 +299,9 @@ const AddEditDriver: React.FC = () => {
                     onChange={(e) => setFirstName(e.target.value)}
                     disabled={loading}
                     className={inputClass}
-                    onFocus={(e) => (e.target.style.borderColor = selectedColor)}
+                    onFocus={(e) =>
+                      (e.target.style.borderColor = selectedColor)
+                    }
                     onBlur={(e) => (e.target.style.borderColor = "")}
                   />
                 </div>
@@ -306,7 +316,9 @@ const AddEditDriver: React.FC = () => {
                     onChange={(e) => setLastName(e.target.value)}
                     disabled={loading}
                     className={inputClass}
-                    onFocus={(e) => (e.target.style.borderColor = selectedColor)}
+                    onFocus={(e) =>
+                      (e.target.style.borderColor = selectedColor)
+                    }
                     onBlur={(e) => (e.target.style.borderColor = "")}
                   />
                 </div>
@@ -325,7 +337,9 @@ const AddEditDriver: React.FC = () => {
                     onChange={(e) => setMobile(e.target.value)}
                     disabled={loading}
                     className={inputClass}
-                    onFocus={(e) => (e.target.style.borderColor = selectedColor)}
+                    onFocus={(e) =>
+                      (e.target.style.borderColor = selectedColor)
+                    }
                     onBlur={(e) => (e.target.style.borderColor = "")}
                   />
                 </div>
@@ -340,7 +354,9 @@ const AddEditDriver: React.FC = () => {
                     onChange={(e) => setEmergencyContact(e.target.value)}
                     disabled={loading}
                     className={inputClass}
-                    onFocus={(e) => (e.target.style.borderColor = selectedColor)}
+                    onFocus={(e) =>
+                      (e.target.style.borderColor = selectedColor)
+                    }
                     onBlur={(e) => (e.target.style.borderColor = "")}
                   />
                 </div>
@@ -359,7 +375,9 @@ const AddEditDriver: React.FC = () => {
                     onChange={(e) => setLicenceNo(e.target.value)}
                     disabled={loading}
                     className={inputClass}
-                    onFocus={(e) => (e.target.style.borderColor = selectedColor)}
+                    onFocus={(e) =>
+                      (e.target.style.borderColor = selectedColor)
+                    }
                     onBlur={(e) => (e.target.style.borderColor = "")}
                   />
                 </div>
@@ -373,7 +391,9 @@ const AddEditDriver: React.FC = () => {
                     onChange={(e) => setLicenceExpiry(e.target.value)}
                     disabled={loading}
                     className={inputClass}
-                    onFocus={(e) => (e.target.style.borderColor = selectedColor)}
+                    onFocus={(e) =>
+                      (e.target.style.borderColor = selectedColor)
+                    }
                     onBlur={(e) => (e.target.style.borderColor = "")}
                   />
                 </div>
@@ -388,7 +408,9 @@ const AddEditDriver: React.FC = () => {
                     onChange={(e) => setBloodGroup(e.target.value)}
                     disabled={loading}
                     className={inputClass}
-                    onFocus={(e) => (e.target.style.borderColor = selectedColor)}
+                    onFocus={(e) =>
+                      (e.target.style.borderColor = selectedColor)
+                    }
                     onBlur={(e) => (e.target.style.borderColor = "")}
                   />
                 </div>
@@ -409,7 +431,9 @@ const AddEditDriver: React.FC = () => {
                     onClick={() => setIsActive(!isActive)}
                     disabled={loading}
                     className="relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
-                    style={{ backgroundColor: isActive ? selectedColor : "#cbd5e1" }}
+                    style={{
+                      backgroundColor: isActive ? selectedColor : "#cbd5e1",
+                    }}
                   >
                     <span
                       className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
@@ -449,7 +473,6 @@ const AddEditDriver: React.FC = () => {
                   )}
                 </button>
               </div>
-
             </div>
           </div>
         </div>

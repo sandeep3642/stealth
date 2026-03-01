@@ -1,18 +1,18 @@
 "use client";
 
+import { Globe, Languages, Map, Plus, X } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { Map, Globe, Languages, Plus, X } from "lucide-react";
-import { useTheme } from "@/context/ThemeContext";
-import { useColor } from "@/context/ColorContext";
-import { useRouter, useParams } from "next/navigation";
+import { toast } from "react-toastify";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
+import { useColor } from "@/context/ColorContext";
+import { useTheme } from "@/context/ThemeContext";
+import { getAllAccounts } from "@/services/commonServie";
 import {
   getConfigurationById,
   saveConfiguration,
   updateConfiguration,
 } from "@/services/configurationService";
-import { toast } from "react-toastify";
-import { getAllAccounts } from "@/services/commonServie";
 
 const Card = ({
   children,
@@ -618,7 +618,6 @@ const NewConfiguration: React.FC = () => {
           </div>
         )}
       </div>
-      
     </div>
   );
 };

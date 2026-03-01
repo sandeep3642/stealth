@@ -69,9 +69,9 @@ export default function GeofencePage() {
         paths:
           geometry === "polygon"
             ? zone?.coordinates?.map((coord) => ({
-              lat: coord.latitude,
-              lng: coord.longitude,
-            }))
+                lat: coord.latitude,
+                lng: coord.longitude,
+              }))
             : undefined,
       };
     },
@@ -134,8 +134,9 @@ export default function GeofencePage() {
           <div className="min-w-0">
             <button
               type="button"
-              className={`text-sm font-semibold truncate cursor-pointer hover:underline text-left ${isDark ? "text-foreground" : "text-gray-900"
-                }`}
+              className={`text-sm font-semibold truncate cursor-pointer hover:underline text-left ${
+                isDark ? "text-foreground" : "text-gray-900"
+              }`}
               onClick={() => router.push(`/geofence/${row.id}`)}
             >
               {row.displayName}
@@ -147,10 +148,11 @@ export default function GeofencePage() {
                 {row.code}
               </span>
               <span
-                className={`text-[9px] font-black px-1.5 py-0.5 rounded ${isDark
+                className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
+                  isDark
                     ? "bg-gray-700 text-gray-300"
                     : "bg-gray-100 text-gray-600"
-                  }`}
+                }`}
               >
                 {row.classification.toUpperCase()}
               </span>
@@ -205,8 +207,6 @@ export default function GeofencePage() {
             showFilterButton={false}
           />
         </div>
-
-
 
         <div className="w-full">
           {loadingZones ? (

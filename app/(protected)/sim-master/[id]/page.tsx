@@ -32,30 +32,30 @@ const ProvisionSim: React.FC = () => {
   const [pageLoading, setPageLoading] = useState(false);
 
   const [accounts, setAccounts] = useState<SimAccount[]>([]);
- const [carriers, setCarriers] = useState<SimCarrier[]>([
-  { id: 1, name: "BSNL" },
-  { id: 2, name: "Jio" },
-  { id: 3, name: "Airtel" },
-  { id: 4, name: "Vi (Vodafone Idea)" },
-  { id: 5, name: "MTNL" },
-  { id: 6, name: "Tata Docomo" }, // legacy
-  { id: 7, name: "Aircel" },      // legacy
-]);
+  const [carriers, setCarriers] = useState<SimCarrier[]>([
+    { id: 1, name: "BSNL" },
+    { id: 2, name: "Jio" },
+    { id: 3, name: "Airtel" },
+    { id: 4, name: "Vi (Vodafone Idea)" },
+    { id: 5, name: "MTNL" },
+    { id: 6, name: "Tata Docomo" }, // legacy
+    { id: 7, name: "Aircel" }, // legacy
+  ]);
 
   const [formData, setFormData] = useState<SimFormData>({
     // Hardware Identity
     accountId: 0,
     iccid: "",
     msisdn: "",
-    imsi: "",            // API field: imsi (not imsiCode)
+    imsi: "", // API field: imsi (not imsiCode)
 
     // Carrier Details
     networkProviderId: 0, // API field: networkProviderId (not carrierId)
-    activatedAt: "",      // API field: activatedAt (not activatedOn)
-    expiryAt: "",         // API field: expiryAt (not contractExpiry)
+    activatedAt: "", // API field: activatedAt (not activatedOn)
+    expiryAt: "", // API field: expiryAt (not contractExpiry)
 
     // Status
-    statusKey: "active",  // API field: statusKey → "active" | "inactive"
+    statusKey: "active", // API field: statusKey → "active" | "inactive"
   });
 
   // ── Helpers ────────────────────────────────────────────────────────────
@@ -75,7 +75,8 @@ const ProvisionSim: React.FC = () => {
     const init = async () => {
       setPageLoading(true);
       try {
-        const [accRes,
+        const [
+          accRes,
           // carrierRes
         ] = await Promise.all([
           getAllAccounts(),
@@ -106,15 +107,15 @@ const ProvisionSim: React.FC = () => {
               accountId: d.accountId ?? 0,
               iccid: d.iccid || "",
               msisdn: d.msisdn || "",
-              imsi: d.imsi || "",                          // ✅ imsi not imsiCode
+              imsi: d.imsi || "", // ✅ imsi not imsiCode
               networkProviderId: d.networkProviderId ?? 0, // ✅ networkProviderId not carrierId
-              activatedAt: d.activatedAt                   // ✅ activatedAt not activatedOn
+              activatedAt: d.activatedAt // ✅ activatedAt not activatedOn
                 ? d.activatedAt.split("T")[0]
                 : "",
-              expiryAt: d.expiryAt                         // ✅ expiryAt not contractExpiry
+              expiryAt: d.expiryAt // ✅ expiryAt not contractExpiry
                 ? d.expiryAt.split("T")[0]
                 : "",
-              statusKey: d.statusKey || "active",           // ✅ statusKey not status
+              statusKey: d.statusKey || "active", // ✅ statusKey not status
             });
           } else {
             toast.error("SIM not found");
@@ -133,7 +134,7 @@ const ProvisionSim: React.FC = () => {
 
   // ── Form change handler ────────────────────────────────────────────────
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -318,12 +319,10 @@ const ProvisionSim: React.FC = () => {
         {/* Form Card */}
         <Card isDark={isDark}>
           <div className="p-4 sm:p-6 space-y-8">
-
             {/* ── HARDWARE IDENTITY ── */}
             <div>
               <SectionHeader icon={ShieldCheck} title="Hardware Identity" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
                 {/* accountId ← accounts[].id, display accounts[].value */}
                 <div>
                   <label className={labelClass}>
@@ -347,8 +346,7 @@ const ProvisionSim: React.FC = () => {
                 {/* iccid */}
                 <div>
                   <label className={labelClass}>
-                    ICCID Identification{" "}
-                    <span className="text-red-500">*</span>
+                    ICCID Identification <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -398,8 +396,8 @@ const ProvisionSim: React.FC = () => {
                     formData.imsi.length > 0 &&
                     formData.imsi.length !== 15 && (
                       <p className="text-xs text-amber-500 mt-1">
-                        IMSI should be exactly 15 digits (
-                        {formData.imsi.length}/15)
+                        IMSI should be exactly 15 digits ({formData.imsi.length}
+                        /15)
                       </p>
                     )}
                 </div>
@@ -414,7 +412,6 @@ const ProvisionSim: React.FC = () => {
                 subtitle="Network provider and contract information."
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
                 {/* networkProviderId — API field name */}
                 <div>
                   <label className={labelClass}>
@@ -496,9 +493,7 @@ const ProvisionSim: React.FC = () => {
                     style={{
                       // statusKey: "active" → green, "inactive" → red
                       color:
-                        formData.statusKey === "active"
-                          ? "#16a34a"
-                          : "#dc2626",
+                        formData.statusKey === "active" ? "#16a34a" : "#dc2626",
                     }}
                   >
                     {formData.statusKey === "active" ? "ENABLED" : "DISABLED"}
@@ -530,7 +525,6 @@ const ProvisionSim: React.FC = () => {
                 </div>
               </div>
             </div>
-
           </div>
         </Card>
       </div>

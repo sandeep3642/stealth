@@ -48,9 +48,7 @@ export const ForgetPassword: React.FC<ForgetPasswordProps> = ({
       console.error("Forgot password error:", err);
 
       if (err?.response?.data) {
-        toast.error(
-          err.response.data.Message || "Failed to send reset link"
-        );
+        toast.error(err.response.data.Message || "Failed to send reset link");
       } else {
         toast.error("Network error. Please try again.");
       }

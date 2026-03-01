@@ -12,7 +12,10 @@ type Options = {
   smoothMs?: number;
 };
 
-export function useVehiclesLive(fetchVehicles: () => Promise<Vehicle[]>, opts: Options = {}) {
+export function useVehiclesLive(
+  fetchVehicles: () => Promise<Vehicle[]>,
+  opts: Options = {},
+) {
   const pollMs = opts.pollMs ?? 3000;
   const smoothMs = opts.smoothMs ?? 900;
 
@@ -30,7 +33,7 @@ export function useVehiclesLive(fetchVehicles: () => Promise<Vehicle[]>, opts: O
       if (!latest) return;
 
       const prevMap = prevRef.current;
-      const nextMap = new Map(latest.map(v => [v.id, v]));
+      const nextMap = new Map(latest.map((v) => [v.id, v]));
 
       // animate positions from prev -> latest
       const start = performance.now();
@@ -40,7 +43,7 @@ export function useVehiclesLive(fetchVehicles: () => Promise<Vehicle[]>, opts: O
       const step = (now: number) => {
         if (isUnmounted) return;
         const t = Math.min(1, (now - start) / smoothMs);
-        const blended: Vehicle[] = latest.map(v => {
+        const blended: Vehicle[] = latest.map((v) => {
           const p = prevMap.get(v.id);
           if (!p) return v;
           return {
@@ -52,9 +55,17 @@ export function useVehiclesLive(fetchVehicles: () => Promise<Vehicle[]>, opts: O
         });
 
         // Only update if changed
-        setVehicles(prev => {
+        setVehicles((prev) => {
           // Simple shallow compare
-          if (prev.length === blended.length && prev.every((v, i) => v.id === blended[i].id && v.lat === blended[i].lat && v.lng === blended[i].lng)) {
+          if (
+            prev.length === blended.length &&
+            prev.every(
+              (v, i) =>
+                v.id === blended[i].id &&
+                v.lat === blended[i].lat &&
+                v.lng === blended[i].lng,
+            )
+          ) {
             return prev;
           }
           return blended;
@@ -74,7 +85,7 @@ export function useVehiclesLive(fetchVehicles: () => Promise<Vehicle[]>, opts: O
 
     const start = async () => {
       const first = await fetchVehicles();
-      prevRef.current = new Map(first.map(v => [v.id, v]));
+      prevRef.current = new Map(first.map((v) => [v.id, v]));
       setVehicles(first);
 
       timer = setInterval(tick, pollMs);

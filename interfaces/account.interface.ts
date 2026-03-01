@@ -51,7 +51,6 @@ export interface FormRights {
   canAll: boolean;
 }
 
-
 // account.interface.ts (or same file)
 
 export interface AccountCardCounts {

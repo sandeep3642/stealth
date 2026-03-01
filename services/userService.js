@@ -32,7 +32,10 @@ export const createUser = async (payload) => {
     formData.append("TwoFactorEnabled", payload.TwoFactorEnabled.toString());
 
     // Handle array properly
-    if (payload.AdditionalPermissions && Array.isArray(payload.AdditionalPermissions)) {
+    if (
+      payload.AdditionalPermissions &&
+      Array.isArray(payload.AdditionalPermissions)
+    ) {
       payload.AdditionalPermissions.forEach((permission) => {
         formData.append("AdditionalPermissions", JSON.stringify(permission));
       });
@@ -65,24 +68,24 @@ export const updateUser = async (id, payload) => {
 
     const res = await api.put(
       `/api/users/${id}` +
-      `?userId=${id}` +
-      `&Email=${encodeURIComponent(payload.Email)}` +
-      `&FirstName=${encodeURIComponent(payload.FirstName)}` +
-      `&LastName=${encodeURIComponent(payload.LastName)}` +
-      `&MobileNo=${encodeURIComponent(payload.MobileNo || "")}` +
-      `&AccountId=${payload.AccountId}` +
-      `&RoleId=${payload.RoleId}` +
-      `&Status=${payload.Status}` +
-      `&TwoFactorEnabled=${payload.TwoFactorEnabled}` +
-      `&AdditionalPermissions=${encodeURIComponent(
-        JSON.stringify(payload.AdditionalPermissions)
-      )}`,
+        `?userId=${id}` +
+        `&Email=${encodeURIComponent(payload.Email)}` +
+        `&FirstName=${encodeURIComponent(payload.FirstName)}` +
+        `&LastName=${encodeURIComponent(payload.LastName)}` +
+        `&MobileNo=${encodeURIComponent(payload.MobileNo || "")}` +
+        `&AccountId=${payload.AccountId}` +
+        `&RoleId=${payload.RoleId}` +
+        `&Status=${payload.Status}` +
+        `&TwoFactorEnabled=${payload.TwoFactorEnabled}` +
+        `&AdditionalPermissions=${encodeURIComponent(
+          JSON.stringify(payload.AdditionalPermissions),
+        )}`,
       formData,
       {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      }
+      },
     );
 
     return res.data;
@@ -97,8 +100,6 @@ export const updateUser = async (id, payload) => {
     );
   }
 };
-
-
 
 export const deleteUser = async (id) => {
   try {

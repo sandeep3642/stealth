@@ -428,10 +428,13 @@ export default function FleetDashboard() {
                         }}
                         icon={{
                           url: getCarMarkerSvg({
-                            color: STATUS_META[vehicle.status]?.color || "#64748b",
+                            color:
+                              STATUS_META[vehicle.status]?.color || "#64748b",
                             isActive: selectedVehicle?.id === vehicle.id,
                             strokeColor:
-                              selectedVehicle?.id === vehicle.id ? "#1e3a8a" : "#0f172a",
+                              selectedVehicle?.id === vehicle.id
+                                ? "#1e3a8a"
+                                : "#0f172a",
                             direction: Number(vehicle?.raw?.direction || 0),
                           }),
                         }}
@@ -509,7 +512,9 @@ export default function FleetDashboard() {
                     </button>
                     <button
                       onClick={() =>
-                        router.push(`/history-tracking-smooth/${popupVehicle.id}`)
+                        router.push(
+                          `/history-tracking-smooth/${popupVehicle.id}`,
+                        )
                       }
                       className="w-[48%] rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                     >

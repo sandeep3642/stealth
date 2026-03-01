@@ -127,17 +127,14 @@ const DefineNewZoneModal: React.FC<Props> = ({
     circle.setMap(null);
   }, []);
 
-  const handlePolygonComplete = useCallback(
-    (polygon: google.maps.Polygon) => {
-      const paths = polygon
-        .getPath()
-        .getArray()
-        .map((ll) => ({ lat: ll.lat(), lng: ll.lng() }));
-      setDrawnPaths(paths);
-      polygon.setMap(null);
-    },
-    [],
-  );
+  const handlePolygonComplete = useCallback((polygon: google.maps.Polygon) => {
+    const paths = polygon
+      .getPath()
+      .getArray()
+      .map((ll) => ({ lat: ll.lat(), lng: ll.lng() }));
+    setDrawnPaths(paths);
+    polygon.setMap(null);
+  }, []);
 
   const handleSwitchGeometry = (g: GeometryType) => {
     setGeometry(g);
@@ -308,7 +305,9 @@ const DefineNewZoneModal: React.FC<Props> = ({
             <label className={labelCls}>GEOFENCE COLOR THEME</label>
             <div
               className={`flex flex-wrap gap-2 p-3 rounded-xl border border-dashed ${
-                isDark ? "border-gray-700 bg-gray-800/40" : "border-gray-200 bg-gray-50"
+                isDark
+                  ? "border-gray-700 bg-gray-800/40"
+                  : "border-gray-200 bg-gray-50"
               }`}
             >
               {PRESET_COLORS.map((color) => (

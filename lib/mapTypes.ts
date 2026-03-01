@@ -1,12 +1,12 @@
 export type Vehicle = {
-  id: string;                 // vehicleId / deviceId / number plate
-  name?: string;              // display name
+  id: string; // vehicleId / deviceId / number plate
+  name?: string; // display name
   lat: number;
   lng: number;
   speed?: number;
-  heading?: number;           // degrees
+  heading?: number; // degrees
   timestamp?: string;
-  status?: string;            // online/offline/ignition etc
+  status?: string; // online/offline/ignition etc
   [key: string]: any;
 };
 

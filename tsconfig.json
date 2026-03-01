@@ -28,7 +28,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
-, "app/(protected)/fleet/page.jsx"  ],
+    "**/*.mts",
+    "app/(protected)/fleet/page.jsx"
+  ],
   "exclude": ["node_modules"]
 }

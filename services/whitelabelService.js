@@ -2,7 +2,9 @@ import api from "./apiService";
 
 // ✅ Get White Labels (List with Pagination)
 export const getWhiteLabels = async (page = 1, pageSize = 10) => {
-  const res = await api.get(`/api/white-labels?page=${page}&pageSize=${pageSize}`);
+  const res = await api.get(
+    `/api/white-labels?page=${page}&pageSize=${pageSize}`,
+  );
   return res.data;
 };
 

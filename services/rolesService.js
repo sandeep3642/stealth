@@ -73,7 +73,6 @@ export const deleteRole = async (id) => {
   return res.data;
 };
 
-
 export const exportRoles = async (accountId, search) => {
   try {
     const res = await api.get(`/api/roles/export`, {

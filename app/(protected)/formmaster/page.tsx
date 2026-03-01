@@ -27,7 +27,12 @@ const FormMasterPage: React.FC = () => {
 
   const columns = [
     { key: "no", label: "NO", visible: true },
-    { key: "formCode", label: "FORM CODE", type: "link" as const, visible: true },
+    {
+      key: "formCode",
+      label: "FORM CODE",
+      type: "link" as const,
+      visible: true,
+    },
     { key: "formName", label: "FORM NAME", visible: true },
     { key: "moduleName", label: "MODULE", visible: true },
     { key: "pageUrl", label: "PAGE URL", visible: true },

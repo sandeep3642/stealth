@@ -109,9 +109,7 @@ export const getCurrencies = async () => {
 };
 
 export const getFormModulesDropdown = async () => {
-  const res = await api.get(
-    `/api/common/dropdowns/form-modules/dropdown`
-  );
+  const res = await api.get(`/api/common/dropdowns/form-modules/dropdown`);
   return res.data;
 };
 

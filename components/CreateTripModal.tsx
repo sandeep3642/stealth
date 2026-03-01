@@ -3,7 +3,12 @@
 import React, { useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import { X, MapPin, Plus, Trash2 } from "lucide-react";
-import type { Trip, TripCycle, TripStop, TripNotifications } from "@/interfaces/trip.interface";
+import type {
+  Trip,
+  TripCycle,
+  TripStop,
+  TripNotifications,
+} from "@/interfaces/trip.interface";
 import { DRIVERS, VEHICLES, VEHICLE_ICON } from "@/interfaces/trip.interface";
 
 /* ──────────────────────────── props ──────────────────────────── */
@@ -26,12 +31,19 @@ const makeStop = (): TripStop => ({
 
 /* ──────────────────────────── component ──────────────────────────── */
 
-const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defaultTrip }) => {
+const CreateTripModal: React.FC<Props> = ({
+  onClose,
+  onSave,
+  existingCount,
+  defaultTrip,
+}) => {
   const { isDark } = useTheme();
 
   // Form state
   const [tripName, setTripName] = useState(defaultTrip?.tripName ?? "");
-  const [consigneeName, setConsigneeName] = useState(defaultTrip?.consigneeName ?? "");
+  const [consigneeName, setConsigneeName] = useState(
+    defaultTrip?.consigneeName ?? "",
+  );
   const [driverName, setDriverName] = useState(defaultTrip?.driverName ?? "");
   const [vehicleId, setVehicleId] = useState(defaultTrip?.vehicleLabel ?? "");
   const [cycle, setCycle] = useState<TripCycle>(defaultTrip?.cycle ?? "weekly");
@@ -40,7 +52,7 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
 
   // Stops: source + intermediates + destination kept as array
   const [stops, setStops] = useState<TripStop[]>(
-    defaultTrip?.stops ?? [makeStop(), makeStop()]
+    defaultTrip?.stops ?? [makeStop(), makeStop()],
   );
 
   // Notifications
@@ -52,12 +64,14 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
       otpConsignee: false,
       smsAlerts: false,
       trackingLink: false,
-    }
+    },
   );
 
   /* ── stop helpers ── */
   const updateStop = (idx: number, field: keyof TripStop, val: string) => {
-    setStops((prev) => prev.map((s, i) => (i === idx ? { ...s, [field]: val } : s)));
+    setStops((prev) =>
+      prev.map((s, i) => (i === idx ? { ...s, [field]: val } : s)),
+    );
   };
 
   const addStop = () => {
@@ -76,7 +90,12 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
   /* ── commit ── */
   const handleCommit = () => {
     const vehicle = VEHICLES.find((v) => v.id === vehicleId);
-    const initials = driverName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+    const initials = driverName
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
     const trip: Trip = {
       id: defaultTrip?.id ?? Date.now().toString(),
       tripName,
@@ -96,7 +115,12 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
     onSave(trip);
   };
 
-  const isValid = tripName.trim() && driverName && vehicleId && stops[0].location && stops[stops.length - 1].location;
+  const isValid =
+    tripName.trim() &&
+    driverName &&
+    vehicleId &&
+    stops[0].location &&
+    stops[stops.length - 1].location;
 
   /* ── style helpers ── */
   const inputCls = `w-full px-4 py-2.5 rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
@@ -131,8 +155,8 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
             ? "border-emerald-800 bg-emerald-900/10"
             : "border-emerald-300 bg-emerald-50"
           : isDark
-          ? "border-gray-700 hover:border-gray-600"
-          : "border-gray-200 hover:border-gray-300"
+            ? "border-gray-700 hover:border-gray-600"
+            : "border-gray-200 hover:border-gray-300"
       }`}
     >
       {/* custom checkbox */}
@@ -141,18 +165,32 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
           notif[field]
             ? "bg-emerald-500 border-emerald-500"
             : isDark
-            ? "border-gray-600"
-            : "border-gray-300"
+              ? "border-gray-600"
+              : "border-gray-300"
         }`}
       >
         {notif[field] && (
-          <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 10">
-            <path d="M1.5 5l2.5 2.5 4.5-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <svg
+            className="w-2.5 h-2.5 text-white"
+            fill="none"
+            viewBox="0 0 10 10"
+          >
+            <path
+              d="M1.5 5l2.5 2.5 4.5-4"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         )}
       </div>
       <div>
-        <p className={`text-xs font-semibold ${isDark ? "text-foreground" : "text-gray-800"}`}>{label}</p>
+        <p
+          className={`text-xs font-semibold ${isDark ? "text-foreground" : "text-gray-800"}`}
+        >
+          {label}
+        </p>
         <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>
       </div>
     </div>
@@ -177,7 +215,9 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
             🚛
           </div>
           <div>
-            <h2 className={`text-base font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}>
+            <h2
+              className={`text-base font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
+            >
               {defaultTrip?.id ? "Edit Trip" : "Create New Trip"}
             </h2>
             <p className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase">
@@ -194,17 +234,20 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
 
         {/* ── Scrollable body ── */}
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
-
           {/* 01 — Trip Identity */}
           <section>
             <div className="flex items-center gap-2 mb-4">
               <span className="text-gray-400 text-xs">①</span>
               <h3 className={sectionTitleCls}>TRIP IDENTITY</h3>
-              <div className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`} />
+              <div
+                className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <label className={labelCls}>TRIP NAME <span className="text-red-500">*</span></label>
+                <label className={labelCls}>
+                  TRIP NAME <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. Delhi–Chandigarh Express"
@@ -214,7 +257,9 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
                 />
               </div>
               <div className="col-span-2">
-                <label className={labelCls}>CONSIGNEE NAME <span className="text-red-500">*</span></label>
+                <label className={labelCls}>
+                  CONSIGNEE NAME <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. Sharma Traders"
@@ -231,19 +276,37 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
             <div className="flex items-center gap-2 mb-4">
               <span className="text-gray-400 text-xs">②</span>
               <h3 className={sectionTitleCls}>DRIVER &amp; VEHICLE</h3>
-              <div className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`} />
+              <div
+                className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>DRIVER NAME <span className="text-red-500">*</span></label>
-                <select value={driverName} onChange={(e) => setDriverName(e.target.value)} className={inputCls}>
+                <label className={labelCls}>
+                  DRIVER NAME <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={driverName}
+                  onChange={(e) => setDriverName(e.target.value)}
+                  className={inputCls}
+                >
                   <option value="">— Select Driver —</option>
-                  {DRIVERS.map((d) => <option key={d} value={d}>{d}</option>)}
+                  {DRIVERS.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
-                <label className={labelCls}>VEHICLE <span className="text-red-500">*</span></label>
-                <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} className={inputCls}>
+                <label className={labelCls}>
+                  VEHICLE <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={vehicleId}
+                  onChange={(e) => setVehicleId(e.target.value)}
+                  className={inputCls}
+                >
                   <option value="">— Select Vehicle —</option>
                   {VEHICLES.map((v) => (
                     <option key={v.id} value={v.id}>
@@ -260,7 +323,9 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
             <div className="flex items-center gap-2 mb-4">
               <span className="text-gray-400 text-xs">③</span>
               <h3 className={sectionTitleCls}>TRIP CYCLE</h3>
-              <div className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`} />
+              <div
+                className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+              />
             </div>
 
             {/* Cycle toggle — matches GeofencePage geometry selector style */}
@@ -273,16 +338,22 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
                     cycle === c
                       ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/10"
                       : isDark
-                      ? "border-gray-700 hover:border-gray-600"
-                      : "border-gray-200 hover:border-gray-300"
+                        ? "border-gray-700 hover:border-gray-600"
+                        : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
                   <span className="text-lg">
                     {c === "weekly" ? "◉" : c === "monthly" ? "◎" : "⊙"}
                   </span>
-                  <p className={`text-[10px] font-bold uppercase tracking-wider ${
-                    cycle === c ? "text-indigo-600 dark:text-indigo-400" : isDark ? "text-gray-400" : "text-gray-500"
-                  }`}>
+                  <p
+                    className={`text-[10px] font-bold uppercase tracking-wider ${
+                      cycle === c
+                        ? "text-indigo-600 dark:text-indigo-400"
+                        : isDark
+                          ? "text-gray-400"
+                          : "text-gray-500"
+                    }`}
+                  >
                     {c}
                   </p>
                 </button>
@@ -292,11 +363,21 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>DEPARTURE DATE &amp; TIME</label>
-                <input type="datetime-local" value={departure} onChange={(e) => setDeparture(e.target.value)} className={inputCls} />
+                <input
+                  type="datetime-local"
+                  value={departure}
+                  onChange={(e) => setDeparture(e.target.value)}
+                  className={inputCls}
+                />
               </div>
               <div>
                 <label className={labelCls}>EXPECTED ARRIVAL</label>
-                <input type="datetime-local" value={arrival} onChange={(e) => setArrival(e.target.value)} className={inputCls} />
+                <input
+                  type="datetime-local"
+                  value={arrival}
+                  onChange={(e) => setArrival(e.target.value)}
+                  className={inputCls}
+                />
               </div>
             </div>
           </section>
@@ -306,12 +387,16 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
             <div className="flex items-center gap-2 mb-4">
               <span className="text-gray-400 text-xs">④</span>
               <h3 className={sectionTitleCls}>ROUTE STOPS</h3>
-              <div className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`} />
+              <div
+                className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+              />
             </div>
 
             <div className="relative">
               {/* Vertical timeline line */}
-              <div className={`absolute left-[9px] top-4 bottom-4 w-0.5 ${isDark ? "bg-gray-700" : "bg-gray-200"}`} />
+              <div
+                className={`absolute left-[9px] top-4 bottom-4 w-0.5 ${isDark ? "bg-gray-700" : "bg-gray-200"}`}
+              />
 
               <div className="space-y-4">
                 {stops.map((stop, idx) => {
@@ -328,27 +413,47 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
                             isFirst
                               ? "bg-indigo-600 border-indigo-600"
                               : isLast
-                              ? "bg-orange-500 border-orange-500"
-                              : isDark
-                              ? "bg-gray-800 border-yellow-500"
-                              : "bg-white border-yellow-500"
+                                ? "bg-orange-500 border-orange-500"
+                                : isDark
+                                  ? "bg-gray-800 border-yellow-500"
+                                  : "bg-white border-yellow-500"
                           }`}
                         >
-                          {isFirst && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                          {isLast && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                          {isIntermediate && <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />}
+                          {isFirst && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                          )}
+                          {isLast && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                          )}
+                          {isIntermediate && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                          )}
                         </div>
                       </div>
 
                       {/* Stop fields */}
-                      <div className={`flex-1 pb-2 rounded-xl border p-3 ${
-                        isDark ? "border-gray-700 bg-gray-800/40" : "border-gray-200 bg-gray-50/60"
-                      }`}>
+                      <div
+                        className={`flex-1 pb-2 rounded-xl border p-3 ${
+                          isDark
+                            ? "border-gray-700 bg-gray-800/40"
+                            : "border-gray-200 bg-gray-50/60"
+                        }`}
+                      >
                         <div className="flex items-center justify-between mb-2">
-                          <span className={`text-[10px] font-bold tracking-widest ${
-                            isFirst ? "text-indigo-500" : isLast ? "text-orange-500" : "text-yellow-600"
-                          }`}>
-                            {isFirst ? "📍 SOURCE" : isLast ? "🏁 DESTINATION" : `📌 STOP ${idx}`}
+                          <span
+                            className={`text-[10px] font-bold tracking-widest ${
+                              isFirst
+                                ? "text-indigo-500"
+                                : isLast
+                                  ? "text-orange-500"
+                                  : "text-yellow-600"
+                            }`}
+                          >
+                            {isFirst
+                              ? "📍 SOURCE"
+                              : isLast
+                                ? "🏁 DESTINATION"
+                                : `📌 STOP ${idx}`}
                           </span>
                           {isIntermediate && (
                             <button
@@ -362,9 +467,17 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
 
                         <input
                           type="text"
-                          placeholder={isFirst ? "Enter source location" : isLast ? "Enter destination location" : "Enter stop location"}
+                          placeholder={
+                            isFirst
+                              ? "Enter source location"
+                              : isLast
+                                ? "Enter destination location"
+                                : "Enter stop location"
+                          }
                           value={stop.location}
-                          onChange={(e) => updateStop(idx, "location", e.target.value)}
+                          onChange={(e) =>
+                            updateStop(idx, "location", e.target.value)
+                          }
                           className={`w-full px-3 py-2 rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20 mb-2 ${
                             isDark
                               ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
@@ -374,13 +487,17 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
 
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className={`block text-[9px] font-bold tracking-widest mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                            <label
+                              className={`block text-[9px] font-bold tracking-widest mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                            >
                               PLANNED ENTRY
                             </label>
                             <input
                               type="datetime-local"
                               value={stop.plannedEntry}
-                              onChange={(e) => updateStop(idx, "plannedEntry", e.target.value)}
+                              onChange={(e) =>
+                                updateStop(idx, "plannedEntry", e.target.value)
+                              }
                               className={`w-full px-2.5 py-1.5 rounded-lg border text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
                                 isDark
                                   ? "bg-gray-800 border-gray-700 text-foreground"
@@ -389,13 +506,17 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
                             />
                           </div>
                           <div>
-                            <label className={`block text-[9px] font-bold tracking-widest mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+                            <label
+                              className={`block text-[9px] font-bold tracking-widest mb-1 ${isDark ? "text-gray-500" : "text-gray-400"}`}
+                            >
                               PLANNED EXIT
                             </label>
                             <input
                               type="datetime-local"
                               value={stop.plannedExit}
-                              onChange={(e) => updateStop(idx, "plannedExit", e.target.value)}
+                              onChange={(e) =>
+                                updateStop(idx, "plannedExit", e.target.value)
+                              }
                               className={`w-full px-2.5 py-1.5 rounded-lg border text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 ${
                                 isDark
                                   ? "bg-gray-800 border-gray-700 text-foreground"
@@ -426,15 +547,41 @@ const CreateTripModal: React.FC<Props> = ({ onClose, onSave, existingCount, defa
             <div className="flex items-center gap-2 mb-4">
               <span className="text-gray-400 text-xs">⑤</span>
               <h3 className={sectionTitleCls}>OTP &amp; NOTIFICATIONS</h3>
-              <div className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`} />
+              <div
+                className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+              />
             </div>
             <div className="grid grid-cols-2 gap-2.5">
-              <NotifItem field="whatsappDriver" label="WhatsApp — Driver" sub="Send trip info & OTP to driver" />
-              <NotifItem field="whatsappConsignee" label="WhatsApp — Consignee" sub="Notify consignee on dispatch" />
-              <NotifItem field="otpDriver" label="OTP Verify — Driver" sub="Driver confirms trip via OTP" />
-              <NotifItem field="otpConsignee" label="OTP Verify — Consignee" sub="Consignee confirms delivery" />
-              <NotifItem field="smsAlerts" label="SMS Alerts" sub="Fallback SMS for all stops" />
-              <NotifItem field="trackingLink" label="Live Tracking Link" sub="Share tracking URL to consignee" />
+              <NotifItem
+                field="whatsappDriver"
+                label="WhatsApp — Driver"
+                sub="Send trip info & OTP to driver"
+              />
+              <NotifItem
+                field="whatsappConsignee"
+                label="WhatsApp — Consignee"
+                sub="Notify consignee on dispatch"
+              />
+              <NotifItem
+                field="otpDriver"
+                label="OTP Verify — Driver"
+                sub="Driver confirms trip via OTP"
+              />
+              <NotifItem
+                field="otpConsignee"
+                label="OTP Verify — Consignee"
+                sub="Consignee confirms delivery"
+              />
+              <NotifItem
+                field="smsAlerts"
+                label="SMS Alerts"
+                sub="Fallback SMS for all stops"
+              />
+              <NotifItem
+                field="trackingLink"
+                label="Live Tracking Link"
+                sub="Share tracking URL to consignee"
+              />
             </div>
           </section>
         </div>

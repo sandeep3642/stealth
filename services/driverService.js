@@ -1,6 +1,9 @@
 import api from "./apiService";
 
-const buildErrorResponse = (error, fallbackMessage = "Network or server error") =>
+const buildErrorResponse = (
+  error,
+  fallbackMessage = "Network or server error",
+) =>
   error.response?.data || {
     success: false,
     statusCode: error.response?.status || 500,

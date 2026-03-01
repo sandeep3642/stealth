@@ -4,7 +4,6 @@ import FleetMap from "@/components/maps/FleetMap";
 import type { RoutePoint, Vehicle } from "@/lib/mapTypes";
 import { getLiveTrackingData } from "@/services/liveTrackingService";
 
-
 // ----------------------------------------------------------
 // Helper: safely convert to number
 // ----------------------------------------------------------
@@ -25,12 +24,10 @@ function toIgnitionStatus(value: any): "ignition-on" | "ignition-off" {
   return "ignition-off";
 }
 
-
 // ----------------------------------------------------------
 // NORMALIZER — Handles ALL field variations & nested formats
 // ----------------------------------------------------------
 function normalizeVehicle(item: any): Vehicle | null {
-
   // ---- Handle latitude field variations ----
   const lat =
     toNum(item.latitude) ??
@@ -49,11 +46,7 @@ function normalizeVehicle(item: any): Vehicle | null {
     toNum(item.LNG);
 
   // Skip invalid or 0,0 coordinates
-  if (
-    lat === undefined ||
-    lng === undefined ||
-    (lat === 0 && lng === 0)
-  ) {
+  if (lat === undefined || lng === undefined || (lat === 0 && lng === 0)) {
     console.warn("Skipping invalid vehicle with bad coordinates:", item);
     return null;
   }
@@ -80,7 +73,6 @@ function normalizeVehicle(item: any): Vehicle | null {
   };
 }
 
-
 // ----------------------------------------------------------
 // Fetch & Normalize Vehicles from Redis
 // ----------------------------------------------------------
@@ -96,7 +88,12 @@ async function fetchVehicles(): Promise<Vehicle[]> {
     }
 
     // Case 2: backend returns { key, value } where value is a JSON string
-    if (data && typeof data === "object" && data.value && typeof data.value === "string") {
+    if (
+      data &&
+      typeof data === "object" &&
+      data.value &&
+      typeof data.value === "string"
+    ) {
       try {
         data = JSON.parse(data.value);
       } catch (e) {
@@ -120,21 +117,20 @@ async function fetchVehicles(): Promise<Vehicle[]> {
   }
 }
 
-
 // ----------------------------------------------------------
 // Fetch route history (unchanged)
 // ----------------------------------------------------------
 async function fetchRoute(vehicleId: string): Promise<RoutePoint[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_VTS_API_PROXY_BASE_URL || "/vts-proxy";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_VTS_API_PROXY_BASE_URL || "/vts-proxy";
   const res = await fetch(
     `${baseUrl}/api/vehicles/${encodeURIComponent(vehicleId)}/route`,
-    { cache: "no-store" }
+    { cache: "no-store" },
   );
 
   const data = await res.json();
   return data;
 }
-
 
 // ----------------------------------------------------------
 // Component

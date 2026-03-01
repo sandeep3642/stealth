@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
 import { Layers } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
-import { useRouter, useParams } from "next/navigation";
-import ThemeCustomizer from "@/components/ThemeCustomizer";
+import { CategoryFormData } from "@/interfaces/category.interface";
 import {
+  getCategoryById,
   saveCategory,
   updateCategory,
-  getCategoryById,
 } from "@/services/categoryService";
-import { CategoryFormData } from "@/interfaces/category.interface";
-import { toast } from "react-toastify";
 
 const AddEditCategory: React.FC = () => {
   const { selectedColor } = useColor();

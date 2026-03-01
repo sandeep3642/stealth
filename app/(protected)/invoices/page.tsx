@@ -212,7 +212,6 @@ const Invoices: React.FC = () => {
           />
         </div>
       </div>
-      
     </div>
   );
 };

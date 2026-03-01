@@ -4,12 +4,21 @@ import React, { useMemo, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Save, Trash2, X } from "lucide-react";
-import type { Trip, TripCycle, TripNotifications, TripStop } from "@/interfaces/trip.interface";
+import type {
+  Trip,
+  TripCycle,
+  TripNotifications,
+  TripStop,
+} from "@/interfaces/trip.interface";
 import { DRIVERS, VEHICLES, VEHICLE_ICON } from "@/interfaces/trip.interface";
 
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
-type RouteMode = "master-route" | "weekly" | "custom-route" | "one-off-scheduled";
+type RouteMode =
+  | "master-route"
+  | "weekly"
+  | "custom-route"
+  | "one-off-scheduled";
 type VehicleClass = "truck" | "traveller" | "bus";
 
 const MASTER_ROUTES = [
@@ -44,7 +53,9 @@ export default function CreateTripPage() {
   const [consigneeName, setConsigneeName] = useState("");
 
   const [cycle, setCycle] = useState<TripCycle>("weekly");
-  const [weeklyRotation, setWeeklyRotation] = useState<Record<(typeof WEEK_DAYS)[number], boolean>>({
+  const [weeklyRotation, setWeeklyRotation] = useState<
+    Record<(typeof WEEK_DAYS)[number], boolean>
+  >({
     Mon: true,
     Tue: true,
     Wed: true,
@@ -83,11 +94,17 @@ export default function CreateTripPage() {
   const sectionTitleCls = `text-[10px] font-bold tracking-widest ${isDark ? "text-gray-400" : "text-gray-500"}`;
 
   const updateStop = (idx: number, field: keyof TripStop, val: string) => {
-    setStops((prev) => prev.map((s, i) => (i === idx ? { ...s, [field]: val } : s)));
+    setStops((prev) =>
+      prev.map((s, i) => (i === idx ? { ...s, [field]: val } : s)),
+    );
   };
 
   const addStop = () => {
-    setStops((prev) => [...prev.slice(0, -1), makeStop(), prev[prev.length - 1]]);
+    setStops((prev) => [
+      ...prev.slice(0, -1),
+      makeStop(),
+      prev[prev.length - 1],
+    ]);
   };
 
   const removeStop = (idx: number) => {
@@ -108,7 +125,9 @@ export default function CreateTripPage() {
   };
 
   const removeOtpNumber = (idx: number) => {
-    setOtpNumbers((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx)));
+    setOtpNumbers((prev) =>
+      prev.length <= 1 ? prev : prev.filter((_, i) => i !== idx),
+    );
   };
 
   const routeLabel = useMemo(() => {
@@ -195,7 +214,9 @@ export default function CreateTripPage() {
           <button
             onClick={() => router.push("/trips")}
             className={`flex items-center gap-1.5 text-sm font-medium ${
-              isDark ? "text-gray-400 hover:text-foreground" : "text-gray-500 hover:text-gray-900"
+              isDark
+                ? "text-gray-400 hover:text-foreground"
+                : "text-gray-500 hover:text-gray-900"
             }`}
           >
             <ArrowLeft className="w-4 h-4" />
@@ -203,10 +224,16 @@ export default function CreateTripPage() {
           </button>
           <span className={isDark ? "text-gray-700" : "text-gray-300"}>|</span>
           <div>
-            <h1 className={`text-base font-black tracking-tight ${isDark ? "text-foreground" : "text-gray-900"}`}>
+            <h1
+              className={`text-base font-black tracking-tight ${isDark ? "text-foreground" : "text-gray-900"}`}
+            >
               MISSION ARCHITECT
             </h1>
-            <p className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}>Trip Master Configuration</p>
+            <p
+              className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
+            >
+              Trip Master Configuration
+            </p>
           </div>
         </div>
 
@@ -214,7 +241,9 @@ export default function CreateTripPage() {
           <button
             onClick={() => router.push("/trips")}
             className={`px-4 py-2 rounded-lg text-sm font-semibold border ${
-              isDark ? "border-gray-700 text-gray-300 hover:bg-gray-800" : "border-gray-200 text-gray-700 hover:bg-gray-50"
+              isDark
+                ? "border-gray-700 text-gray-300 hover:bg-gray-800"
+                : "border-gray-200 text-gray-700 hover:bg-gray-50"
             }`}
           >
             Discard
@@ -224,30 +253,51 @@ export default function CreateTripPage() {
             disabled={!isValid || saving}
             className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {saving ? <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+            {saving ? (
+              <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
             DEPLOY MISSION
           </button>
         </div>
       </header>
 
-      <main className={`flex-1 px-6 py-6 ${isDark ? "bg-background" : "bg-gray-50"}`}>
+      <main
+        className={`flex-1 px-6 py-6 ${isDark ? "bg-background" : "bg-gray-50"}`}
+      >
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <section className={cardCls}>
               <div className="flex items-center gap-2 mb-5">
-                <span className={`text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md ${isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-100 text-indigo-700"}`}>01</span>
+                <span
+                  className={`text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md ${isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-100 text-indigo-700"}`}
+                >
+                  01
+                </span>
                 <h3 className={sectionTitleCls}>MISSION IDENTITY</h3>
-                <div className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`} />
+                <div
+                  className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>TRIP NAME</label>
-                  <input value={tripName} onChange={(e) => setTripName(e.target.value)} className={inputCls} placeholder="e.g. Metro Daily Supply" />
+                  <input
+                    value={tripName}
+                    onChange={(e) => setTripName(e.target.value)}
+                    className={inputCls}
+                    placeholder="e.g. Metro Daily Supply"
+                  />
                 </div>
                 <div>
                   <label className={labelCls}>ASSIGNED OPERATOR</label>
-                  <select value={driverName} onChange={(e) => setDriverName(e.target.value)} className={inputCls}>
+                  <select
+                    value={driverName}
+                    onChange={(e) => setDriverName(e.target.value)}
+                    className={inputCls}
+                  >
                     <option value="">Select driver</option>
                     {DRIVERS.map((driver) => (
                       <option key={driver} value={driver}>
@@ -258,7 +308,11 @@ export default function CreateTripPage() {
                 </div>
                 <div>
                   <label className={labelCls}>VEHICLE</label>
-                  <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)} className={inputCls}>
+                  <select
+                    value={vehicleId}
+                    onChange={(e) => setVehicleId(e.target.value)}
+                    className={inputCls}
+                  >
                     <option value="">Select vehicle</option>
                     {VEHICLES.map((vehicle) => (
                       <option key={vehicle.id} value={vehicle.id}>
@@ -269,25 +323,42 @@ export default function CreateTripPage() {
                 </div>
                 <div>
                   <label className={labelCls}>CONSIGNEE</label>
-                  <input value={consigneeName} onChange={(e) => setConsigneeName(e.target.value)} className={inputCls} placeholder="e.g. Sharma Traders" />
+                  <input
+                    value={consigneeName}
+                    onChange={(e) => setConsigneeName(e.target.value)}
+                    className={inputCls}
+                    placeholder="e.g. Sharma Traders"
+                  />
                 </div>
               </div>
             </section>
 
             <section className={cardCls}>
               <div className="flex items-center gap-2 mb-5">
-                <span className={`text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md ${isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-100 text-indigo-700"}`}>02</span>
+                <span
+                  className={`text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md ${isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-100 text-indigo-700"}`}
+                >
+                  02
+                </span>
                 <h3 className={sectionTitleCls}>FLEET STRATEGY</h3>
-                <div className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`} />
+                <div
+                  className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+                />
               </div>
 
               <label className={labelCls}>VEHICLE ASSIGNMENT</label>
               <div className="grid grid-cols-3 gap-3 mb-5">
-                {([
-                  { id: "truck", title: "Truck", sub: "Freight Titan" },
-                  { id: "traveller", title: "Traveller", sub: "Transit Crew Van" },
-                  { id: "bus", title: "Bus", sub: "Shuttle Prime" },
-                ] as const).map((opt) => (
+                {(
+                  [
+                    { id: "truck", title: "Truck", sub: "Freight Titan" },
+                    {
+                      id: "traveller",
+                      title: "Traveller",
+                      sub: "Transit Crew Van",
+                    },
+                    { id: "bus", title: "Bus", sub: "Shuttle Prime" },
+                  ] as const
+                ).map((opt) => (
                   <button
                     key={opt.id}
                     type="button"
@@ -300,19 +371,30 @@ export default function CreateTripPage() {
                           : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <p className={`text-xs font-bold ${vehicleClass === opt.id ? "text-indigo-600 dark:text-indigo-300" : isDark ? "text-foreground" : "text-gray-800"}`}>{opt.title}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{opt.sub}</p>
+                    <p
+                      className={`text-xs font-bold ${vehicleClass === opt.id ? "text-indigo-600 dark:text-indigo-300" : isDark ? "text-foreground" : "text-gray-800"}`}
+                    >
+                      {opt.title}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      {opt.sub}
+                    </p>
                   </button>
                 ))}
               </div>
-
             </section>
 
             <section className={cardCls}>
               <div className="flex items-center gap-2 mb-5">
-                <span className={`text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md ${isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-100 text-indigo-700"}`}>03</span>
+                <span
+                  className={`text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md ${isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-100 text-indigo-700"}`}
+                >
+                  03
+                </span>
                 <h3 className={sectionTitleCls}>TRIP CYCLE & TIMELINE</h3>
-                <div className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`} />
+                <div
+                  className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+                />
               </div>
 
               <label className={labelCls}>TRIP TYPE</label>
@@ -323,7 +405,9 @@ export default function CreateTripPage() {
                     type="button"
                     onClick={() => {
                       setRouteMode(opt.id);
-                      setCycle(opt.id === "one-off-scheduled" ? "one-off" : "weekly");
+                      setCycle(
+                        opt.id === "one-off-scheduled" ? "one-off" : "weekly",
+                      );
                     }}
                     className={`rounded-xl border px-3 py-3 text-left transition-colors ${
                       routeMode === opt.id
@@ -333,8 +417,14 @@ export default function CreateTripPage() {
                           : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
-                    <p className={`text-xs font-bold ${routeMode === opt.id ? "text-indigo-600 dark:text-indigo-300" : isDark ? "text-foreground" : "text-gray-800"}`}>{opt.label}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{opt.sub}</p>
+                    <p
+                      className={`text-xs font-bold ${routeMode === opt.id ? "text-indigo-600 dark:text-indigo-300" : isDark ? "text-foreground" : "text-gray-800"}`}
+                    >
+                      {opt.label}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">
+                      {opt.sub}
+                    </p>
                   </button>
                 ))}
               </div>
@@ -366,11 +456,21 @@ export default function CreateTripPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className={labelCls}>DEPARTURE ETD</label>
-                  <input type="datetime-local" value={departure} onChange={(e) => setDeparture(e.target.value)} className={inputCls} />
+                  <input
+                    type="datetime-local"
+                    value={departure}
+                    onChange={(e) => setDeparture(e.target.value)}
+                    className={inputCls}
+                  />
                 </div>
                 <div>
                   <label className={labelCls}>EXPECTED ARRIVAL</label>
-                  <input type="datetime-local" value={arrival} onChange={(e) => setArrival(e.target.value)} className={inputCls} />
+                  <input
+                    type="datetime-local"
+                    value={arrival}
+                    onChange={(e) => setArrival(e.target.value)}
+                    className={inputCls}
+                  />
                 </div>
               </div>
 
@@ -379,7 +479,11 @@ export default function CreateTripPage() {
                   {showMasterRoute && (
                     <div>
                       <label className={labelCls}>SELECT MASTER PIPELINE</label>
-                      <select value={masterRoute} onChange={(e) => setMasterRoute(e.target.value)} className={inputCls}>
+                      <select
+                        value={masterRoute}
+                        onChange={(e) => setMasterRoute(e.target.value)}
+                        className={inputCls}
+                      >
                         {MASTER_ROUTES.map((route) => (
                           <option key={route} value={route}>
                             {route}
@@ -405,9 +509,15 @@ export default function CreateTripPage() {
 
             <section className={cardCls}>
               <div className="flex items-center gap-2 mb-5">
-                <span className={`text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md ${isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-100 text-indigo-700"}`}>04</span>
+                <span
+                  className={`text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md ${isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-100 text-indigo-700"}`}
+                >
+                  04
+                </span>
                 <h3 className={sectionTitleCls}>TIMELINE & ROUTE</h3>
-                <div className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`} />
+                <div
+                  className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+                />
               </div>
 
               <div className="space-y-4">
@@ -415,13 +525,24 @@ export default function CreateTripPage() {
                   const isFirst = idx === 0;
                   const isLast = idx === stops.length - 1;
                   return (
-                    <div key={stop.id} className={`rounded-xl border p-4 ${isDark ? "border-gray-700 bg-gray-800/40" : "border-gray-200 bg-gray-50"}`}>
+                    <div
+                      key={stop.id}
+                      className={`rounded-xl border p-4 ${isDark ? "border-gray-700 bg-gray-800/40" : "border-gray-200 bg-gray-50"}`}
+                    >
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-xs font-bold tracking-wider text-indigo-500">
-                          {isFirst ? "SOURCE LOCATION" : isLast ? "DESTINATION LOCATION" : `STOP ${idx}`}
+                          {isFirst
+                            ? "SOURCE LOCATION"
+                            : isLast
+                              ? "DESTINATION LOCATION"
+                              : `STOP ${idx}`}
                         </p>
                         {!isFirst && !isLast && (
-                          <button type="button" onClick={() => removeStop(idx)} className="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => removeStop(idx)}
+                            className="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1"
+                          >
                             <Trash2 className="w-3 h-3" /> Remove
                           </button>
                         )}
@@ -429,14 +550,36 @@ export default function CreateTripPage() {
 
                       <input
                         value={stop.location}
-                        onChange={(e) => updateStop(idx, "location", e.target.value)}
+                        onChange={(e) =>
+                          updateStop(idx, "location", e.target.value)
+                        }
                         className={`${inputCls} mb-3`}
-                        placeholder={isFirst ? "Enter source location" : isLast ? "Enter destination location" : "Enter stop location"}
+                        placeholder={
+                          isFirst
+                            ? "Enter source location"
+                            : isLast
+                              ? "Enter destination location"
+                              : "Enter stop location"
+                        }
                       />
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input type="datetime-local" value={stop.plannedEntry} onChange={(e) => updateStop(idx, "plannedEntry", e.target.value)} className={inputCls} />
-                        <input type="datetime-local" value={stop.plannedExit} onChange={(e) => updateStop(idx, "plannedExit", e.target.value)} className={inputCls} />
+                        <input
+                          type="datetime-local"
+                          value={stop.plannedEntry}
+                          onChange={(e) =>
+                            updateStop(idx, "plannedEntry", e.target.value)
+                          }
+                          className={inputCls}
+                        />
+                        <input
+                          type="datetime-local"
+                          value={stop.plannedExit}
+                          onChange={(e) =>
+                            updateStop(idx, "plannedExit", e.target.value)
+                          }
+                          className={inputCls}
+                        />
                       </div>
                     </div>
                   );
@@ -447,7 +590,9 @@ export default function CreateTripPage() {
                 type="button"
                 onClick={addStop}
                 className={`mt-4 flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-lg border ${
-                  isDark ? "border-gray-700 text-indigo-400 hover:border-indigo-700" : "border-gray-200 text-indigo-600 hover:border-indigo-300"
+                  isDark
+                    ? "border-gray-700 text-indigo-400 hover:border-indigo-700"
+                    : "border-gray-200 text-indigo-600 hover:border-indigo-300"
                 }`}
               >
                 <Plus className="w-3.5 h-3.5" /> Add Stop
@@ -456,12 +601,20 @@ export default function CreateTripPage() {
 
             <section className={cardCls}>
               <div className="flex items-center gap-2 mb-5">
-                <span className={`text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md ${isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-100 text-indigo-700"}`}>05</span>
+                <span
+                  className={`text-[10px] font-black tracking-widest px-2 py-0.5 rounded-md ${isDark ? "bg-indigo-900/40 text-indigo-400" : "bg-indigo-100 text-indigo-700"}`}
+                >
+                  05
+                </span>
                 <h3 className={sectionTitleCls}>NOTIFICATIONS</h3>
-                <div className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`} />
+                <div
+                  className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
+                />
               </div>
 
-              <div className={`rounded-xl border p-4 ${isDark ? "border-gray-700 bg-gray-800/30" : "border-gray-200 bg-gray-50"}`}>
+              <div
+                className={`rounded-xl border p-4 ${isDark ? "border-gray-700 bg-gray-800/30" : "border-gray-200 bg-gray-50"}`}
+              >
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
@@ -476,15 +629,26 @@ export default function CreateTripPage() {
                     className="w-4 h-4 accent-indigo-600"
                   />
                   <div>
-                    <p className={`text-sm font-semibold ${isDark ? "text-foreground" : "text-gray-900"}`}>Enable OTP Notification</p>
-                    <p className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"}`}>OTP on hone par niche multiple mobile numbers add karein.</p>
+                    <p
+                      className={`text-sm font-semibold ${isDark ? "text-foreground" : "text-gray-900"}`}
+                    >
+                      Enable OTP Notification
+                    </p>
+                    <p
+                      className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"}`}
+                    >
+                      OTP on hone par niche multiple mobile numbers add karein.
+                    </p>
                   </div>
                 </label>
 
                 {notif.otpDriver && (
                   <div className="mt-4 space-y-3">
                     {otpNumbers.map((number, idx) => (
-                      <div key={`otp-number-${idx}`} className="flex items-center gap-2">
+                      <div
+                        key={`otp-number-${idx}`}
+                        className="flex items-center gap-2"
+                      >
                         <input
                           type="tel"
                           value={number}
@@ -509,7 +673,9 @@ export default function CreateTripPage() {
                       type="button"
                       onClick={addOtpNumber}
                       className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg border ${
-                        isDark ? "border-gray-700 text-indigo-400 hover:border-indigo-700" : "border-gray-200 text-indigo-600 hover:border-indigo-300"
+                        isDark
+                          ? "border-gray-700 text-indigo-400 hover:border-indigo-700"
+                          : "border-gray-200 text-indigo-600 hover:border-indigo-300"
                       }`}
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -523,8 +689,12 @@ export default function CreateTripPage() {
 
           <aside className="lg:col-span-1">
             <div className="sticky top-[86px] space-y-4">
-              <div className={`rounded-xl border p-3 ${isDark ? "border-gray-800 bg-gray-800/30" : "border-gray-200 bg-white"}`}>
-                <p className={`text-[10px] font-bold tracking-widest mb-2 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+              <div
+                className={`rounded-xl border p-3 ${isDark ? "border-gray-800 bg-gray-800/30" : "border-gray-200 bg-white"}`}
+              >
+                <p
+                  className={`text-[10px] font-bold tracking-widest mb-2 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                >
                   LIVE MAP PREVIEW
                 </p>
                 <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
@@ -537,18 +707,57 @@ export default function CreateTripPage() {
                 </div>
               </div>
 
-              <div className={`rounded-xl border p-4 ${isDark ? "border-gray-800 bg-gray-800/30" : "border-gray-200 bg-white"}`}>
-                <p className={`text-[10px] font-bold tracking-widest mb-3 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+              <div
+                className={`rounded-xl border p-4 ${isDark ? "border-gray-800 bg-gray-800/30" : "border-gray-200 bg-white"}`}
+              >
+                <p
+                  className={`text-[10px] font-bold tracking-widest mb-3 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+                >
                   MISSION SUMMARY
                 </p>
                 <div className="space-y-2 text-xs">
-                  <div className="flex justify-between gap-3"><span className="text-gray-400">Trip</span><span className="font-semibold text-right">{tripName || "-"}</span></div>
-                  <div className="flex justify-between gap-3"><span className="text-gray-400">Driver</span><span className="font-semibold text-right">{driverName || "-"}</span></div>
-                  <div className="flex justify-between gap-3"><span className="text-gray-400">Vehicle</span><span className="font-semibold text-right">{vehicleId || "-"}</span></div>
-                  <div className="flex justify-between gap-3"><span className="text-gray-400">Assignment</span><span className="font-semibold capitalize text-right">{vehicleClass}</span></div>
-                  <div className="flex justify-between gap-3"><span className="text-gray-400">Cycle</span><span className="font-semibold uppercase text-right">{cycle}</span></div>
-                  <div className="flex justify-between gap-3"><span className="text-gray-400">Route Mode</span><span className="font-semibold text-right">{routeMode}</span></div>
-                  <div className="flex justify-between gap-3"><span className="text-gray-400">Route</span><span className="font-semibold text-right">{routeLabel}</span></div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-gray-400">Trip</span>
+                    <span className="font-semibold text-right">
+                      {tripName || "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-gray-400">Driver</span>
+                    <span className="font-semibold text-right">
+                      {driverName || "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-gray-400">Vehicle</span>
+                    <span className="font-semibold text-right">
+                      {vehicleId || "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-gray-400">Assignment</span>
+                    <span className="font-semibold capitalize text-right">
+                      {vehicleClass}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-gray-400">Cycle</span>
+                    <span className="font-semibold uppercase text-right">
+                      {cycle}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-gray-400">Route Mode</span>
+                    <span className="font-semibold text-right">
+                      {routeMode}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <span className="text-gray-400">Route</span>
+                    <span className="font-semibold text-right">
+                      {routeLabel}
+                    </span>
+                  </div>
                 </div>
 
                 <button

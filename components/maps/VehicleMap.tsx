@@ -1,7 +1,12 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { GoogleMap, InfoWindow, MarkerF, PolylineF } from "@react-google-maps/api";
+import {
+  GoogleMap,
+  InfoWindow,
+  MarkerF,
+  PolylineF,
+} from "@react-google-maps/api";
 // import { MarkerClusterer } from "@googlemaps/markerclusterer";
 import type { RoutePoint, Vehicle } from "@/lib/mapTypes";
 
@@ -38,22 +43,42 @@ export default function VehicleMap({
     }
   };
   // Map style
-  const mapStyle = useMemo<React.CSSProperties>(() => ({ width: "100%", height, borderRadius: 12 }), [height]);
+  const mapStyle = useMemo<React.CSSProperties>(
+    () => ({ width: "100%", height, borderRadius: 12 }),
+    [height],
+  );
 
   // Selected vehicle state
   const [selected, setSelected] = useState<Vehicle | null>(null);
 
   // Route path for polyline
-  const routePath = useMemo(() => (route?.length ? route.map(p => ({ lat: p.lat, lng: p.lng })) : null), [route]);
+  const routePath = useMemo(
+    () =>
+      route?.length ? route.map((p) => ({ lat: p.lat, lng: p.lng })) : null,
+    [route],
+  );
 
   // Validate center coordinates
   const validCenter = useMemo(() => {
-    const isValid = typeof center?.lat === "number" && typeof center?.lng === "number" && isFinite(center.lat) && isFinite(center.lng);
+    const isValid =
+      typeof center?.lat === "number" &&
+      typeof center?.lng === "number" &&
+      isFinite(center.lat) &&
+      isFinite(center.lng);
     return isValid ? center : { lat: 20.5937, lng: 78.9629 };
   }, [center]);
   return (
-    <GoogleMap mapContainerStyle={mapStyle} center={validCenter} zoom={zoom} onLoad={onLoad}
-      options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: true }}>
+    <GoogleMap
+      mapContainerStyle={mapStyle}
+      center={validCenter}
+      zoom={zoom}
+      onLoad={onLoad}
+      options={{
+        streetViewControl: false,
+        mapTypeControl: false,
+        fullscreenControl: true,
+      }}
+    >
       {/* Route polyline */}
       {routePath && (
         <PolylineF
@@ -62,38 +87,60 @@ export default function VehicleMap({
         />
       )}
 
-
       {/* Show live route trace line for single vehicle as green dotted */}
-      {vehicles.length === 1 && Array.isArray(liveRoute) && liveRoute.length > 1 && (
-        <PolylineF
-          path={liveRoute}
-          options={{
-            strokeColor: '#2DD4BF', // teal-400
-            strokeOpacity: 0.95,
-            strokeWeight: 6,
-            zIndex: 2,
-            icons: [
-              {
-                icon: {
-                  path: 'M 0,-1 0,1',
-                  strokeOpacity: 1,
-                  scale: 5,
-                  strokeColor: '#2DD4BF',
+      {vehicles.length === 1 &&
+        Array.isArray(liveRoute) &&
+        liveRoute.length > 1 && (
+          <PolylineF
+            path={liveRoute}
+            options={{
+              strokeColor: "#2DD4BF", // teal-400
+              strokeOpacity: 0.95,
+              strokeWeight: 6,
+              zIndex: 2,
+              icons: [
+                {
+                  icon: {
+                    path: "M 0,-1 0,1",
+                    strokeOpacity: 1,
+                    scale: 5,
+                    strokeColor: "#2DD4BF",
+                  },
+                  offset: "0",
+                  repeat: "18px",
                 },
-                offset: '0',
-                repeat: '18px',
-              },
-            ],
-          }}
-        />
-      )}
+              ],
+            }}
+          />
+        )}
 
       {/* Show live route trace lines for all vehicles if more than one vehicle is present */}
       {vehicles.length > 1 && (
         <>
           {vehicles.map((v, idx) => {
             // Assign a unique color per vehicle
-            const colors = ["#e6194b", "#3cb44b", "#ffe119", "#4363d8", "#f58231", "#911eb4", "#46f0f0", "#f032e6", "#bcf60c", "#fabebe", "#008080", "#e6beff", "#9a6324", "#fffac8", "#800000", "#aaffc3", "#808000", "#ffd8b1", "#000075", "#808080"];
+            const colors = [
+              "#e6194b",
+              "#3cb44b",
+              "#ffe119",
+              "#4363d8",
+              "#f58231",
+              "#911eb4",
+              "#46f0f0",
+              "#f032e6",
+              "#bcf60c",
+              "#fabebe",
+              "#008080",
+              "#e6beff",
+              "#9a6324",
+              "#fffac8",
+              "#800000",
+              "#aaffc3",
+              "#808000",
+              "#ffd8b1",
+              "#000075",
+              "#808080",
+            ];
             const color = colors[idx % colors.length];
             // If v.liveRoute exists, draw it, else just a dot
             if (Array.isArray(v.liveRoute) && v.liveRoute.length > 1) {
@@ -101,7 +148,12 @@ export default function VehicleMap({
                 <PolylineF
                   key={v.id + "-route"}
                   path={v.liveRoute}
-                  options={{ strokeColor: color, strokeOpacity: 0.8, strokeWeight: 4, zIndex: 2 }}
+                  options={{
+                    strokeColor: color,
+                    strokeOpacity: 0.8,
+                    strokeWeight: 4,
+                    zIndex: 2,
+                  }}
                 />
               );
             }
@@ -113,7 +165,28 @@ export default function VehicleMap({
       {/* Animated vehicle markers for all vehicles with unique color */}
       {vehicles.length > 1
         ? vehicles.map((v, idx) => {
-            const colors = ["#e6194b", "#3cb44b", "#ffe119", "#4363d8", "#f58231", "#911eb4", "#46f0f0", "#f032e6", "#bcf60c", "#fabebe", "#008080", "#e6beff", "#9a6324", "#fffac8", "#800000", "#aaffc3", "#808000", "#ffd8b1", "#000075", "#808080"];
+            const colors = [
+              "#e6194b",
+              "#3cb44b",
+              "#ffe119",
+              "#4363d8",
+              "#f58231",
+              "#911eb4",
+              "#46f0f0",
+              "#f032e6",
+              "#bcf60c",
+              "#fabebe",
+              "#008080",
+              "#e6beff",
+              "#9a6324",
+              "#fffac8",
+              "#800000",
+              "#aaffc3",
+              "#808000",
+              "#ffd8b1",
+              "#000075",
+              "#808080",
+            ];
             const color = colors[idx % colors.length];
             // Guard: skip if lat/lng are not valid numbers
             if (
@@ -177,13 +250,29 @@ export default function VehicleMap({
           onCloseClick={() => setSelected(null)}
         >
           <div style={{ minWidth: 240 }}>
-            <div style={{ fontWeight: 700, marginBottom: 6 }}>{selected.name ?? selected.id}</div>
-            <div><b>Lat:</b> {selected.lat}</div>
-            <div><b>Lng:</b> {selected.lng}</div>
-            <div><b>Speed:</b> {selected.speed ?? "-"} km/h</div>
-            <div><b>Heading:</b> {selected.heading ?? "-"}°</div>
-            <div><b>Time:</b> {selected.timestamp ?? "-"}</div>
-            {selected.status && <div><b>Status:</b> {selected.status}</div>}
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>
+              {selected.name ?? selected.id}
+            </div>
+            <div>
+              <b>Lat:</b> {selected.lat}
+            </div>
+            <div>
+              <b>Lng:</b> {selected.lng}
+            </div>
+            <div>
+              <b>Speed:</b> {selected.speed ?? "-"} km/h
+            </div>
+            <div>
+              <b>Heading:</b> {selected.heading ?? "-"}°
+            </div>
+            <div>
+              <b>Time:</b> {selected.timestamp ?? "-"}
+            </div>
+            {selected.status && (
+              <div>
+                <b>Status:</b> {selected.status}
+              </div>
+            )}
           </div>
         </InfoWindow>
       )}

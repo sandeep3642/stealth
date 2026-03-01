@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import CommonTable from "@/components/CommonTable";
-import PageHeader from "@/components/PageHeader";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
-import { useTheme } from "@/context/ThemeContext";
-import {
-  getConfigurations,
-  deleteConfiguration,
-} from "@/services/configurationService";
-import { Configuration } from "@/interfaces/configuartion.interface";
 import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import CommonTable from "@/components/CommonTable";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
+import PageHeader from "@/components/PageHeader";
+import { useTheme } from "@/context/ThemeContext";
+import { Configuration } from "@/interfaces/configuartion.interface";
+import {
+  deleteConfiguration,
+  getConfigurations,
+} from "@/services/configurationService";
 
 const ConfigurationPage: React.FC = () => {
   const { isDark } = useTheme();

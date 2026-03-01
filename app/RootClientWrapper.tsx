@@ -8,7 +8,11 @@ import { AuthProvider } from "@/context/AuthContext";
 import ToastProvider from "@/providers/ToastProvider";
 import { applyWhiteLabelColors } from "@/utils/themeUtils";
 
-export default function RootClientWrapper({ children }: { children: React.ReactNode }) {
+export default function RootClientWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   useEffect(() => {
     const savedTheme = localStorage.getItem("whiteLabelTheme");
     if (savedTheme) {

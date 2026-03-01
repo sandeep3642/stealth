@@ -16,11 +16,17 @@ export default function PlaybackControls({
   onSeek: (t: number) => void;
 }) {
   return (
-    <div style={{ display: "flex", gap: 12, alignItems: "center", padding: 12 }}>
+    <div
+      style={{ display: "flex", gap: 12, alignItems: "center", padding: 12 }}
+    >
       {!isPlaying ? (
-        <button onClick={onPlay} style={{ padding: "6px 12px" }}>Play</button>
+        <button onClick={onPlay} style={{ padding: "6px 12px" }}>
+          Play
+        </button>
       ) : (
-        <button onClick={onPause} style={{ padding: "6px 12px" }}>Pause</button>
+        <button onClick={onPause} style={{ padding: "6px 12px" }}>
+          Pause
+        </button>
       )}
 
       <input
@@ -32,7 +38,9 @@ export default function PlaybackControls({
         style={{ flex: 1 }}
       />
 
-      <div style={{ width: 60, textAlign: "right" }}>{Math.round(progress * 100)}%</div>
+      <div style={{ width: 60, textAlign: "right" }}>
+        {Math.round(progress * 100)}%
+      </div>
     </div>
   );
 }

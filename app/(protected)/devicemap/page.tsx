@@ -15,10 +15,7 @@ import { MetricCard } from "@/components/CommonCard";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { useTheme } from "@/context/ThemeContext";
 import { useColor } from "@/context/ColorContext";
-import {
-  deleteDeviceMap,
-  getDeviceMaps,
-} from "@/services/devicemapService";
+import { deleteDeviceMap, getDeviceMaps } from "@/services/devicemapService";
 import { getAllAccounts } from "@/services/commonServie";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
@@ -128,7 +125,7 @@ const DeviceMap: React.FC = () => {
   const getTotalRecords = (response: any, fallbackLength: number): number =>
     Number(
       response?.data?.assignments?.totalRecords ??
-      response?.data?.pageData?.totalRecords ??
+        response?.data?.pageData?.totalRecords ??
         response?.data?.totalRecords ??
         fallbackLength,
     );
@@ -229,7 +226,9 @@ const DeviceMap: React.FC = () => {
     try {
       const response = await deleteDeviceMap(selectedRow.id);
       if (response?.success || response?.statusCode === 200) {
-        toast.success(response?.message || "Device mapping deleted successfully");
+        toast.success(
+          response?.message || "Device mapping deleted successfully",
+        );
         fetchDeviceMaps();
       } else {
         toast.error(response?.message || "Unable to delete device mapping");

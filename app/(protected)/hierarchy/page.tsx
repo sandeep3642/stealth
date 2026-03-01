@@ -79,7 +79,6 @@ const Hierarchy: React.FC = () => {
           showSearch={true}
         />
       </div>
-      
     </div>
   );
 };

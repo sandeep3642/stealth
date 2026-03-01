@@ -5,7 +5,6 @@ import React, { useRef } from "react";
 import type { Vehicle } from "@/lib/mapTypes";
 import { getLiveTrackingData } from "@/services/liveTrackingService";
 
-
 // Helper: safely convert to number
 function toNum(value: any): number | undefined {
   if (value === null || value === undefined) return undefined;
@@ -28,12 +27,11 @@ function normalizeVehicle(item: any): Vehicle | null {
     toNum(item.Longitude) ??
     toNum(item.Lng) ??
     toNum(item.LNG);
-  if (
-    lat === undefined ||
-    lng === undefined ||
-    (lat === 0 && lng === 0)
-  ) {
-    console.warn("[trackallvehicle] Skipping invalid vehicle with bad coordinates:", item);
+  if (lat === undefined || lng === undefined || (lat === 0 && lng === 0)) {
+    console.warn(
+      "[trackallvehicle] Skipping invalid vehicle with bad coordinates:",
+      item,
+    );
     return null;
   }
   const id =
@@ -69,33 +67,45 @@ async function fetchAllVehicles(): Promise<Vehicle[]> {
   baseUrl = baseUrl.replace(/\/+$/, "");
   const res = await fetch(
     `${baseUrl}/api/live-tracking/batch?vehicleNos=${vehicleNos.join(",")}`,
-    { cache: "no-store" }
+    { cache: "no-store" },
   );
   let data = null;
   try {
-    if (res.ok && res.headers.get("content-type")?.includes("application/json")) {
+    if (
+      res.ok &&
+      res.headers.get("content-type")?.includes("application/json")
+    ) {
       data = await res.json();
     }
   } catch (e) {
     return [];
   }
   if (data && data.ok && Array.isArray(data.data)) {
-    return data.data.map(normalizeVehicle).filter((v: Vehicle | null) => v !== null) as Vehicle[];
+    return data.data
+      .map(normalizeVehicle)
+      .filter((v: Vehicle | null) => v !== null) as Vehicle[];
   }
   return [];
 }
 
 export default function TrackAllVehiclePage() {
   // Track live route for each vehicle by id
-  const liveRoutesRef = useRef<{ [id: string]: { lat: number; lng: number }[] }>({});
+  const liveRoutesRef = useRef<{
+    [id: string]: { lat: number; lng: number }[];
+  }>({});
 
   // Wrap fetchAllVehicles to update liveRoutesRef
   const fetchAndTrackVehicles = async () => {
     const vehicles = await fetchAllVehicles();
-    console.log('[trackallvehicle] fetched vehicles:', vehicles);
-    vehicles.forEach(v => {
-      console.log('[trackallvehicle] vehicle:', v.id, v.lat, v.lng);
-      if (typeof v.lat === "number" && typeof v.lng === "number" && isFinite(v.lat) && isFinite(v.lng)) {
+    console.log("[trackallvehicle] fetched vehicles:", vehicles);
+    vehicles.forEach((v) => {
+      console.log("[trackallvehicle] vehicle:", v.id, v.lat, v.lng);
+      if (
+        typeof v.lat === "number" &&
+        typeof v.lng === "number" &&
+        isFinite(v.lat) &&
+        isFinite(v.lng)
+      ) {
         if (!liveRoutesRef.current[v.id]) {
           liveRoutesRef.current[v.id] = [];
         }
@@ -105,11 +115,19 @@ export default function TrackAllVehiclePage() {
           route.push({ lat: v.lat, lng: v.lng });
         }
       } else {
-        console.warn('[trackallvehicle] invalid lat/lng for vehicle:', v.id, v.lat, v.lng);
+        console.warn(
+          "[trackallvehicle] invalid lat/lng for vehicle:",
+          v.id,
+          v.lat,
+          v.lng,
+        );
       }
     });
     // Attach liveRoute to each vehicle
-    return vehicles.map(v => ({ ...v, liveRoute: liveRoutesRef.current[v.id] || [] }));
+    return vehicles.map((v) => ({
+      ...v,
+      liveRoute: liveRoutesRef.current[v.id] || [],
+    }));
   };
 
   return (

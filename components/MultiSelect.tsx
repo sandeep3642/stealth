@@ -53,7 +53,7 @@ const MultiSelect = ({
   };
 
   const filteredOptions = options.filter((opt) =>
-    opt.label.toLowerCase().includes(search.toLowerCase())
+    opt.label.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
@@ -113,9 +113,7 @@ const MultiSelect = ({
             )}
 
             {filteredOptions.map((option) => {
-              const checked = value.some(
-                (v) => v.value === option.value
-              );
+              const checked = value.some((v) => v.value === option.value);
 
               return (
                 <label

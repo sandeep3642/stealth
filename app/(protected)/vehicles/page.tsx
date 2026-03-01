@@ -145,44 +145,44 @@ const Vehicles: React.FC = () => {
     init();
   }, []);
 
-const fetchVehicles = async () => {
-  try {
-    const response = await getVehicles(pageNo, pageSize);
-    console.log("response", response);
+  const fetchVehicles = async () => {
+    try {
+      const response = await getVehicles(pageNo, pageSize);
+      console.log("response", response);
 
-    const vehiclesData = response.data?.vehicles;  // ✅ corrected
-    const summary = response.data?.summary;        // ✅ corrected
+      const vehiclesData = response.data?.vehicles; // ✅ corrected
+      const summary = response.data?.summary; // ✅ corrected
 
-    if (vehiclesData?.items?.length) {
-      const mappedData = vehiclesData.items.map((v: any) => ({
-        vehicleId: v.id,
-        registrationNumber: v.vehicleNumber,
-        vinNumber: v.vinOrChassisNumber,
-        vehicleType: getVehicleTypes(v.vehicleTypeId),
-        vehicleBrand: getVehicleBrand(v.vehicleTypeId), // adjust if brandId exists later
-        ownershipBasis: v.ownershipType?.toUpperCase() || "UNKNOWN",
-        lessorName: v.leasedVendorId ? `Vendor #${v.leasedVendorId}` : null,
-        status: v.status,
-        updatedAt: v.updatedAt || v.createdAt || null,
-      }));
+      if (vehiclesData?.items?.length) {
+        const mappedData = vehiclesData.items.map((v: any) => ({
+          vehicleId: v.id,
+          registrationNumber: v.vehicleNumber,
+          vinNumber: v.vinOrChassisNumber,
+          vehicleType: getVehicleTypes(v.vehicleTypeId),
+          vehicleBrand: getVehicleBrand(v.vehicleTypeId), // adjust if brandId exists later
+          ownershipBasis: v.ownershipType?.toUpperCase() || "UNKNOWN",
+          lessorName: v.leasedVendorId ? `Vendor #${v.leasedVendorId}` : null,
+          status: v.status,
+          updatedAt: v.updatedAt || v.createdAt || null,
+        }));
 
-      setSummaryData({
-        totalFleetSize: summary.totalFleetSize,
-        inService: summary.inService,
-        offRoadOrOutOfService: summary.outOfService,
-        activeAccounts: summary.inService,
-      });
+        setSummaryData({
+          totalFleetSize: summary.totalFleetSize,
+          inService: summary.inService,
+          offRoadOrOutOfService: summary.outOfService,
+          activeAccounts: summary.inService,
+        });
 
-      setData(mappedData);
-      setTotalRecords(vehiclesData.totalRecords);
-    } else {
-      toast.error("No vehicles found");
+        setData(mappedData);
+        setTotalRecords(vehiclesData.totalRecords);
+      } else {
+        toast.error("No vehicles found");
+      }
+    } catch (error) {
+      console.error("Error fetching vehicles:", error);
+      toast.error("An error occurred while loading vehicles");
     }
-  } catch (error) {
-    console.error("Error fetching vehicles:", error);
-    toast.error("An error occurred while loading vehicles");
-  }
-};
+  };
 
   useEffect(() => {
     fetchVehicles();

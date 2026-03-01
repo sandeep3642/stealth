@@ -71,7 +71,7 @@ export const deleteCategory = async (id) => {
 export const updateCategoryStatus = async (id, isActive) => {
   try {
     const res = await api.patch(
-      `/api/categories/${id}/status?isActive=${isActive}`
+      `/api/categories/${id}/status?isActive=${isActive}`,
     );
     return res.data;
   } catch (error) {

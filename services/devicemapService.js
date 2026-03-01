@@ -19,7 +19,9 @@ export const getDeviceMaps = async ({
     query.set("search", search.trim());
   }
 
-  const res = await api.get(`/api/vehicle-device-maps/list?${query.toString()}`);
+  const res = await api.get(
+    `/api/vehicle-device-maps/list?${query.toString()}`,
+  );
   return res.data;
 };
 

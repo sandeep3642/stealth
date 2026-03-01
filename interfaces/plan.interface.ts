@@ -15,8 +15,6 @@ export interface CardProps {
   isDark: boolean;
 }
 
-
-
 export interface Currency {
   id: number;
   value: string; // Format: "USD - US Dollar ($)"

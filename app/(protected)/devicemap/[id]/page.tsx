@@ -133,12 +133,12 @@ const AddEditDeviceMap: React.FC = () => {
     try {
       const [accountsRes, vehiclesRes, typeRes, simRes, hwRes] =
         await Promise.allSettled([
-        getAllAccounts(),
-        getVehicleDropdown(accountId),
-        getDeviceTypeDropdown(),
-        getSimDropdownByAccount(accountId),
-        getDeviceDropdown(accountId),
-      ]);
+          getAllAccounts(),
+          getVehicleDropdown(accountId),
+          getDeviceTypeDropdown(),
+          getSimDropdownByAccount(accountId),
+          getDeviceDropdown(accountId),
+        ]);
 
       if (accountsRes.status === "fulfilled") {
         setAccounts(toOptions(accountsRes.value));
@@ -230,7 +230,9 @@ const AddEditDeviceMap: React.FC = () => {
   }, [deviceMapId]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
   ) => {
     const { name, value } = e.target;
     const numberFields = [
@@ -377,10 +379,7 @@ const AddEditDeviceMap: React.FC = () => {
                   className="p-2 rounded-lg"
                   style={{ backgroundColor: `${selectedColor}20` }}
                 >
-                  <Link2
-                    className="w-5 h-5"
-                    style={{ color: selectedColor }}
-                  />
+                  <Link2 className="w-5 h-5" style={{ color: selectedColor }} />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-foreground mb-1">
@@ -525,7 +524,9 @@ const AddEditDeviceMap: React.FC = () => {
                         ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
                         : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
                     } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                    onFocus={(e) => (e.target.style.borderColor = selectedColor)}
+                    onFocus={(e) =>
+                      (e.target.style.borderColor = selectedColor)
+                    }
                     onBlur={(e) => (e.target.style.borderColor = "")}
                     disabled={loading}
                   />
@@ -601,24 +602,26 @@ const AddEditDeviceMap: React.FC = () => {
                       className={`w-4 h-4 ${formData.isActive ? "text-green-500" : "text-gray-400"}`}
                     />
                     <button
-                    onClick={() =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        isActive: prev.isActive ? 0 : 1,
-                      }))
-                    }
-                    disabled={loading}
-                    className="relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
-                    style={{
-                      backgroundColor: formData.isActive ? selectedColor : "#cbd5e1",
-                    }}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                        formData.isActive ? "translate-x-8" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          isActive: prev.isActive ? 0 : 1,
+                        }))
+                      }
+                      disabled={loading}
+                      className="relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
+                      style={{
+                        backgroundColor: formData.isActive
+                          ? selectedColor
+                          : "#cbd5e1",
+                      }}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                          formData.isActive ? "translate-x-8" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
                   </div>
                 </div>
               </div>

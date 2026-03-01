@@ -192,7 +192,6 @@ const ManagePlans: React.FC = () => {
           />
         </div>
       </div>
-      
     </div>
   );
 };

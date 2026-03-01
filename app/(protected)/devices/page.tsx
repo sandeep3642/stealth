@@ -1,26 +1,26 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import CommonTable from "@/components/CommonTable";
-import PageHeader from "@/components/PageHeader";
-import { MetricCard } from "@/components/CommonCard";
-import { useTheme } from "@/context/ThemeContext";
-import { useColor } from "@/context/ColorContext";
-import { useRouter } from "next/navigation";
-import { toast } from "react-toastify";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
 import {
+  AlertCircle,
+  Building2,
+  Camera,
+  ChevronDown,
+  Cpu,
   Monitor,
   ShieldCheck,
-  AlertCircle,
   Wifi,
-  Camera,
-  Cpu,
-  Building2,
-  ChevronDown,
 } from "lucide-react";
-import { deleteDevice, getdevices } from "@/services/deviceService";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
+import { MetricCard } from "@/components/CommonCard";
+import CommonTable from "@/components/CommonTable";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
+import PageHeader from "@/components/PageHeader";
+import { useColor } from "@/context/ColorContext";
+import { useTheme } from "@/context/ThemeContext";
 import { getAllAccounts } from "@/services/commonServie";
+import { deleteDevice, getdevices } from "@/services/deviceService";
 
 interface Device {
   id: string;
@@ -185,7 +185,7 @@ const DeviceRegistry: React.FC = () => {
   const fetchAccounts = async () => {
     try {
       const response = await getAllAccounts();
-      console.log(response)
+      console.log(response);
       if (response?.statusCode === 200 && Array.isArray(response?.data)) {
         setAccounts(response.data);
       }
@@ -203,9 +203,12 @@ const DeviceRegistry: React.FC = () => {
         accountId: selectedAccountId,
         search: debouncedQuery,
       });
-      console.log("response",response)
+      console.log("response", response);
       const listData =
-        response?.data?.devices || response?.data?.pageData || response?.data || {};
+        response?.data?.devices ||
+        response?.data?.pageData ||
+        response?.data ||
+        {};
       const items = Array.isArray(listData?.items)
         ? listData.items
         : Array.isArray(response?.data)
@@ -230,12 +233,17 @@ const DeviceRegistry: React.FC = () => {
       setDevices(mappedDevices);
       setSummary({
         totalDevices: Number(
-          summaryData?.totalDevices || listData?.totalRecords || mappedDevices.length || 0,
+          summaryData?.totalDevices ||
+            listData?.totalRecords ||
+            mappedDevices.length ||
+            0,
         ),
         inService: Number(summaryData?.inService || 0),
         outOfService: Number(summaryData?.outOfService || 0),
       });
-      setTotalRecords(Number(listData?.totalRecords || mappedDevices.length || 0));
+      setTotalRecords(
+        Number(listData?.totalRecords || mappedDevices.length || 0),
+      );
     } catch (error) {
       console.error("Error fetching devices:", error);
       toast.error("An error occurred while loading devices");

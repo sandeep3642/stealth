@@ -103,12 +103,8 @@ const PlansManagement = () => {
     { id: 4, name: "Enterprise", displayName: "Dealer(B2B2C)" },
   ];
 
-  const billingIntervals = ["Monthly","Yearly"];
-  const contractValidities = [
-    "1 Year",
-    "2 Years",
-    "Lifetime",
-  ];
+  const billingIntervals = ["Monthly", "Yearly"];
+  const contractValidities = ["1 Year", "2 Years", "Lifetime"];
   const pricingModels = [
     "Fixed (Flat Account-based)",
     "License-based (Variable per Unit)",
@@ -457,9 +453,7 @@ const PlansManagement = () => {
     <div className={`${isDark ? "dark" : ""}`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""}`}>
         {/* Sticky Header */}
-        <div
-          className={` ${isDark ? "bg-background" : ""} pt-6 px-6 pb-4`}
-        >
+        <div className={` ${isDark ? "bg-background" : ""} pt-6 px-6 pb-4`}>
           <div className="max-w-[1600px] mx-auto">
             <div className="flex items-center justify-between">
               <div>
