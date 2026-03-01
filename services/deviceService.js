@@ -1,24 +1,70 @@
-// src/features/auth/authService.js
 import api from "./apiService";
 
-export const getdevices = async (page, pageSize,) => {
-    const res = await api.get(
-        `/api/devices/list?page=${page}&pageSize=${pageSize}`,
-    );
+const getStoredUser = () => {
+    if (typeof window === "undefined") return {};
+
+    try {
+        return JSON.parse(localStorage.getItem("user") || "{}");
+    } catch (error) {
+        console.error("Error parsing user from localStorage:", error);
+        return {};
+    }
+};
+
+const getStoredAccountId = () => {
+    if (typeof window === "undefined") return 0;
+
+    const selectedAccountId = Number(localStorage.getItem("accountId") || 0);
+    if (selectedAccountId > 0) return selectedAccountId;
+
+    const user = getStoredUser();
+    return Number(user?.accountId || 0);
+};
+
+export const getdevices = async ({
+    page = 1,
+    pageSize = 10,
+    accountId,
+    search = "",
+} = {}) => {
+    const resolvedAccountId = Number(accountId || getStoredAccountId() || 0);
+    const query = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize),
+    });
+
+    if (resolvedAccountId > 0) {
+        query.set("accountId", String(resolvedAccountId));
+    }
+
+    if (search?.trim()) {
+        query.set("search", search.trim());
+    }
+
+    const res = await api.get(`/api/devices/list?${query.toString()}`);
     return res.data;
 };
 
 export const getDeviceType = async () => {
-    const res = await api.get(
-        `api/device-types/list?page=0&pageSize=0`,
-    );
+    const res = await api.get(`/api/common/dropdowns/device-types`);
     return res.data;
 };
 
 
 export const saveDevice = async (payload) => {
     try {
-        const res = await api.post(`/api/devices`, payload);
+        const user = getStoredUser();
+        const resolvedAccountId = Number(payload?.accountId || getStoredAccountId() || 0);
+        const createdBy = Number(payload?.createdBy || resolvedAccountId || user?.accountId || user?.userId || 0);
+        const requestBody = {
+            accountId: resolvedAccountId,
+            manufacturerId: Number(payload?.manufacturerId || 0),
+            deviceTypeId: Number(payload?.deviceTypeId || 0),
+            deviceNo: String(payload?.deviceNo || "").trim(),
+            deviceImeiOrSerial: String(payload?.deviceImeiOrSerial || "").trim(),
+            createdBy,
+        };
+        const res = await api.post(`/api/devices`, requestBody);
         return res.data;
     } catch (error) {
         console.error("API Error in saveDevice:", error);
@@ -42,7 +88,19 @@ export const getDeviceById = async (id) => {
 
 export const updateDevice = async (id, payload) => {
     try {
-        const res = await api.put(`/api/devices/${id}`, payload);
+        const user = getStoredUser();
+        const updatedBy = Number(payload?.updatedBy || getStoredAccountId() || user?.accountId || user?.userId || 0);
+        const requestBody = {
+            id: Number(payload?.id || id),
+            manufacturerId: Number(payload?.manufacturerId || 0),
+            deviceTypeId: Number(payload?.deviceTypeId || 0),
+            deviceNo: String(payload?.deviceNo || "").trim(),
+            deviceImeiOrSerial: String(payload?.deviceImeiOrSerial || "").trim(),
+            deviceStatus: payload?.deviceStatus || "ACTIVE",
+            isActive: typeof payload?.isActive === "boolean" ? payload.isActive : true,
+            updatedBy,
+        };
+        const res = await api.put(`/api/devices/${id}`, requestBody);
         return res.data;
     } catch (error) {
         console.error("API Error in update Device:", error);

@@ -153,7 +153,7 @@ export const getDeviceDropdown = async (accountId) => {
 };
 
 export const getOemManufacturersDropdown = async () => {
-  const res = await api.get(`/api/Lookup/oem-manufacturers`);
+  const res = await api.get(`/api/common/dropdowns/manufacturers`);
   return res.data;
 };
 
