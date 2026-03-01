@@ -1,52 +1,57 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import Cookies from "js-cookie";
+// Add these imports at the top
 import {
-  Search,
-  Bell,
-  Globe,
-  Menu,
-  Home,
-  LayoutDashboard,
-  FileText,
-  Users,
-  Briefcase,
-  Cog,
-  ChevronDown,
-  List,
-  Layers,
-  GitBranch,
-  Settings,
-  Tag,
-  User,
-  Shield,
   Activity,
-  Package,
-  X,
-  LogOut,
+  Bell,
+  Briefcase,
+  ChevronDown,
+  Cog,
   CreditCard,
+  FileText,
+  GitBranch,
+  Globe,
+  Home,
+  Layers,
+  LayoutDashboard,
+  Link2,
+  List,
+  LogOut,
+  Menu,
+  Package,
   Receipt,
+  Search,
+  Settings,
+  Shield,
+  ShieldCheck,
+  Smartphone,
   SubscriptIcon,
+  Tag,
+  Truck,
+  User,
+  UserCheck,
+  Users,
+  X,
 } from "lucide-react";
 import Link from "next/link";
-import { useLayout } from "../context/LayoutContext";
-import { useColor } from "../context/ColorContext";
-import { useTheme } from "../context/ThemeContext";
+import { usePathname } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import {
-  SidebarSection,
   HeaderClasses,
   SidebarClasses,
+  SidebarSection,
 } from "@/interfaces/navbar.interface";
-import { getInitials } from "@/utils/utils";
-import Cookies from "js-cookie";
 import {
   filterMenuByPermissions,
   getUserRoleData,
 } from "@/services/commonServie";
-import { usePathname } from "next/navigation";
 import { applyWhiteLabelColors } from "@/utils/themeUtils";
-// Add these imports at the top
-import { Truck, Smartphone, UserCheck, Link2, ShieldCheck } from "lucide-react";
+import { getInitials } from "@/utils/utils";
+import { useColor } from "../context/ColorContext";
+import { useLayout } from "../context/LayoutContext";
+import { useTheme } from "../context/ThemeContext";
+
 const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -258,26 +263,14 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
             {
               id: "geofence-master",
               label: "Geofence Master",
-              icon: Map,
+              icon: ShieldCheck,
               path: "/geofence",
-            },
-            {
-              id: "vehicle-device-mapping",
-              label: "Vehicle Device Mapping",
-              icon: Link2,
-              path: "/devicemap",
             },
             {
               id: "sim-master",
               label: "SIM Master",
               icon: Smartphone,
               path: "/sim-master",
-            },
-            {
-              id: "vehicle-geofence",
-              label: "Vehicle Geofence",
-              icon: Link2,
-              path: "/vehicle-geofence",
             },
           ],
         },
@@ -288,18 +281,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           active: false,
           expandable: true,
           children: [
-            {
-              id: "driver-assignments",
-              label: "Driver Assignments",
-              icon: UserCheck,
-              path: "/fleet/assignments/drivers",
-            },
-            {
-              id: "vehicle-access",
-              label: "Vehicle Access",
-              icon: ShieldCheck,
-              path: "/fleet/assignments/vehicle-access",
-            },
             {
               id: "device-assignments",
               label: "Device Assignments",
