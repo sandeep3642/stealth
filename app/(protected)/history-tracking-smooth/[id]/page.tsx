@@ -220,7 +220,7 @@ export default function HistoryTracking() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          vehicleNo: vehicleId,
+          vehicleId: vehicleId,
           start: formatDateForAPI(startDate),
           end: formatDateForAPI(endDate),
         }),
