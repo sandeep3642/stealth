@@ -76,11 +76,22 @@ export const updateGeofence = async (id, payload) => {
       ...payload,
       accountId: resolvedAccountId,
       updatedBy: Number(payload?.updatedBy || resolvedAccountId || 0),
+      updatedAt: payload?.updatedAt || new Date().toISOString(),
     };
     const res = await api.put(`/api/geofences/${id}`, finalPayload);
     return res.data;
   } catch (error) {
     console.error("API Error in updateGeofence:", error);
+    return buildErrorResponse(error);
+  }
+};
+
+export const deleteGeofence = async (id) => {
+  try {
+    const res = await api.delete(`/api/geofences/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error("API Error in deleteGeofence:", error);
     return buildErrorResponse(error);
   }
 };

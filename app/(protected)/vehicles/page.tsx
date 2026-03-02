@@ -16,17 +16,11 @@ import {
   VehicleType,
 } from "@/interfaces/vehicle.interface";
 import {
+  deleteVehicle,
   getVehicleBrands,
   getVehicles,
   getVehicleType,
 } from "@/services/vehicleService";
-
-async function deleteVehicle(
-  vehicleId: number,
-): Promise<{ statusCode: number; message: string }> {
-  // TODO: replace with real API
-  return { statusCode: 200, message: "Vehicle deleted successfully" };
-}
 
 // ── Component ──────────────────────────────────────────────────────────────
 const Vehicles: React.FC = () => {
@@ -202,8 +196,12 @@ const Vehicles: React.FC = () => {
     try {
       const response = await deleteVehicle(vehicleToDelete.vehicleId);
       if (response && response.statusCode === 200) {
-        toast.success("Vehicle removed from registry!");
-        fetchVehicles();
+        toast.success(response.message || "Vehicle removed successfully");
+        if (pageNo > 1 && data.length === 1) {
+          setPageNo((prev) => prev - 1);
+        } else {
+          fetchVehicles();
+        }
       } else {
         toast.error(response.message || "Failed to delete vehicle");
       }

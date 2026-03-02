@@ -64,9 +64,9 @@ export const updateVehicle = async (id, payload) => {
   }
 };
 
-export const deleteAccount = async (id) => {
+export const deleteVehicle = async (id) => {
   try {
-    const res = await api.delete(`/api/accounts/${id}`);
+    const res = await api.delete(`/api/vehicles/${id}`);
     return res.data;
   } catch (error) {
     return (

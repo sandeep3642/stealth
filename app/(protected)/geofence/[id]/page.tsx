@@ -50,6 +50,25 @@ const CLASSIFICATIONS: ZoneClassification[] = [
 
 const DEFAULT_CENTER = { lat: 28.6139, lng: 77.209 };
 
+const CLASSIFICATION_CODE_TO_LABEL: Record<string, ZoneClassification> = {
+  WAREHOUSE: "Warehouse",
+  PORT: "Port",
+  CLIENT_SITE: "Client Site",
+  DEPOT: "Depot",
+  RESTRICTED_AREA: "Restricted Area",
+};
+
+const getClassificationLabel = (value?: string): ZoneClassification =>
+  CLASSIFICATION_CODE_TO_LABEL[String(value || "").toUpperCase()] ||
+  (value as ZoneClassification) ||
+  "Warehouse";
+
+const getClassificationCode = (value: ZoneClassification): string =>
+  String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "_");
+
 export default function GeofenceDetailPage() {
   const { isDark } = useTheme();
   const router = useRouter();
@@ -158,7 +177,9 @@ export default function GeofenceDetailPage() {
         setCode(String(zone?.uniqueCode || ""));
         setDisplayName(String(zone?.displayName || ""));
         setClassification(
-          String(zone?.classificationCode || "Warehouse") as ZoneClassification,
+          getClassificationLabel(
+            String(zone?.classificationCode || zone?.classificationLabel || ""),
+          ),
         );
         setColor(zone?.colorTheme || PRESET_COLORS[0]);
         setGeometry(loadedGeometry);
@@ -317,9 +338,7 @@ export default function GeofenceDetailPage() {
 
     setSaving(true);
     try {
-      const classificationCode = classification
-        .toUpperCase()
-        .replace(/\s+/g, "_");
+      const classificationCode = getClassificationCode(classification);
       const geometryType = geometry === "polygon" ? "POLYGON" : "CIRCLE";
 
       const coordinates =
@@ -346,12 +365,13 @@ export default function GeofenceDetailPage() {
         classificationCode,
         classificationLabel: classification,
         geometryType,
-        radiusM: geometry === "circle" ? Number(radius || 0) : 0,
+        radiusM: geometry === "circle" ? Number(radius || 0) : null,
         coordinatesJson: JSON.stringify(coordinates),
         coordinates,
         colorTheme: color,
         opacity: 0.6,
         isEnabled: status === "enabled",
+        updatedAt: new Date().toISOString(),
       };
 
       const response = isCreateMode

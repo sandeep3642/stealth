@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MetricCard } from "@/components/CommonCard";
 import CommonTable from "@/components/CommonTable";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 import PageHeader from "@/components/PageHeader";
 import { useTheme } from "@/context/ThemeContext";
 import type { GeofenceZone, ZoneStatus } from "@/interfaces/geofence.interface";
-import { getGeofences } from "@/services/geofenceService";
+import { deleteGeofence, getGeofences } from "@/services/geofenceService";
+import { toast } from "react-toastify";
 
 const STATUS_STYLE: Record<ZoneStatus, string> = {
   enabled: "bg-emerald-100 text-emerald-700",
@@ -37,6 +39,8 @@ export default function GeofencePage() {
   const [pageSize, setPageSize] = useState(10);
   const [totalRecords, setTotalRecords] = useState(0);
   const [loadingZones, setLoadingZones] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [zoneToDelete, setZoneToDelete] = useState<GeofenceZone | null>(null);
   const [summary, setSummary] = useState({
     totalZones: 0,
     enabled: 0,
@@ -107,6 +111,40 @@ export default function GeofencePage() {
     fetchGeofenceList();
   }, [fetchGeofenceList]);
 
+  const handleEdit = (row: GeofenceZone) => {
+    router.push(`/geofence/${row.id}`);
+  };
+
+  const handleDelete = (row: GeofenceZone) => {
+    setZoneToDelete(row);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!zoneToDelete) return;
+
+    try {
+      const response = await deleteGeofence(zoneToDelete.id);
+
+      if (response?.success || response?.statusCode === 200) {
+        toast.success(response?.message || "Geofence deleted successfully");
+        if (pageNo > 1 && filtered.length === 1) {
+          setPageNo((prev) => prev - 1);
+        } else {
+          fetchGeofenceList();
+        }
+      } else {
+        toast.error(response?.message || "Failed to delete geofence");
+      }
+    } catch (error) {
+      console.error("Error deleting geofence:", error);
+      toast.error("Error deleting geofence");
+    } finally {
+      setZoneToDelete(null);
+      setIsDeleteDialogOpen(false);
+    }
+  };
+
   const filtered = useMemo(
     () =>
       zones.filter((z) => {
@@ -167,7 +205,9 @@ export default function GeofencePage() {
       visible: true,
       render: (value: GeofenceZone["geometry"]) => (
         <span
-          className={`text-xl ${isDark ? "text-gray-500" : "text-gray-300"}`}
+          className={`inline-flex items-center justify-center text-2xl font-bold leading-none ${
+            isDark ? "text-gray-200" : "text-gray-700"
+          }`}
         >
           {value === "circle" ? "○" : "⬠"}
         </span>
@@ -220,7 +260,9 @@ export default function GeofencePage() {
                 ...zone,
                 identity: zone.displayName,
               }))}
-              showActions={false}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              showActions={true}
               searchPlaceholder="Search geofences..."
               rowsPerPageOptions={[5, 10, 25, 50]}
               pageNo={pageNo}
@@ -234,6 +276,21 @@ export default function GeofencePage() {
             />
           )}
         </div>
+
+        <ConfirmationDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={() => {
+            setIsDeleteDialogOpen(false);
+            setZoneToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          title="Delete Geofence"
+          message={`Are you sure you want to delete "${zoneToDelete?.displayName}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="danger"
+          isDark={isDark}
+        />
       </div>
     </div>
   );
