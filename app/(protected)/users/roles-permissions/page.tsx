@@ -19,6 +19,8 @@ const Roles: React.FC = () => {
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
 
   const [summary, setSummary] = useState({
     totalRoles: 0,
@@ -97,7 +99,7 @@ const Roles: React.FC = () => {
   };
 
   async function fetchRoles() {
-    const response = await getRoles(pageNo, pageSize);
+    const response = await getRoles(pageNo, pageSize, debouncedQuery);
     if (response && response.statusCode === 200) {
       setSummary(response.data.summary);
       setData(response.data.roles.items);
@@ -107,7 +109,15 @@ const Roles: React.FC = () => {
 
   useEffect(() => {
     fetchRoles();
-  }, [pageNo, pageSize]);
+  }, [pageNo, pageSize, debouncedQuery]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   return (
     <div className={`${isDark ? "dark" : ""} mt-10`}>
@@ -168,6 +178,8 @@ const Roles: React.FC = () => {
           onPageChange={handlePageChange}
           totalRecords={totalRecords}
           onPageSizeChange={handlePageSizeChange}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
           isServerSide={true}
         />
 

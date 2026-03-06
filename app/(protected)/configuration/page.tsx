@@ -19,8 +19,11 @@ const ConfigurationPage: React.FC = () => {
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [configurations, setConfigurations] = useState<Configuration[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [totalRecords, setTotalRecords] = useState(0);
 
   // Confirmation dialog states
@@ -45,8 +48,8 @@ const ConfigurationPage: React.FC = () => {
 
   const fetchConfigurations = async () => {
     try {
-      setLoading(true);
-      const response = await getConfigurations(pageNo, pageSize);
+      if (isInitialLoad) setLoading(true);
+      const response = await getConfigurations(pageNo, pageSize, debouncedQuery);
       if (response.success) {
         setConfigurations(response.data?.items || []);
         setTotalRecords(response.data?.totalRecords || 0);
@@ -57,6 +60,7 @@ const ConfigurationPage: React.FC = () => {
       console.error("Error fetching configurations:", error);
     } finally {
       setLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -100,8 +104,16 @@ const ConfigurationPage: React.FC = () => {
   };
 
   useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  useEffect(() => {
     fetchConfigurations();
-  }, [pageNo, pageSize]);
+  }, [pageNo, pageSize, debouncedQuery]);
 
   return (
     <div className={`${isDark ? "dark" : ""} mt-10`}>
@@ -135,6 +147,8 @@ const ConfigurationPage: React.FC = () => {
             pageSize={pageSize}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
             totalRecords={totalRecords}
           />
         )}

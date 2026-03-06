@@ -1,9 +1,14 @@
 import api from "./apiService";
 
 export const getRoles = async (page, pageSize, searchQuery) => {
-  const res = await api.get(
-    `/api/roles/GetAllRole?page=${page}&pageSize=${pageSize}`,
-  );
+  const query = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+  if (searchQuery?.trim()) {
+    query.set("search", searchQuery.trim());
+  }
+  const res = await api.get(`/api/roles/GetAllRole?${query.toString()}`);
   return res.data;
 };
 

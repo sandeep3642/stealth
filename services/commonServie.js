@@ -150,6 +150,16 @@ export const getDeviceDropdown = async (accountId) => {
   return res.data;
 };
 
+export const getGeofenceDropdownByAccount = async (accountId) => {
+  const res = await api.get(`/api/common/dropdowns/geofences`, {
+    params: {
+      accountId: Number(accountId || 0),
+      limit: 0,
+    },
+  });
+  return res.data;
+};
+
 export const getOemManufacturersDropdown = async () => {
   const res = await api.get(`/api/common/dropdowns/manufacturers`);
   return res.data;

@@ -19,6 +19,8 @@ const Users: React.FC = () => {
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [data, setData] = useState<UserItem[]>([]);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -105,7 +107,7 @@ const Users: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await getUsers(pageNo, pageSize);
+      const response = await getUsers(pageNo, pageSize, debouncedQuery);
       if (response && response.statusCode === 200) {
         setSummaryData(response.data.summary);
         setTotalRecords(response.data.users.totalRecords || 0);
@@ -120,7 +122,15 @@ const Users: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [pageNo, pageSize]);
+  }, [pageNo, pageSize, debouncedQuery]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   const handlePageChange = (page: number) => setPageNo(page);
   const handlePageSizeChange = (size: number) => {
@@ -259,6 +269,8 @@ const Users: React.FC = () => {
           onPageChange={handlePageChange}
           totalRecords={totalRecords}
           onPageSizeChange={handlePageSizeChange}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
         />
 
         {/* Confirmation Dialog */}

@@ -1,8 +1,15 @@
 import api from "./apiService";
 
 // ✅ Get Categories (List)
-export const getCategories = async () => {
-  const res = await api.get(`/api/categories`);
+export const getCategories = async (page = 1, pageSize = 10, search = "") => {
+  const query = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+  if (search?.trim()) {
+    query.set("search", search.trim());
+  }
+  const res = await api.get(`/api/categories?${query.toString()}`);
   return res.data;
 };
 

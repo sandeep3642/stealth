@@ -19,6 +19,8 @@ const SimMaster: React.FC = () => {
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [data, setData] = useState<SimItem[]>([]);
   const [totalRecords, setTotalRecords] = useState(0);
   const [summaryData, setSummaryData] = useState<SimSummary>({
@@ -74,7 +76,7 @@ const SimMaster: React.FC = () => {
 
   const fetchSims = async () => {
     try {
-      const response = await getSims(pageNo, pageSize);
+      const response = await getSims(pageNo, pageSize, debouncedQuery);
       console.log("sim response", response);
 
       const simsData = response.data?.sims;
@@ -113,7 +115,15 @@ const SimMaster: React.FC = () => {
 
   useEffect(() => {
     fetchSims();
-  }, [pageNo, pageSize]);
+  }, [pageNo, pageSize, debouncedQuery]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   const handleEdit = (row: SimItem) => {
     router.push(`/sim-master/${row.simId}`);
@@ -216,6 +226,8 @@ const SimMaster: React.FC = () => {
             setPageSize(size);
             setPageNo(1);
           }}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
         />
 
         {/* Confirmation Dialog */}

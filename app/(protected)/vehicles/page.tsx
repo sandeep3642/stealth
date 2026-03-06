@@ -29,6 +29,8 @@ const Vehicles: React.FC = () => {
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [data, setData] = useState<VehicleItem[]>([]);
   const [totalRecords, setTotalRecords] = useState(0);
   const [summaryData, setSummaryData] = useState<VehicleSummary>({
@@ -141,7 +143,7 @@ const Vehicles: React.FC = () => {
 
   const fetchVehicles = async () => {
     try {
-      const response = await getVehicles(pageNo, pageSize);
+      const response = await getVehicles(pageNo, pageSize, debouncedQuery);
       console.log("response", response);
 
       const vehiclesData = response.data?.vehicles; // ✅ corrected
@@ -180,7 +182,15 @@ const Vehicles: React.FC = () => {
 
   useEffect(() => {
     fetchVehicles();
-  }, [pageNo, pageSize, vehicleTypes, vehicleBrands]);
+  }, [pageNo, pageSize, debouncedQuery, vehicleTypes, vehicleBrands]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   const handleEdit = (row: VehicleItem) => {
     router.push(`/vehicles/${row.vehicleId}`);
@@ -284,6 +294,8 @@ const Vehicles: React.FC = () => {
             setPageSize(size);
             setPageNo(1);
           }}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
         />
 
         {/* Confirmation Dialog */}

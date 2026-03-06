@@ -29,11 +29,16 @@ const getUserData = () => {
   }
 };
 
-export const getGeofences = async (page = 1, pageSize = 10) => {
+export const getGeofences = async (page = 1, pageSize = 10, search = "") => {
   try {
-    const res = await api.get(
-      `/api/geofences/list?page=${page}&pageSize=${pageSize}`,
-    );
+    const query = new URLSearchParams({
+      page: String(page),
+      pageSize: String(pageSize),
+    });
+    if (search?.trim()) {
+      query.set("search", search.trim());
+    }
+    const res = await api.get(`/api/geofences/list?${query.toString()}`);
     return res.data;
   } catch (error) {
     console.error("API Error in getGeofences:", error);

@@ -1,10 +1,15 @@
 import api from "./apiService";
 
 // ── GET all SIMs (paginated) ───────────────────────────────────────────────
-export const getSims = async (pageNo, pageSize) => {
-  const response = await api.get(
-    `/api/sims/list??pageNo=${pageNo}&pageSize=${pageSize}`,
-  );
+export const getSims = async (pageNo, pageSize, search = "") => {
+  const query = new URLSearchParams({
+    pageNo: String(pageNo),
+    pageSize: String(pageSize),
+  });
+  if (search?.trim()) {
+    query.set("search", search.trim());
+  }
+  const response = await api.get(`/api/sims/list?${query.toString()}`);
   return response.data;
 };
 

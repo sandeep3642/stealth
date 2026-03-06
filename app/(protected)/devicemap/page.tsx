@@ -49,6 +49,7 @@ const DeviceMap: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [totalRecords, setTotalRecords] = useState(0);
   const [rows, setRows] = useState<DeviceMapRow[]>([]);
   const [accounts, setAccounts] = useState<AccountOption[]>([]);
@@ -172,7 +173,7 @@ const DeviceMap: React.FC = () => {
 
   const fetchDeviceMaps = async () => {
     try {
-      setLoading(true);
+      if (isInitialLoad) setLoading(true);
       const requestParams = {
         page: pageNo,
         pageSize,
@@ -190,6 +191,7 @@ const DeviceMap: React.FC = () => {
       toast.error("Failed to fetch device mappings");
     } finally {
       setLoading(false);
+      setIsInitialLoad(false);
     }
   };
 

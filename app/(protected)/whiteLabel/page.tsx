@@ -16,9 +16,12 @@ const WhiteLabelPage: React.FC = () => {
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [data, setData] = useState<WhiteLabel[]>([]);
   const [totalRecords, setTotalRecords] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Confirmation dialog states
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -67,8 +70,8 @@ const WhiteLabelPage: React.FC = () => {
   // Fetch White Labels Data
   const fetchWhiteLabels = async () => {
     try {
-      setLoading(true);
-      const response = await getWhiteLabels(pageNo, pageSize);
+      if (isInitialLoad) setLoading(true);
+      const response = await getWhiteLabels(pageNo, pageSize, debouncedQuery);
 
       if (response.success && response.data) {
         setData(response.data.items || []);
@@ -82,12 +85,21 @@ const WhiteLabelPage: React.FC = () => {
       setData([]);
     } finally {
       setLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
   useEffect(() => {
     fetchWhiteLabels();
-  }, [pageNo, pageSize]);
+  }, [pageNo, pageSize, debouncedQuery]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   const handleEdit = (row: WhiteLabel) => {
     router.push(`/provisionBranding?id=${row.whiteLabelId}`);
@@ -161,6 +173,8 @@ const WhiteLabelPage: React.FC = () => {
             totalRecords={totalRecords}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
           />
         )}
 

@@ -17,8 +17,11 @@ const Categories: React.FC = () => {
   const router = useRouter();
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [totalRecords, setTotalRecords] = useState(0);
   const [categoryRights, setCategoryRights] = useState<FormRights | null>(null);
 
@@ -61,10 +64,20 @@ const Categories: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      setLoading(true);
-      const response = await getCategories();
+      if (isInitialLoad) setLoading(true);
+      const response = await getCategories(pageNo, pageSize, debouncedQuery);
       if (response.success) {
-        setCategories(response.data || []);
+        const pageData = response.data;
+        const items = Array.isArray(pageData)
+          ? pageData
+          : pageData?.items || pageData?.data || [];
+
+        setCategories(items);
+        setTotalRecords(
+          Array.isArray(pageData)
+            ? pageData.length
+            : pageData?.totalRecords || items.length,
+        );
       } else {
         console.error("Failed to fetch categories:", response.message);
       }
@@ -72,6 +85,7 @@ const Categories: React.FC = () => {
       console.error("Error fetching categories:", error);
     } finally {
       setLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -116,7 +130,15 @@ const Categories: React.FC = () => {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [pageNo, pageSize, debouncedQuery]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   useEffect(() => {
     function getPermissionsList() {
@@ -179,7 +201,10 @@ const Categories: React.FC = () => {
             pageSize={pageSize}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
-            isServerSide={false}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            totalRecords={totalRecords}
+            isServerSide={true}
           />
         )}
 

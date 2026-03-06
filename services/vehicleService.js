@@ -1,8 +1,15 @@
 // src/features/auth/authService.js
 import api from "./apiService";
 
-export const getVehicles = async (page, pageSize) => {
-  const res = await api.get(`/api/vehicles?page=${page}&pageSize=${pageSize}`);
+export const getVehicles = async (page, pageSize, search = "") => {
+  const query = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+  });
+  if (search?.trim()) {
+    query.set("search", search.trim());
+  }
+  const res = await api.get(`/api/vehicles?${query.toString()}`);
   return res.data;
 };
 

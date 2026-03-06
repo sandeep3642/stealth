@@ -2,7 +2,7 @@
 
 import { CheckCircle, MapPin, ShieldAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MetricCard } from "@/components/CommonCard";
 import CommonTable from "@/components/CommonTable";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
@@ -35,10 +35,12 @@ export default function GeofencePage() {
 
   const [zones, setZones] = useState<GeofenceZone[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalRecords, setTotalRecords] = useState(0);
   const [loadingZones, setLoadingZones] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [zoneToDelete, setZoneToDelete] = useState<GeofenceZone | null>(null);
   const [summary, setSummary] = useState({
@@ -84,8 +86,8 @@ export default function GeofencePage() {
 
   const fetchGeofenceList = useCallback(async () => {
     try {
-      setLoadingZones(true);
-      const response = await getGeofences(pageNo, pageSize);
+      if (isInitialLoad) setLoadingZones(true);
+      const response = await getGeofences(pageNo, pageSize, debouncedQuery);
       if (!response?.success) return;
 
       const zonesData = response?.data?.zones;
@@ -104,12 +106,21 @@ export default function GeofencePage() {
       console.error("Error fetching geofences:", error);
     } finally {
       setLoadingZones(false);
+      setIsInitialLoad(false);
     }
-  }, [pageNo, pageSize, mapApiZoneToUi]);
+  }, [pageNo, pageSize, debouncedQuery, isInitialLoad, mapApiZoneToUi]);
 
   useEffect(() => {
     fetchGeofenceList();
   }, [fetchGeofenceList]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
 
   const handleEdit = (row: GeofenceZone) => {
     router.push(`/geofence/${row.id}`);
@@ -128,7 +139,7 @@ export default function GeofencePage() {
 
       if (response?.success || response?.statusCode === 200) {
         toast.success(response?.message || "Geofence deleted successfully");
-        if (pageNo > 1 && filtered.length === 1) {
+        if (pageNo > 1 && zones.length === 1) {
           setPageNo((prev) => prev - 1);
         } else {
           fetchGeofenceList();
@@ -144,19 +155,6 @@ export default function GeofencePage() {
       setIsDeleteDialogOpen(false);
     }
   };
-
-  const filtered = useMemo(
-    () =>
-      zones.filter((z) => {
-        const q = searchQuery.toLowerCase();
-        return (
-          z.displayName.toLowerCase().includes(q) ||
-          z.code.toLowerCase().includes(q) ||
-          z.classification.toLowerCase().includes(q)
-        );
-      }),
-    [zones, searchQuery],
-  );
 
   const columns = [
     {
@@ -256,7 +254,7 @@ export default function GeofencePage() {
           ) : (
             <CommonTable
               columns={columns}
-              data={filtered.map((zone) => ({
+              data={zones.map((zone) => ({
                 ...zone,
                 identity: zone.displayName,
               }))}

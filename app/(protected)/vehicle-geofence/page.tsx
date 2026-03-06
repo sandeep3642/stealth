@@ -49,6 +49,7 @@ const VehicleGeofencePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [totalRecords, setTotalRecords] = useState(0);
   const [rows, setRows] = useState<VehicleGeofenceRow[]>([]);
   const [summary, setSummary] = useState<VehicleGeofenceSummary>(EMPTY_SUMMARY);
@@ -123,7 +124,7 @@ const VehicleGeofencePage: React.FC = () => {
 
   const fetchVehicleGeofences = async () => {
     try {
-      setLoading(true);
+      if (isInitialLoad) setLoading(true);
       const response = await getVehicleGeofences({
         page: pageNo,
         pageSize,
@@ -147,6 +148,7 @@ const VehicleGeofencePage: React.FC = () => {
       toast.error("Failed to fetch vehicle geofence assignments");
     } finally {
       setLoading(false);
+      setIsInitialLoad(false);
     }
   };
 

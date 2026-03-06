@@ -6,8 +6,11 @@ import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "react-toastify";
-import api from "@/services/apiService";
-import { getAllAccounts, getVehicleDropdown } from "@/services/commonServie";
+import {
+  getAllAccounts,
+  getGeofenceDropdownByAccount,
+  getVehicleDropdown,
+} from "@/services/commonServie";
 import {
   getVehicleGeofenceById,
   saveVehicleGeofence,
@@ -79,13 +82,8 @@ const AddEditVehicleGeofence: React.FC = () => {
   };
 
   const getGeofenceDropdown = async (accountId?: number) => {
-    const res = await api.get("/api/common/dropdowns/geofences", {
-      params: {
-        accountId: Number(accountId || 0),
-        limit: 0,
-      },
-    });
-    return toOptions(res?.data);
+    const res = await getGeofenceDropdownByAccount(accountId);
+    return toOptions(res);
   };
 
   const fetchDropdowns = async (accountId: number) => {
