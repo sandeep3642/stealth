@@ -105,7 +105,7 @@ const SimMaster: React.FC = () => {
         setData(mappedData);
         setTotalRecords(simsData.totalRecords);
       } else {
-        toast.error("No SIMs found");
+        // toast.error("No SIMs found");
       }
     } catch (error) {
       console.error("Error fetching SIMs:", error);

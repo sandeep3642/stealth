@@ -144,8 +144,6 @@ const Vehicles: React.FC = () => {
   const fetchVehicles = async () => {
     try {
       const response = await getVehicles(pageNo, pageSize, debouncedQuery);
-      console.log("response", response);
-
       const vehiclesData = response.data?.vehicles; // ✅ corrected
       const summary = response.data?.summary; // ✅ corrected
 
@@ -172,7 +170,7 @@ const Vehicles: React.FC = () => {
         setData(mappedData);
         setTotalRecords(vehiclesData.totalRecords);
       } else {
-        toast.error("No vehicles found");
+        // toast.error("No vehicles found");
       }
     } catch (error) {
       console.error("Error fetching vehicles:", error);
