@@ -19,4 +19,6 @@ export interface PageHeaderProps {
   FilterbuttonText?: string;
   onFilterClick?: () => void;
   showWriteButton?: boolean;
+  showBulkUpload?: boolean;
+  bulkUploadModuleKey?: string;
 }

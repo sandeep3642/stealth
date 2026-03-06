@@ -5,8 +5,9 @@ import { useEffect, useState } from "react";
 import { Home, Filter, Download } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
 import { useColor } from "@/context/ColorContext";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { PageHeaderProps } from "@/interfaces/header.interface";
+import BulkUploadControls from "@/components/BulkUploadControls";
 
 const PageHeader: React.FC<PageHeaderProps> = ({
   title,
@@ -24,10 +25,13 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   FilterbuttonText = "Filters",
   onFilterClick,
   showWriteButton = true,
+  showBulkUpload = true,
+  bulkUploadModuleKey,
 }) => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleButtonClick = () => {
     if (onButtonClick) {
@@ -53,6 +57,25 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const getModuleKeyFromPath = (): string => {
+    if (!pathname) return "";
+    const segments = pathname.split("/").filter(Boolean);
+    if (segments.length === 0) return "";
+
+    if (segments[0] === "users" && segments[1] === "roles-permissions") {
+      return "roles-permissions";
+    }
+
+    if (segments[0] === "users" && segments[1] === "activity-logs") {
+      return "activity-logs";
+    }
+
+    return segments[0];
+  };
+
+  const resolvedModuleKey = bulkUploadModuleKey || getModuleKeyFromPath();
+
   return (
     <>
       {/* Breadcrumb */}
@@ -114,7 +137,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         </div>
 
         {/* Action Buttons */}
-        {(showFilterButton || showExportButton || showButton) && (
+        {(showFilterButton || showExportButton || showButton || showBulkUpload) && (
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Filters Button */}
             {showFilterButton && (
@@ -144,6 +167,10 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                 <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span className="hidden xs:inline">{ExportbuttonText}</span>
               </button>
+            )}
+
+            {mounted && showBulkUpload && (
+              <BulkUploadControls moduleKey={resolvedModuleKey} />
             )}
 
             {/* Primary Action Button */}
