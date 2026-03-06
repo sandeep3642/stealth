@@ -239,6 +239,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         },
       ],
     },
+
     {
       title: "FLEET OPERATIONS",
       items: [
@@ -254,6 +255,12 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               label: "Vehicle",
               icon: Truck,
               path: "/vehicles",
+            },
+            {
+              id: "drivers",
+              label: "Driver",
+              icon: Truck,
+              path: "/driver",
             },
             {
               id: "devices",
@@ -272,12 +279,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               label: "SIM Master",
               icon: Smartphone,
               path: "/sim-master",
-            },
-            {
-              id: "route-master",
-              label: "Route Master",
-              icon: Route,
-              path: "/route-master",
             },
           ],
         },
@@ -304,6 +305,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         },
       ],
     },
+
     {
       title: "CONFIGURATIONS",
       items: [
@@ -352,6 +354,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
             },
           ],
         },
+
         {
           id: "users",
           label: "Users",
@@ -374,6 +377,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
             },
           ],
         },
+
         {
           id: "assets",
           label: "Assets",
@@ -389,6 +393,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
             },
           ],
         },
+
         {
           id: "billing",
           label: "Billing",
@@ -418,6 +423,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         },
       ],
     },
+
     {
       title: "SYSTEM SETUP",
       items: [
@@ -427,6 +433,26 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
           icon: Cog,
           active: false,
           path: "/settings",
+        },
+      ],
+    },
+
+    {
+      title: "TRIP MANAGEMENT",
+      items: [
+        {
+          id: "route-master",
+          label: "Route Master",
+          icon: Route,
+          active: false,
+          path: "/route-master",
+        },
+        {
+          id: "trip-master",
+          label: "Trip master",
+          icon: Cog,
+          active: false,
+          path: "/trip-master",
         },
       ],
     },
