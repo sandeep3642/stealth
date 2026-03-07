@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Card } from "@/components/CommonCard";
-import { useTheme } from "@/context/ThemeContext";
-import { Building2, User, Shield, Upload, X, Lock } from "lucide-react";
-import { UserFormData } from "@/interfaces/user.interface";
-import { useColor } from "@/context/ColorContext";
-import ThemeCustomizer from "@/components/ThemeCustomizer";
+import { Building2, Lock, Shield, Upload, User, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { createUser, updateUser, getUserById } from "@/services/userService";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { Card } from "@/components/CommonCard";
+import ThemeCustomizer from "@/components/ThemeCustomizer";
+import { useColor } from "@/context/ColorContext";
+import { useTheme } from "@/context/ThemeContext";
+import { UserFormData } from "@/interfaces/user.interface";
 import { getAllAccounts, getAllRoles } from "@/services/commonServie";
 import { getRoleById } from "@/services/rolesService";
+import { createUser, getUserById, updateUser } from "@/services/userService";
 
 type TabType = "profile" | "access" | "security";
 
@@ -57,6 +57,8 @@ const CreateUser: React.FC = () => {
   const [formData, setFormData] = useState<UserFormData>({
     accountName: "",
     accountCode: "",
+    userName: "",
+    password: "",
     accountId: 7, // Static for testing - AddRole reference
     roleId: 0,
     primaryDomain: "",
@@ -117,6 +119,13 @@ const CreateUser: React.FC = () => {
         setAdditionalPermissions([]);
       }
     } else {
+      if (name === "password") {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: value,
+        }));
+        return;
+      }
       setFormData((prev) => ({
         ...prev,
         [name]: value,
@@ -257,6 +266,8 @@ const CreateUser: React.FC = () => {
         setFormData({
           accountName: userData.firstName || "",
           accountCode: userData.lastName || "",
+          userName: String(userData.userName || userData.username || ""),
+          password: "",
           accountId: userData.accountId || 7, // Use from API or default to 7
           roleId: userData.roleId || 0,
           primaryDomain: "",
@@ -335,6 +346,13 @@ const CreateUser: React.FC = () => {
       return;
     }
 
+    if (!isEditMode) {
+      if (formData.password.length < 6) {
+        toast.error("Password must be minimum 6 characters");
+        return;
+      }
+    }
+
     try {
       setLoading(true);
       const submitData = new FormData();
@@ -387,7 +405,8 @@ const CreateUser: React.FC = () => {
         // CREATE USER - Pass plain object instead of FormData
         const payload = {
           Email: formData.emailAddress,
-          Password: "TempPass@123",
+          UserName: formData.userName,
+          Password: formData.password,
           FirstName: formData.accountName,
           LastName: formData.accountCode,
           MobileNo: formData.phoneNumber || "",
@@ -692,6 +711,48 @@ const CreateUser: React.FC = () => {
                       </p>
                     )}
                   </div>
+                  {!isEditMode && (
+                    <>
+                      <div>
+                        <label
+                          className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                        >
+                          Username <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="userName"
+                          value={formData.userName}
+                          onChange={handleInputChange}
+                          placeholder="Enter username"
+                          className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
+                            isDark
+                              ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                              : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                          } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        />
+                      </div>
+                      <div>
+                        <label
+                          className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                        >
+                          Password <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="password"
+                          name="password"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          placeholder="Enter minimum 6 character password"
+                          className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
+                            isDark
+                              ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                              : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                          } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        />
+                      </div>
+                    </>
+                  )}
                   <div>
                     <label
                       className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}

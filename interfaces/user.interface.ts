@@ -1,6 +1,8 @@
 export interface UserFormData {
   accountName: string;
   accountCode: string;
+  userName: string;
+  password: string;
   accountId: number;
   primaryDomain: string;
   fullName: string;

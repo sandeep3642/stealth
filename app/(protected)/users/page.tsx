@@ -164,7 +164,7 @@ const Users: React.FC = () => {
           showExportButton={true}
           ExportbuttonText="Export"
           onExportClick={handleExport}
-          showFilterButton={true}
+          showFilterButton={false}
           FilterbuttonText="Filters"
           onFilterClick={handleFilter}
           showWriteButton={true}

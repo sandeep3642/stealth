@@ -150,6 +150,7 @@ const TripMasterPage: React.FC = () => {
           buttonRoute="/trip-master/0"
           showExportButton={false}
           showFilterButton={false}
+          showBulkUpload={false}
         />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">

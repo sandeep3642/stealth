@@ -1,18 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  Building2,
-  ChevronDown,
-  GitBranch,
-  MapPin,
-  Route,
-} from "lucide-react";
+import { Building2, ChevronDown, GitBranch, MapPin, Route } from "lucide-react";
 import { useRouter } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
+import { MetricCard } from "@/components/CommonCard";
 import CommonTable from "@/components/CommonTable";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
-import { MetricCard } from "@/components/CommonCard";
 import PageHeader from "@/components/PageHeader";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -163,7 +157,8 @@ const RouteMasterPage: React.FC = () => {
         totalRoutes: Number(summaryData?.totalRoutes || total),
         geofenceRelated,
         nonGeofenceRelated: Number(
-          summaryData?.nonGeofenceRelated || Math.max(total - geofenceRelated, 0),
+          summaryData?.nonGeofenceRelated ||
+            Math.max(total - geofenceRelated, 0),
         ),
       });
     } catch (error) {
@@ -228,15 +223,13 @@ const RouteMasterPage: React.FC = () => {
         <PageHeader
           title="Route Master"
           subtitle="Configure reusable route templates using geofence points and stops."
-          breadcrumbs={[
-            { label: "Fleet" },
-            { label: "Route Master" },
-          ]}
+          breadcrumbs={[{ label: "Fleet" }, { label: "Route Master" }]}
           showButton={true}
           buttonText="Add Route"
           buttonRoute="/route-master/0"
           showExportButton={false}
           showFilterButton={false}
+          showBulkUpload={false}
         />
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 sm:mb-6">

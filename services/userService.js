@@ -28,6 +28,9 @@ export const createUser = async (payload) => {
 
     formData.append("FirstName", payload.FirstName);
     formData.append("LastName", payload.LastName);
+    if (payload.UserName) {
+      formData.append("UserName", payload.UserName);
+    }
     formData.append("Email", payload.Email);
     formData.append("Password", payload.Password);
     formData.append("MobileNo", payload.MobileNo || "");
