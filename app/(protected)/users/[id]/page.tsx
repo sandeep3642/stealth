@@ -711,48 +711,47 @@ const CreateUser: React.FC = () => {
                       </p>
                     )}
                   </div>
-                  {!isEditMode && (
-                    <>
-                      <div>
-                        <label
-                          className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                        >
-                          Username <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="userName"
-                          value={formData.userName}
-                          onChange={handleInputChange}
-                          placeholder="Enter username"
-                          className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
-                            isDark
-                              ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                              : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                          } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                        />
-                      </div>
-                      <div>
-                        <label
-                          className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
-                        >
-                          Password <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="password"
-                          name="password"
-                          value={formData.password}
-                          onChange={handleInputChange}
-                          placeholder="Enter minimum 6 character password"
-                          className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
-                            isDark
-                              ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                              : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                          } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                        />
-                      </div>
-                    </>
-                  )}
+                  <div>
+                    <label
+                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                    >
+                      Username <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="userName"
+                      value={formData.userName}
+                      onChange={handleInputChange}
+                      placeholder="Enter username"
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
+                        isDark
+                          ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                          : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
+                    >
+                      Password <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      name="password"
+                      value={isEditMode ? "" : formData.password}
+                      onChange={handleInputChange}
+                      placeholder={
+                        isEditMode ? "******" : "Enter minimum 6 character password"
+                      }
+                      disabled={isEditMode}
+                      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base rounded-lg border transition-colors ${
+                        isDark
+                          ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                          : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      } ${isEditMode ? "opacity-60 cursor-not-allowed" : ""} focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                    />
+                  </div>
                   <div>
                     <label
                       className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}

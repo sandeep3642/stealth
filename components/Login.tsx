@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { AtSign, Lock, Eye, EyeOff } from "lucide-react";
-import { loginUser } from "@/services/authService";
+import { loginUser, verify2FA } from "@/services/authService";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { useColor } from "@/context/ColorContext";
@@ -18,6 +18,7 @@ interface LoginComponentProps {
 interface FormErrors {
   email?: string;
   password?: string;
+  otp?: string;
 }
 
 export const LoginComponent: React.FC<LoginComponentProps> = ({
@@ -36,6 +37,14 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [pending2FAUser, setPending2FAUser] = useState<{
+    userId: string;
+    email: string;
+    fullName: string;
+  } | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const router = useRouter();
 
@@ -82,6 +91,31 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
       return "Password must be at least 6 characters";
     }
     return undefined;
+  };
+
+  const completeLogin = async (userData: any) => {
+    if (!userData?.token?.accessToken) {
+      toast.error("Login token not found.");
+      return;
+    }
+
+    localStorage.setItem("authToken", userData.token.accessToken);
+    localStorage.setItem("user", JSON.stringify(userData));
+    Cookies.set("authToken", userData.token.accessToken, {
+      path: "/",
+    });
+
+    if (userData.whiteLabel) {
+      const whiteLabel = userData.whiteLabel;
+      applyWhiteLabelColors(whiteLabel, handleColorChange);
+      localStorage.setItem("whiteLabelTheme", JSON.stringify(whiteLabel));
+    }
+
+    await getUserRoleData();
+    window.dispatchEvent(new Event("permissions-updated"));
+
+    toast.success("Login successful!");
+    router.push("/dashboard");
   };
 
   const handleEmailChange = (value: string) => {
@@ -142,35 +176,25 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
       }
 
       const response = await loginUser(email, password);
-
-      if (response.data.token) {
-        // ✅ set user + token
-        localStorage.setItem("authToken", response.data.token.accessToken);
-        localStorage.setItem("user", JSON.stringify(response.data));
-        Cookies.set("authToken", response.data.token.accessToken, {
-          path: "/",
-        });
-
-        if (response.data.whiteLabel) {
-          const whiteLabel = response.data.whiteLabel;
-          applyWhiteLabelColors(whiteLabel, handleColorChange);
-
-          // persist in localStorage for reloads
-          localStorage.setItem("whiteLabelTheme", JSON.stringify(whiteLabel));
-        }
-
-        // ✅ Fetch and store permissions BEFORE redirect
-        await getUserRoleData();
-
-        // ✅ Dispatch event to notify layout about new permissions
-        window.dispatchEvent(new Event("permissions-updated"));
-
-        // ✅ Show success toast
-        toast.success("Login successful!");
-
-        // ✅ Now redirect
-        router.push("/dashboard");
+      const token = response?.data?.token;
+      if (!token) {
+        toast.error(response?.message || "Login failed. Please try again.");
+        return;
       }
+
+      if (token.is2FARequired) {
+        setPending2FAUser({
+          userId: response?.data?.userId,
+          email: response?.data?.email || email,
+          fullName: response?.data?.fullName || "",
+        });
+        setOtpCode("");
+        setShowOtpModal(true);
+        toast.info("OTP sent to your email. Please verify to continue.");
+        return;
+      }
+
+      await completeLogin(response.data);
     } catch (err: any) {
       console.error("Login error:", err);
 
@@ -186,6 +210,43 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!pending2FAUser?.userId) {
+      toast.error("2FA session missing. Please login again.");
+      return;
+    }
+
+    if (!/^\d{6}$/.test(otpCode)) {
+      setErrors((prev) => ({ ...prev, otp: "Please enter valid 6 digit OTP" }));
+      return;
+    }
+
+    try {
+      setVerifyingOtp(true);
+      setErrors((prev) => ({ ...prev, otp: undefined }));
+
+      const response = await verify2FA(pending2FAUser.userId, otpCode);
+      if (!response?.success || !response?.data?.token) {
+        toast.error(response?.message || "OTP verification failed");
+        return;
+      }
+
+      setShowOtpModal(false);
+      setPending2FAUser(null);
+      setOtpCode("");
+      await completeLogin(response.data);
+    } catch (err: any) {
+      console.error("OTP verify error:", err);
+      toast.error(
+        err?.response?.data?.message ||
+          err?.response?.data?.Message ||
+          "OTP verification failed",
+      );
+    } finally {
+      setVerifyingOtp(false);
     }
   };
 
@@ -316,6 +377,63 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
           Sign Up
         </button>
       </div>
+
+      {showOtpModal && (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+            <h3 className="text-lg font-semibold text-zinc-900">Verify OTP</h3>
+            <p className="mt-1 text-sm text-zinc-600">
+              6 digit OTP sent to {" "}
+              {pending2FAUser?.email ? `(${pending2FAUser.email})` : ""} 
+            </p>
+
+            <input
+              type="text"
+              value={otpCode}
+              onChange={(e) => {
+                const nextValue = e.target.value.replace(/\D/g, "").slice(0, 6);
+                setOtpCode(nextValue);
+                if (errors.otp) {
+                  setErrors((prev) => ({ ...prev, otp: undefined }));
+                }
+              }}
+              onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
+              placeholder="Enter 6 digit OTP"
+              maxLength={6}
+              inputMode="numeric"
+              className={`mt-4 w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-600 ${
+                errors.otp ? "border-red-500" : "border-zinc-300"
+              }`}
+            />
+            {errors.otp && (
+              <p className="mt-1 text-xs text-red-500">{errors.otp}</p>
+            )}
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOtpModal(false);
+                  setPending2FAUser(null);
+                  setOtpCode("");
+                }}
+                disabled={verifyingOtp}
+                className="rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleVerifyOtp}
+                disabled={verifyingOtp}
+                className="rounded-md bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-60"
+              >
+                {verifyingOtp ? "Verifying..." : "Verify OTP"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

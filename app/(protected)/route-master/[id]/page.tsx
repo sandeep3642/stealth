@@ -1,9 +1,15 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { GoogleMap, DirectionsRenderer } from "@react-google-maps/api";
+import { DirectionsRenderer, GoogleMap } from "@react-google-maps/api";
 import { Plus, Route, Save, Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "react-toastify";
 import PageHeader from "@/components/PageHeader";
 import { useTheme } from "@/context/ThemeContext";
@@ -16,12 +22,12 @@ import {
   getAllAccounts,
   getGeofenceDropdownByAccount,
 } from "@/services/commonServie";
+import { getGeofenceById } from "@/services/geofenceService";
 import {
   getRouteMasterById,
   saveRouteMaster,
   updateRouteMaster,
 } from "@/services/routeMasterService";
-import { getGeofenceById } from "@/services/geofenceService";
 
 const DEFAULT_CENTER = { lat: 28.6139, lng: 77.209 };
 
@@ -143,7 +149,9 @@ const AddEditRouteMasterPage: React.FC = () => {
 
       setFormData(nextFormData);
       if (nextFormData.accountId > 0) {
-        const geofenceOptions = await fetchGeofenceDropdown(nextFormData.accountId);
+        const geofenceOptions = await fetchGeofenceDropdown(
+          nextFormData.accountId,
+        );
         setGeofences(geofenceOptions);
       }
     } catch (error) {
@@ -190,7 +198,9 @@ const AddEditRouteMasterPage: React.FC = () => {
   const hasSelectedAccountInList = useMemo(
     () =>
       Number(formData.accountId) > 0 &&
-      accounts.some((account) => Number(account.id) === Number(formData.accountId)),
+      accounts.some(
+        (account) => Number(account.id) === Number(formData.accountId),
+      ),
     [accounts, formData.accountId],
   );
 
@@ -215,7 +225,11 @@ const AddEditRouteMasterPage: React.FC = () => {
       ...stopIds,
       Number(formData.endGeofenceId || 0),
     ].filter((id) => id > 0);
-  }, [formData.startGeofenceId, formData.stopGeofenceIds, formData.endGeofenceId]);
+  }, [
+    formData.startGeofenceId,
+    formData.stopGeofenceIds,
+    formData.endGeofenceId,
+  ]);
 
   const resolveGeofenceLatLng = useCallback(
     async (geofenceId: number): Promise<GeofenceLatLng | null> => {
@@ -300,10 +314,19 @@ const AddEditRouteMasterPage: React.FC = () => {
       );
       const invalidPoint = resolvedPoints.find((item) => !item.point);
       if (invalidPoint) {
-        toast.error(`Unable to resolve geofence coordinates for ID ${invalidPoint.id}`);
+        toast.error(
+          `Unable to resolve geofence coordinates for ID ${invalidPoint.id}`,
+        );
         setPreviewLoading(false);
         return;
       }
+
+      // Map geofence IDs to their names from the geofences dropdown
+      const getGeofenceName = (id: number): string => {
+        const found = geofences.find((g) => Number(g.id) === id);
+        return found?.value || `Geofence ${id}`;
+      };
+      const geofenceNames = waypointIds.map((id) => getGeofenceName(id));
 
       const routePoints = resolvedPoints.map(
         (item) => item.point as google.maps.LatLngLiteral,
@@ -324,9 +347,9 @@ const AddEditRouteMasterPage: React.FC = () => {
       setDirectionsResult(response);
       const legs = response.routes?.[0]?.legs || [];
       setSegmentSummaries(
-        legs.map((leg) => ({
-          from: leg.start_address,
-          to: leg.end_address,
+        legs.map((leg, index) => ({
+          from: geofenceNames[index] || leg.start_address,
+          to: geofenceNames[index + 1] || leg.end_address,
           distanceText: leg.distance?.text || "-",
           durationText: leg.duration?.text || "-",
         })),
@@ -399,7 +422,9 @@ const AddEditRouteMasterPage: React.FC = () => {
       if (response?.success || response?.statusCode === 200) {
         toast.success(
           response?.message ||
-            (isEditMode ? "Route updated successfully" : "Route created successfully"),
+            (isEditMode
+              ? "Route updated successfully"
+              : "Route created successfully"),
         );
         router.push("/route-master");
       } else {
@@ -447,14 +472,17 @@ const AddEditRouteMasterPage: React.FC = () => {
             { label: isEditMode ? "Edit" : "Create" },
           ]}
           showButton={true}
-          buttonText={loading ? "Saving..." : isEditMode ? "Update Route" : "Create Route"}
+          buttonText={
+            loading ? "Saving..." : isEditMode ? "Update Route" : "Create Route"
+          }
           buttonIcon={loading ? undefined : <Save className="w-4 h-4" />}
           onButtonClick={handleSave}
           showExportButton={false}
           showFilterButton={false}
+          showBulkUpload={false}
         />
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        <div className="flex flex-col gap-5">
           <section className={`${cardCls} space-y-4`}>
             <div>
               <label className={labelCls}>ACCOUNT</label>
@@ -473,11 +501,12 @@ const AddEditRouteMasterPage: React.FC = () => {
                 disabled={loading}
               >
                 <option value={0}>Select account</option>
-                {!hasSelectedAccountInList && Number(formData.accountId) > 0 && (
-                  <option value={formData.accountId}>
-                    {`Selected Account (${formData.accountId})`}
-                  </option>
-                )}
+                {!hasSelectedAccountInList &&
+                  Number(formData.accountId) > 0 && (
+                    <option value={formData.accountId}>
+                      {`Selected Account (${formData.accountId})`}
+                    </option>
+                  )}
                 {accounts.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.value}
@@ -492,7 +521,10 @@ const AddEditRouteMasterPage: React.FC = () => {
                 type="text"
                 value={formData.routeName}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, routeName: e.target.value }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    routeName: e.target.value,
+                  }))
                 }
                 className={inputCls}
                 placeholder="Enter route name"
@@ -506,7 +538,10 @@ const AddEditRouteMasterPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() =>
-                    setFormData((prev) => ({ ...prev, isGeofenceRelated: true }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      isGeofenceRelated: true,
+                    }))
                   }
                   className={`px-3 py-2 rounded-lg border text-sm font-semibold ${
                     formData.isGeofenceRelated
@@ -521,7 +556,10 @@ const AddEditRouteMasterPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() =>
-                    setFormData((prev) => ({ ...prev, isGeofenceRelated: false }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      isGeofenceRelated: false,
+                    }))
                   }
                   className={`px-3 py-2 rounded-lg border text-sm font-semibold ${
                     !formData.isGeofenceRelated
@@ -538,7 +576,9 @@ const AddEditRouteMasterPage: React.FC = () => {
 
             <div>
               <div className="mb-1.5 flex items-center justify-between gap-2">
-                <label className={`${labelCls} mb-0`}>START POINT (GEOFENCE)</label>
+                <label className={`${labelCls} mb-0`}>
+                  START POINT (GEOFENCE)
+                </label>
                 <button
                   type="button"
                   onClick={() => router.push(addGeofenceHref)}
@@ -572,7 +612,9 @@ const AddEditRouteMasterPage: React.FC = () => {
 
             {formData.stopGeofenceIds.map((stopId, index) => (
               <div key={`stop-${index}`}>
-                <label className={labelCls}>{`STOP ${index + 1} (GEOFENCE)`}</label>
+                <label
+                  className={labelCls}
+                >{`STOP ${index + 1} (GEOFENCE)`}</label>
                 <div className="flex gap-2">
                   <select
                     value={stopId}
@@ -637,6 +679,18 @@ const AddEditRouteMasterPage: React.FC = () => {
               </select>
             </div>
 
+            {formData.endGeofenceId > 0 && formData.startGeofenceId > 0 && (
+              <button
+                type="button"
+                onClick={calculateRoute}
+                disabled={previewLoading || !isLoaded}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+              >
+                <Route className="w-4 h-4" />
+                {previewLoading ? "Loading Route..." : "View Route"}
+              </button>
+            )}
+
             {isEditMode && (
               <div>
                 <label className={labelCls}>STATUS</label>
@@ -655,109 +709,107 @@ const AddEditRouteMasterPage: React.FC = () => {
                 </select>
               </div>
             )}
-          </section>
 
-          <section className={`${cardCls} space-y-4`}>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h3
-                  className={`text-sm font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
-                >
-                  Route Preview
-                </h3>
-                <p className={`text-xs ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                  Select points and click view route to draw map + timing
-                </p>
-              </div>
+            {/* {formData.endGeofenceId > 0 && formData.startGeofenceId > 0 && (
               <button
                 type="button"
                 onClick={calculateRoute}
                 disabled={previewLoading || !isLoaded}
-                className="px-4 py-2 rounded-lg text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 transition-colors"
               >
-                {previewLoading ? "Loading..." : "View Route"}
+                <Route className="w-4 h-4" />
+                {previewLoading ? "Loading Route..." : "View Route"}
               </button>
-            </div>
+            )} */}
 
-            <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 h-[340px]">
-              {loadError ? (
-                <div className="h-full flex items-center justify-center text-sm text-red-500">
-                  Failed to load Google Maps SDK
-                </div>
-              ) : !isLoaded ? (
-                <div className="h-full flex items-center justify-center text-sm text-gray-500">
-                  Loading map...
-                </div>
-              ) : (
-                <GoogleMap
-                  mapContainerStyle={{ width: "100%", height: "100%" }}
-                  center={DEFAULT_CENTER}
-                  zoom={6}
-                  onLoad={(map) => {
-                    mapRef.current = map;
-                  }}
-                  options={{
-                    mapTypeControl: false,
-                    streetViewControl: false,
-                    fullscreenControl: false,
-                  }}
-                >
-                  {directionsResult && (
-                    <DirectionsRenderer
-                      directions={directionsResult}
-                      options={{
-                        suppressMarkers: false,
-                        polylineOptions: {
-                          strokeColor: "#4f46e5",
-                          strokeWeight: 5,
-                          strokeOpacity: 0.9,
-                        },
-                      }}
-                    />
-                  )}
-                </GoogleMap>
-              )}
-            </div>
-
-            <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div
-                className={`px-4 py-3 border-b text-xs font-bold tracking-wider ${
-                  isDark
-                    ? "bg-gray-900 border-gray-700 text-gray-300"
-                    : "bg-gray-50 border-gray-200 text-gray-600"
-                }`}
-              >
-                SEGMENT TRAVEL ESTIMATE
-              </div>
-
-              {segmentSummaries.length === 0 ? (
-                <div className="px-4 py-6 text-sm text-gray-500">
-                  No route preview available yet.
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {segmentSummaries.map((segment, index) => (
-                    <div
-                      key={`segment-${index}`}
-                      className="px-4 py-3 flex flex-col gap-1 text-sm"
-                    >
-                      <div className="font-semibold flex items-center gap-2">
-                        <Route className="w-4 h-4 text-indigo-500" />
-                        <span>{`Segment ${String.fromCharCode(65 + index)} -> ${String.fromCharCode(66 + index)}`}</span>
+            {(directionsResult || previewLoading) && (
+              <>
+                <div>
+                  <h3
+                    className={`text-sm font-bold mb-3 ${isDark ? "text-foreground" : "text-gray-900"}`}
+                  >
+                    Route Preview
+                  </h3>
+                  <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 h-[420px]">
+                    {loadError ? (
+                      <div className="h-full flex items-center justify-center text-sm text-red-500">
+                        Failed to load Google Maps SDK
                       </div>
-                      <p
-                        className={`${isDark ? "text-gray-300" : "text-gray-700"} truncate`}
+                    ) : !isLoaded ? (
+                      <div className="h-full flex items-center justify-center text-sm text-gray-500">
+                        Loading map...
+                      </div>
+                    ) : (
+                      <GoogleMap
+                        mapContainerStyle={{ width: "100%", height: "100%" }}
+                        center={DEFAULT_CENTER}
+                        zoom={6}
+                        onLoad={(map) => {
+                          mapRef.current = map;
+                        }}
+                        options={{
+                          mapTypeControl: false,
+                          streetViewControl: false,
+                          fullscreenControl: false,
+                        }}
                       >
-                        {segment.from} {"->"} {segment.to}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Distance: {segment.distanceText} | ETA: {segment.durationText}
-                      </p>
-                    </div>
-                  ))}
+                        {directionsResult && (
+                          <DirectionsRenderer
+                            directions={directionsResult}
+                            options={{
+                              suppressMarkers: false,
+                              polylineOptions: {
+                                strokeColor: "#4f46e5",
+                                strokeWeight: 5,
+                                strokeOpacity: 0.9,
+                              },
+                            }}
+                          />
+                        )}
+                      </GoogleMap>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
+
+                <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div
+                    className={`px-4 py-3 border-b text-xs font-bold tracking-wider ${
+                      isDark
+                        ? "bg-gray-900 border-gray-700 text-gray-300"
+                        : "bg-gray-50 border-gray-200 text-gray-600"
+                    }`}
+                  >
+                    SEGMENT TRAVEL ESTIMATE
+                  </div>
+
+                  {segmentSummaries.length === 0 ? (
+                    <div className="px-4 py-6 text-sm text-gray-500">
+                      No route preview available yet.
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {segmentSummaries.map((segment, index) => (
+                        <div
+                          key={`segment-${index}`}
+                          className="px-4 py-3 flex flex-col gap-1 text-sm"
+                        >
+                          <div className="font-semibold flex items-center gap-2">
+                            <Route className="w-4 h-4 text-indigo-500 shrink-0" />
+                            <span className="truncate">
+                              {segment.from} → {segment.to}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Distance: {segment.distanceText} &nbsp;|&nbsp; ETA:{" "}
+                            {segment.durationText}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </section>
         </div>
       </div>

@@ -6,6 +6,11 @@ export const loginUser = async (email, password) => {
   return res.data;
 };
 
+export const verify2FA = async (userId, code) => {
+  const res = await api.post("/api/auth/verify-2fa", { userId, code });
+  return res.data;
+};
+
 export const registerUser = async (userData) => {
   const res = await api.post("/api/auth/signup", userData);
   return res.data;

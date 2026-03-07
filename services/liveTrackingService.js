@@ -114,14 +114,26 @@ function normalizeLiveTrackingRecord(record, fallbackVehicleNo = "", idx = 0) {
   };
 }
 
-export async function getLiveTrackingBatch(
-  vehicleNos = DEFAULT_FLEET_VEHICLES,
-) {
-  const list = vehicleNos.filter(Boolean);
-  if (!list.length) return [];
+function getStoredAccountId() {
+  if (typeof window === "undefined") return 0;
+  const selectedAccountId = Number(localStorage.getItem("accountId") || 0);
+  if (selectedAccountId > 0) return selectedAccountId;
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const userAccountId = Number(user?.accountId || 0);
+    return userAccountId > 0 ? userAccountId : 0;
+  } catch {
+    return 0;
+  }
+}
 
+export async function getLiveTrackingBatch(orgId) {
+  // const list = vehicleNos.filter(Boolean);
+  // if (!list.length) return [];
+  const resolvedOrgId = Number(getStoredAccountId() || 1);
   const { data } = await api.get("/api/live-tracking/batch", {
-    params: { vehicleNos: list.join(",") },
+    // params: { vehicleNos: list.join(",") },
+    params: { orgId: resolvedOrgId },
   });
   const rows = Array.isArray(data)
     ? data
