@@ -76,6 +76,7 @@ export default function GeofenceDetailPage() {
   const searchParams = useSearchParams();
   const id = params?.id as string;
   const isCreateMode = id === "0";
+  const returnTo = searchParams.get("returnTo");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -119,6 +120,12 @@ export default function GeofenceDetailPage() {
         const list = Array.isArray(response?.data) ? response.data : [];
         setAccounts(list);
 
+        const accountIdFromQuery = Number(searchParams.get("accountId") || 0);
+        if (accountIdFromQuery > 0) {
+          setAccountId(accountIdFromQuery);
+          return;
+        }
+
         let userAccountId = 0;
         if (typeof window !== "undefined") {
           try {
@@ -140,7 +147,7 @@ export default function GeofenceDetailPage() {
     };
 
     fetchAccounts();
-  }, []);
+  }, [searchParams]);
 
   // ─── Load existing zone ───────────────────────────────────────────────────
   useEffect(() => {
@@ -384,7 +391,11 @@ export default function GeofenceDetailPage() {
             ? "Geofence created successfully"
             : "Geofence updated successfully",
         );
-        router.push("/geofence");
+        if (returnTo && returnTo.startsWith("/")) {
+          router.push(returnTo);
+        } else {
+          router.push("/geofence");
+        }
       } else {
         toast.error(response?.message || "Failed to save geofence");
       }

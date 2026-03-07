@@ -194,6 +194,20 @@ const AddEditRouteMasterPage: React.FC = () => {
     [accounts, formData.accountId],
   );
 
+  const addGeofenceHref = useMemo(() => {
+    const accountId = Number(formData.accountId || 0);
+    const returnTo = `/route-master/${routeId}?refreshGeofence=1`;
+    const query = new URLSearchParams({
+      returnTo,
+    });
+
+    if (accountId > 0) {
+      query.set("accountId", String(accountId));
+    }
+
+    return `/geofence/0?${query.toString()}`;
+  }, [formData.accountId, routeId]);
+
   const waypointIds = useMemo(() => {
     const stopIds = formData.stopGeofenceIds.filter((id) => id > 0);
     return [
@@ -523,7 +537,19 @@ const AddEditRouteMasterPage: React.FC = () => {
             </div>
 
             <div>
-              <label className={labelCls}>START POINT (GEOFENCE)</label>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <label className={`${labelCls} mb-0`}>START POINT (GEOFENCE)</label>
+                <button
+                  type="button"
+                  onClick={() => router.push(addGeofenceHref)}
+                  className={`inline-flex items-center gap-1 text-xs font-semibold ${
+                    isDark ? "text-indigo-400" : "text-indigo-600"
+                  }`}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Geofence
+                </button>
+              </div>
               <select
                 value={formData.startGeofenceId}
                 onChange={(e) =>

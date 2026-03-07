@@ -1,16 +1,16 @@
 "use client";
 
+import { ArrowLeft, Plus, Save, Trash2, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Save, Trash2, X } from "lucide-react";
 import type {
   Trip,
   TripCycle,
   TripNotifications,
   TripStop,
 } from "@/interfaces/trip.interface";
-import { DRIVERS, VEHICLES, VEHICLE_ICON } from "@/interfaces/trip.interface";
+import { DRIVERS, VEHICLE_ICON, VEHICLES } from "@/interfaces/trip.interface";
 
 const WEEK_DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
@@ -200,7 +200,7 @@ export default function CreateTripPage() {
     });
     await new Promise((r) => setTimeout(r, 700));
     setSaving(false);
-    router.push("/trips");
+    router.push("/trip-master");
   };
 
   return (
@@ -211,17 +211,6 @@ export default function CreateTripPage() {
         }`}
       >
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push("/trips")}
-            className={`flex items-center gap-1.5 text-sm font-medium ${
-              isDark
-                ? "text-gray-400 hover:text-foreground"
-                : "text-gray-500 hover:text-gray-900"
-            }`}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
           <span className={isDark ? "text-gray-700" : "text-gray-300"}>|</span>
           <div>
             <h1
@@ -239,7 +228,7 @@ export default function CreateTripPage() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => router.push("/trips")}
+            onClick={() => router.push("/trip-master")}
             className={`px-4 py-2 rounded-lg text-sm font-semibold border ${
               isDark
                 ? "border-gray-700 text-gray-300 hover:bg-gray-800"

@@ -441,18 +441,25 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       title: "TRIP MANAGEMENT",
       items: [
         {
-          id: "route-master",
-          label: "Route Master",
+          id: "trip-management",
+          label: "TMS",
           icon: Route,
           active: false,
-          path: "/route-master",
-        },
-        {
-          id: "trip-master",
-          label: "Trip master",
-          icon: Cog,
-          active: false,
-          path: "/trip-master",
+          expandable: true,
+          children: [
+            {
+              id: "route-master",
+              label: "Route Master",
+              icon: Route,
+              path: "/route-master",
+            },
+            {
+              id: "trip-master",
+              label: "Trip Master",
+              icon: Cog,
+              path: "/trip-master",
+            },
+          ],
         },
       ],
     },
