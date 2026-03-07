@@ -12,6 +12,19 @@ const LOGOUT_KEYS = [
 
 let isLogoutInProgress = false;
 
+const PUBLIC_AUTH_ROUTES = new Set([
+  "/api/auth/login",
+  "/api/auth/signup",
+  "/api/auth/forgot-password",
+  "/api/auth/reset-password",
+  "/api/auth/verify-2fa",
+]);
+
+const isPublicAuthRoute = (url = "") => {
+  const cleanUrl = url.split("?")[0];
+  return PUBLIC_AUTH_ROUTES.has(cleanUrl);
+};
+
 const handleLogout = () => {
   if (typeof window === "undefined" || isLogoutInProgress) return;
 
@@ -36,8 +49,10 @@ export const vtsApi = axios.create({
 // 🟦 Request Interceptor
 api.interceptors.request.use(
   (config) => {
+    const requestUrl = config?.url || "";
+
     // Add Bearer Token
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && !isPublicAuthRoute(requestUrl)) {
       const token = localStorage.getItem("authToken");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -62,7 +77,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error?.response?.status === 401) {
+    const requestUrl = error?.config?.url || "";
+    if (
+      error?.response?.status === 401 &&
+      !isPublicAuthRoute(requestUrl)
+    ) {
       handleLogout();
     }
     return Promise.reject(error);
