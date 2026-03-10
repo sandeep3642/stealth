@@ -68,6 +68,20 @@ const resolveProfileImageUrl = (profileImagePath?: string): string => {
   return `${baseUrl}${normalizedPath}`;
 };
 
+const resolveAssetUrl = (assetPath?: string): string => {
+  const path = String(assetPath || "").trim();
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+
+  const baseUrl = String(process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(
+    /\/+$/,
+    "",
+  );
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (!baseUrl) return normalizedPath;
+  return `${baseUrl}${normalizedPath}`;
+};
+
 const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -92,6 +106,9 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   const [isProfileImageError, setIsProfileImageError] = useState(false);
   const [secondaryColorHex, setSecondaryColorHex] = useState<string>("");
   const [primaryColorHex, setPrimaryColorHex] = useState<string>("");
+  const [brandName, setBrandName] = useState<string>("Agentix");
+  const [brandLogoUrl, setBrandLogoUrl] = useState<string>("");
+  const [isBrandLogoError, setIsBrandLogoError] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -112,6 +129,32 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       setUser(parsedUser);
       setProfileImageUrl(resolveProfileImageUrl(parsedUser?.profileImagePath));
       setIsProfileImageError(false);
+
+      const whiteLabelRaw =
+        localStorage.getItem("whiteLabel") ||
+        localStorage.getItem("whiteLabelTheme");
+      let whiteLabelData: any = null;
+      if (whiteLabelRaw) {
+        try {
+          whiteLabelData = JSON.parse(whiteLabelRaw);
+        } catch (err) {
+          console.error("Error parsing whiteLabel data:", err);
+        }
+      }
+
+      const resolvedBrandName = String(
+        whiteLabelData?.brandName || parsedUser?.whiteLabel?.brandName || "Agentix",
+      ).trim();
+      const resolvedLogo = resolveAssetUrl(
+        whiteLabelData?.logoUrl ||
+          whiteLabelData?.logoPath ||
+          parsedUser?.whiteLabel?.logoUrl ||
+          parsedUser?.whiteLabel?.logoPath,
+      );
+
+      setBrandName(resolvedBrandName || "Agentix");
+      setBrandLogoUrl(resolvedLogo);
+      setIsBrandLogoError(false);
     }
   }, []);
 
@@ -202,6 +245,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       "permissions",
       "primaryHsl",
       "user",
+      "whiteLabel",
       "whiteLabelTheme",
     ];
 
@@ -556,13 +600,22 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
             {/* Left side: Logo and Navigation */}
             <div className="flex items-center gap-4 md:gap-8">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">
-                  A
-                </div>
+                {brandLogoUrl && !isBrandLogoError ? (
+                  <img
+                    src={brandLogoUrl}
+                    alt={brandName}
+                    className="w-8 h-8 rounded-lg object-cover"
+                    onError={() => setIsBrandLogoError(true)}
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground font-bold">
+                    {getInitials(brandName || "A")}
+                  </div>
+                )}
                 <span
                   className={`text-lg md:text-xl font-semibold ${headerClasses.text}`}
                 >
-                  Agentix
+                  {brandName}
                 </span>
               </div>
 
@@ -792,13 +845,22 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
             </button>
 
             <div className="flex items-center gap-2 lg:hidden">
-              <div
-                className={`w-8 h-8 ${headerLogo} rounded-lg flex items-center justify-center ${headerLogoText} font-bold`}
-              >
-                A
-              </div>
+              {brandLogoUrl && !isBrandLogoError ? (
+                <img
+                  src={brandLogoUrl}
+                  alt={brandName}
+                  className="w-8 h-8 rounded-lg object-cover"
+                  onError={() => setIsBrandLogoError(true)}
+                />
+              ) : (
+                <div
+                  className={`w-8 h-8 ${headerLogo} rounded-lg flex items-center justify-center ${headerLogoText} font-bold`}
+                >
+                  {getInitials(brandName || "A")}
+                </div>
+              )}
               <span className={`text-lg font-semibold ${headerText}`}>
-                Agentix
+                {brandName}
               </span>
             </div>
           </div>
@@ -932,15 +994,24 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                 className={`flex items-center gap-2 ${isOpen ? "" : "flex-col"}`}
               >
                 <div
-                  className={`w-8 h-8 ${sidebarClasses.logo} rounded-lg flex items-center justify-center ${sidebarClasses.logoText} font-bold`}
+                  className={`w-8 h-8 ${sidebarClasses.logo} rounded-lg flex items-center justify-center ${sidebarClasses.logoText} font-bold overflow-hidden`}
                 >
-                  A
+                  {brandLogoUrl && !isBrandLogoError ? (
+                    <img
+                      src={brandLogoUrl}
+                      alt={brandName}
+                      className="w-full h-full object-cover"
+                      onError={() => setIsBrandLogoError(true)}
+                    />
+                  ) : (
+                    getInitials(brandName || "A")
+                  )}
                 </div>
                 {isOpen && (
                   <span
                     className={`text-xl font-semibold ${sidebarClasses.brandText}`}
                   >
-                    Agentix
+                    {brandName}
                   </span>
                 )}
               </div>
