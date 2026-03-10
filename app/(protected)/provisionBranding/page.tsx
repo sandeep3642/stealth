@@ -10,6 +10,7 @@ import { HexColorPicker } from "react-colorful";
 import {
   getWhiteLabelById,
   saveWhiteLabel,
+  uploadWhiteLabelLogos,
   updateWhiteLabel,
 } from "@/services/whitelabelService";
 import {
@@ -18,6 +19,37 @@ import {
 } from "@/interfaces/whitelabel.interface";
 import { getAllAccounts } from "@/services/commonServie";
 import { toast } from "react-toastify";
+
+const resolveMediaUrl = (value?: string) => {
+  const path = String(value || "").trim();
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+
+  const baseUrl = String(process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(
+    /\/+$/,
+    "",
+  );
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return baseUrl ? `${baseUrl}${normalizedPath}` : normalizedPath;
+};
+
+const DEFAULT_PRIMARY_HEX = "#4F46E5";
+const DEFAULT_SECONDARY_HEX = "#10B981";
+
+const normalizeHexColor = (value: unknown, fallback: string) => {
+  const color = String(value || "").trim();
+  return /^#[0-9A-Fa-f]{6}$/.test(color) ? color.toUpperCase() : fallback;
+};
+
+const hexToRgb = (hex: string) => {
+  const safeHex = normalizeHexColor(hex, DEFAULT_PRIMARY_HEX);
+  const bigint = parseInt(safeHex.slice(1), 16);
+  return {
+    r: (bigint >> 16) & 255,
+    g: (bigint >> 8) & 255,
+    b: bigint & 255,
+  };
+};
 
 const ProvisionBranding: React.FC = () => {
   const { selectedColor } = useColor();
@@ -29,10 +61,39 @@ const ProvisionBranding: React.FC = () => {
   const [formData, setFormData] = useState({
     accountId: 0,
     customEntryFqdn: "",
+    brandName: "",
     logoUrl: "",
-    primaryColorHex: "#4F46E5",
-    secondaryColorHex: "#10B981",
+    logoPath: "",
+    primaryLogoPath: "",
+    primaryLogoUrl: "",
+    appLogoPath: "",
+    appLogoUrl: "",
+    mobileLogoPath: "",
+    mobileLogoUrl: "",
+    faviconPath: "",
+    faviconUrl: "",
+    logoDarkPath: "",
+    logoDarkUrl: "",
+    logoLightPath: "",
+    logoLightUrl: "",
+    primaryColorHex: DEFAULT_PRIMARY_HEX,
+    secondaryColorHex: DEFAULT_SECONDARY_HEX,
     isActive: true,
+  });
+  const [logoFiles, setLogoFiles] = useState<{
+    primaryLogo: File | null;
+    appLogo: File | null;
+    mobileLogo: File | null;
+    favicon: File | null;
+    logoDark: File | null;
+    logoLight: File | null;
+  }>({
+    primaryLogo: null,
+    appLogo: null,
+    mobileLogo: null,
+    favicon: null,
+    logoDark: null,
+    logoLight: null,
   });
 
   const [showPrimaryPicker, setShowPrimaryPicker] = useState(false);
@@ -42,6 +103,9 @@ const ProvisionBranding: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [accounts, setAccounts] = useState<{ id: number; value: string }[]>([]);
+  const [logoPreviewErrors, setLogoPreviewErrors] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -66,30 +130,40 @@ const ProvisionBranding: React.FC = () => {
 
       if (response.success && response.data) {
         const data = response.data;
+        const primaryColorHex = normalizeHexColor(
+          data?.primaryColorHex,
+          DEFAULT_PRIMARY_HEX,
+        );
+        const secondaryColorHex = normalizeHexColor(
+          data?.secondaryColorHex,
+          DEFAULT_SECONDARY_HEX,
+        );
+
         setFormData({
-          accountId: data.accountId,
-          customEntryFqdn: data.customEntryFqdn,
-          logoUrl: data.logoUrl,
-          primaryColorHex: data.primaryColorHex,
-          secondaryColorHex: data.secondaryColorHex,
-          isActive: data.isActive,
+          accountId: Number(data?.accountId || 0),
+          customEntryFqdn: String(data?.customEntryFqdn || ""),
+          brandName: data.brandName || "",
+          logoUrl: String(data?.logoUrl || ""),
+          logoPath: data.logoPath || "",
+          primaryLogoPath: data.primaryLogoPath || "",
+          primaryLogoUrl: data.primaryLogoUrl || "",
+          appLogoPath: data.appLogoPath || "",
+          appLogoUrl: data.appLogoUrl || "",
+          mobileLogoPath: data.mobileLogoPath || "",
+          mobileLogoUrl: data.mobileLogoUrl || "",
+          faviconPath: data.faviconPath || "",
+          faviconUrl: data.faviconUrl || "",
+          logoDarkPath: data.logoDarkPath || "",
+          logoDarkUrl: data.logoDarkUrl || "",
+          logoLightPath: data.logoLightPath || "",
+          logoLightUrl: data.logoLightUrl || "",
+          primaryColorHex,
+          secondaryColorHex,
+          isActive: Boolean(data?.isActive ?? true),
         });
 
-        // Set RGB values for primary color
-        const primaryBigint = parseInt(data.primaryColorHex.slice(1), 16);
-        setPrimaryRgb({
-          r: (primaryBigint >> 16) & 255,
-          g: (primaryBigint >> 8) & 255,
-          b: primaryBigint & 255,
-        });
-
-        // Set RGB values for secondary color
-        const secondaryBigint = parseInt(data.secondaryColorHex.slice(1), 16);
-        setSecondaryRgb({
-          r: (secondaryBigint >> 16) & 255,
-          g: (secondaryBigint >> 8) & 255,
-          b: secondaryBigint & 255,
-        });
+        setPrimaryRgb(hexToRgb(primaryColorHex));
+        setSecondaryRgb(hexToRgb(secondaryColorHex));
       }
     } catch (error) {
       console.error("Error fetching white label:", error);
@@ -103,10 +177,37 @@ const ProvisionBranding: React.FC = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
+    if (name === "primaryColorHex") {
+      setFormData((prev) => ({
+        ...prev,
+        primaryColorHex: normalizeHexColor(value, DEFAULT_PRIMARY_HEX),
+      }));
+      return;
+    }
+    if (name === "secondaryColorHex") {
+      setFormData((prev) => ({
+        ...prev,
+        secondaryColorHex: normalizeHexColor(value, DEFAULT_SECONDARY_HEX),
+      }));
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: name === "accountId" ? Number(value) : value,
     }));
+  };
+  const handleLogoFileChange = (
+    key:
+      | "primaryLogo"
+      | "appLogo"
+      | "mobileLogo"
+      | "favicon"
+      | "logoDark"
+      | "logoLight",
+    file: File | null,
+  ) => {
+    setLogoFiles((prev) => ({ ...prev, [key]: file }));
+    setLogoPreviewErrors((prev) => ({ ...prev, [key]: false }));
   };
 
   const handleCancel = () => router.back();
@@ -124,27 +225,132 @@ const ProvisionBranding: React.FC = () => {
 
     try {
       setLoading(true);
+      let mergedFormData = { ...formData };
+
+      const hasLogoFiles = Object.values(logoFiles).some(Boolean);
+      if (hasLogoFiles) {
+        const uploadRes = await uploadWhiteLabelLogos({
+          accountId: formData.accountId,
+          primaryLogo: logoFiles.primaryLogo,
+          appLogo: logoFiles.appLogo,
+          mobileLogo: logoFiles.mobileLogo,
+          favicon: logoFiles.favicon,
+          logoDark: logoFiles.logoDark,
+          logoLight: logoFiles.logoLight,
+        });
+
+        if (!uploadRes?.success) {
+          toast.error(uploadRes?.message || "Logo upload failed");
+          setLoading(false);
+          return;
+        }
+
+        const uploadData = uploadRes?.data || {};
+        mergedFormData = {
+          ...mergedFormData,
+          logoUrl: String(
+            uploadData?.logoUrl ||
+              uploadData?.primaryLogoUrl ||
+              mergedFormData.logoUrl ||
+              "",
+          ),
+          logoPath: String(uploadData?.logoPath || mergedFormData.logoPath || ""),
+          primaryLogoUrl: String(
+            uploadData?.primaryLogoUrl || mergedFormData.primaryLogoUrl || "",
+          ),
+          primaryLogoPath: String(
+            uploadData?.primaryLogoPath || mergedFormData.primaryLogoPath || "",
+          ),
+          appLogoUrl: String(uploadData?.appLogoUrl || mergedFormData.appLogoUrl || ""),
+          appLogoPath: String(
+            uploadData?.appLogoPath || mergedFormData.appLogoPath || "",
+          ),
+          mobileLogoUrl: String(
+            uploadData?.mobileLogoUrl || mergedFormData.mobileLogoUrl || "",
+          ),
+          mobileLogoPath: String(
+            uploadData?.mobileLogoPath || mergedFormData.mobileLogoPath || "",
+          ),
+          faviconUrl: String(uploadData?.faviconUrl || mergedFormData.faviconUrl || ""),
+          faviconPath: String(
+            uploadData?.faviconPath || mergedFormData.faviconPath || "",
+          ),
+          logoDarkUrl: String(
+            uploadData?.logoDarkUrl || mergedFormData.logoDarkUrl || "",
+          ),
+          logoDarkPath: String(
+            uploadData?.logoDarkPath || mergedFormData.logoDarkPath || "",
+          ),
+          logoLightUrl: String(
+            uploadData?.logoLightUrl || mergedFormData.logoLightUrl || "",
+          ),
+          logoLightPath: String(
+            uploadData?.logoLightPath || mergedFormData.logoLightPath || "",
+          ),
+        };
+        setFormData(mergedFormData);
+      }
 
       let response;
       if (isEditMode && whiteLabelId) {
         // Update existing
-        const updatePayload: WhiteLabelUpdateData = {
-          customEntryFqdn: formData.customEntryFqdn,
-          logoUrl: formData.logoUrl,
-          primaryColorHex: formData.primaryColorHex,
-          secondaryColorHex: formData.secondaryColorHex,
-          isActive: formData.isActive,
+      const updatePayload: WhiteLabelUpdateData = {
+          customEntryFqdn: mergedFormData.customEntryFqdn,
+          brandName: mergedFormData.brandName || null,
+          logoUrl: mergedFormData.logoUrl,
+          logoPath: mergedFormData.logoPath || null,
+          primaryLogoPath: mergedFormData.primaryLogoPath || null,
+          primaryLogoUrl: mergedFormData.primaryLogoUrl || null,
+          appLogoPath: mergedFormData.appLogoPath || null,
+          appLogoUrl: mergedFormData.appLogoUrl || null,
+          mobileLogoPath: mergedFormData.mobileLogoPath || null,
+          mobileLogoUrl: mergedFormData.mobileLogoUrl || null,
+          faviconPath: mergedFormData.faviconPath || null,
+          faviconUrl: mergedFormData.faviconUrl || null,
+          logoDarkPath: mergedFormData.logoDarkPath || null,
+          logoDarkUrl: mergedFormData.logoDarkUrl || null,
+          logoLightPath: mergedFormData.logoLightPath || null,
+          logoLightUrl: mergedFormData.logoLightUrl || null,
+          primaryColorHex: normalizeHexColor(
+            mergedFormData.primaryColorHex,
+            DEFAULT_PRIMARY_HEX,
+          ),
+          secondaryColorHex: normalizeHexColor(
+            mergedFormData.secondaryColorHex,
+            DEFAULT_SECONDARY_HEX,
+          ),
+          isActive: mergedFormData.isActive,
         };
         response = await updateWhiteLabel(updatePayload, Number(whiteLabelId));
       } else {
         // Create new
         const createPayload: WhiteLabelFormData = {
-          accountId: formData.accountId,
-          customEntryFqdn: formData.customEntryFqdn,
-          logoUrl: formData.logoUrl,
-          primaryColorHex: formData.primaryColorHex,
-          secondaryColorHex: formData.secondaryColorHex,
-          isActive: formData.isActive,
+          accountId: mergedFormData.accountId,
+          customEntryFqdn: mergedFormData.customEntryFqdn,
+          brandName: mergedFormData.brandName || null,
+          logoUrl: mergedFormData.logoUrl,
+          logoPath: mergedFormData.logoPath || null,
+          primaryLogoPath: mergedFormData.primaryLogoPath || null,
+          primaryLogoUrl: mergedFormData.primaryLogoUrl || null,
+          appLogoPath: mergedFormData.appLogoPath || null,
+          appLogoUrl: mergedFormData.appLogoUrl || null,
+          mobileLogoPath: mergedFormData.mobileLogoPath || null,
+          mobileLogoUrl: mergedFormData.mobileLogoUrl || null,
+          faviconPath: mergedFormData.faviconPath || null,
+          faviconUrl: mergedFormData.faviconUrl || null,
+          logoDarkPath: mergedFormData.logoDarkPath || null,
+          logoDarkUrl: mergedFormData.logoDarkUrl || null,
+          logoLightPath: mergedFormData.logoLightPath || null,
+          logoLightUrl: mergedFormData.logoLightUrl || null,
+          primaryColorHex: normalizeHexColor(
+            mergedFormData.primaryColorHex,
+            DEFAULT_PRIMARY_HEX,
+          ),
+          secondaryColorHex: normalizeHexColor(
+            mergedFormData.secondaryColorHex,
+            DEFAULT_SECONDARY_HEX,
+          ),
+          isActive: mergedFormData.isActive,
         };
         response = await saveWhiteLabel(createPayload);
       }
@@ -314,6 +520,24 @@ const ProvisionBranding: React.FC = () => {
                       />
                     </div>
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-foreground mb-2">
+                      Brand Name
+                    </label>
+                    <input
+                      type="text"
+                      name="brandName"
+                      value={formData.brandName}
+                      onChange={handleInputChange}
+                      placeholder="Enter brand name"
+                      className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
+                        isDark
+                          ? "bg-gray-800 border-gray-700 text-foreground"
+                          : "bg-white border-gray-300 text-gray-900"
+                      } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -349,6 +573,91 @@ const ProvisionBranding: React.FC = () => {
                     />
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      { key: "primaryLogo", label: "Primary Logo", urlKey: "primaryLogoUrl" },
+                      { key: "appLogo", label: "App Logo", urlKey: "appLogoUrl" },
+                      { key: "mobileLogo", label: "Mobile Logo", urlKey: "mobileLogoUrl" },
+                      { key: "favicon", label: "Favicon", urlKey: "faviconUrl" },
+                      { key: "logoDark", label: "Logo Dark", urlKey: "logoDarkUrl" },
+                      { key: "logoLight", label: "Logo Light", urlKey: "logoLightUrl" },
+                    ].map((item) => (
+                      <div key={item.key}>
+                        <label className="block text-sm font-semibold text-foreground mb-2 uppercase tracking-wide">
+                          {item.label}
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) =>
+                            handleLogoFileChange(
+                              item.key as
+                                | "primaryLogo"
+                                | "appLogo"
+                                | "mobileLogo"
+                                | "favicon"
+                                | "logoDark"
+                                | "logoLight",
+                              e.target.files?.[0] || null,
+                            )
+                          }
+                          className={`w-full px-3 py-2 rounded-lg border transition-colors ${
+                            isDark
+                              ? "bg-gray-800 border-gray-700 text-foreground"
+                              : "bg-white border-gray-300 text-gray-900"
+                          } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                        />
+                        <input
+                          type="text"
+                          value={String((formData as any)[item.urlKey] || "")}
+                          readOnly
+                          placeholder="Uploaded URL will appear here"
+                          className={`w-full mt-2 px-3 py-2 rounded-lg border text-xs transition-colors ${
+                            isDark
+                              ? "bg-gray-900 border-gray-700 text-gray-300"
+                              : "bg-gray-50 border-gray-200 text-gray-700"
+                          }`}
+                        />
+                        {(() => {
+                          const rawUrl = String((formData as any)[item.urlKey] || "");
+                          const previewUrl = resolveMediaUrl(rawUrl);
+                          const hasPreview = Boolean(previewUrl) && !logoPreviewErrors[item.key];
+                          return (
+                            <div
+                              className={`mt-2 rounded-lg border h-20 flex items-center justify-center overflow-hidden ${
+                                isDark
+                                  ? "bg-gray-900 border-gray-700"
+                                  : "bg-gray-50 border-gray-200"
+                              }`}
+                            >
+                              {hasPreview ? (
+                                <img
+                                  src={previewUrl}
+                                  alt={item.label}
+                                  className="w-full h-full object-contain"
+                                  onError={() =>
+                                    setLogoPreviewErrors((prev) => ({
+                                      ...prev,
+                                      [item.key]: true,
+                                    }))
+                                  }
+                                />
+                              ) : (
+                                <span
+                                  className={`text-xs ${
+                                    isDark ? "text-gray-400" : "text-gray-500"
+                                  }`}
+                                >
+                                  No image preview
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    ))}
+                  </div>
+
                   {/* Color Palettes */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Primary Palette */}
@@ -364,7 +673,10 @@ const ProvisionBranding: React.FC = () => {
                             }
                             className="w-16 h-16 rounded-lg border-2 border-white shadow-sm cursor-pointer hover:scale-105 transition-transform"
                             style={{
-                              backgroundColor: formData.primaryColorHex,
+                              backgroundColor: normalizeHexColor(
+                                formData.primaryColorHex,
+                                DEFAULT_PRIMARY_HEX,
+                              ),
                             }}
                           />
                           <div>
@@ -374,7 +686,10 @@ const ProvisionBranding: React.FC = () => {
                             <input
                               type="text"
                               name="primaryColorHex"
-                              value={formData.primaryColorHex}
+                              value={normalizeHexColor(
+                                formData.primaryColorHex,
+                                DEFAULT_PRIMARY_HEX,
+                              )}
                               onChange={handleInputChange}
                               className="text-base font-bold text-foreground bg-transparent border-none focus:outline-none w-32"
                             />
@@ -384,7 +699,10 @@ const ProvisionBranding: React.FC = () => {
                         {showPrimaryPicker && (
                           <div className="space-y-4">
                             <HexColorPicker
-                              color={formData.primaryColorHex}
+                              color={normalizeHexColor(
+                                formData.primaryColorHex,
+                                DEFAULT_PRIMARY_HEX,
+                              )}
                               onChange={handlePrimaryColorChange}
                             />
                             <div className="grid grid-cols-3 gap-3">
@@ -431,7 +749,10 @@ const ProvisionBranding: React.FC = () => {
                             }
                             className="w-16 h-16 rounded-lg border-2 border-white shadow-sm cursor-pointer hover:scale-105 transition-transform"
                             style={{
-                              backgroundColor: formData.secondaryColorHex,
+                              backgroundColor: normalizeHexColor(
+                                formData.secondaryColorHex,
+                                DEFAULT_SECONDARY_HEX,
+                              ),
                             }}
                           />
                           <div>
@@ -441,7 +762,10 @@ const ProvisionBranding: React.FC = () => {
                             <input
                               type="text"
                               name="secondaryColorHex"
-                              value={formData.secondaryColorHex}
+                              value={normalizeHexColor(
+                                formData.secondaryColorHex,
+                                DEFAULT_SECONDARY_HEX,
+                              )}
                               onChange={handleInputChange}
                               className="text-base font-bold text-foreground bg-transparent border-none focus:outline-none w-32"
                             />
@@ -451,7 +775,10 @@ const ProvisionBranding: React.FC = () => {
                         {showSecondaryPicker && (
                           <div className="space-y-4">
                             <HexColorPicker
-                              color={formData.secondaryColorHex}
+                              color={normalizeHexColor(
+                                formData.secondaryColorHex,
+                                DEFAULT_SECONDARY_HEX,
+                              )}
                               onChange={handleSecondaryColorChange}
                             />
                             <div className="grid grid-cols-3 gap-3">
@@ -578,14 +905,17 @@ const ProvisionBranding: React.FC = () => {
                       <div
                         className="flex-1 h-12 rounded border-2 border-white shadow-sm"
                         style={{ backgroundColor: formData.primaryColorHex }}
-                        title={`Primary: ${formData.primaryColorHex}`}
+                        title={`Primary: ${normalizeHexColor(formData.primaryColorHex, DEFAULT_PRIMARY_HEX)}`}
                       />
                       <div
                         className="flex-1 h-12 rounded border-2 border-white shadow-sm"
                         style={{
-                          backgroundColor: formData.secondaryColorHex,
+                          backgroundColor: normalizeHexColor(
+                            formData.secondaryColorHex,
+                            DEFAULT_SECONDARY_HEX,
+                          ),
                         }}
-                        title={`Secondary: ${formData.secondaryColorHex}`}
+                        title={`Secondary: ${normalizeHexColor(formData.secondaryColorHex, DEFAULT_SECONDARY_HEX)}`}
                       />
                     </div>
                   </div>

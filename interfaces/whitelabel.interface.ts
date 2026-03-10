@@ -4,7 +4,21 @@ export interface WhiteLabel {
   accountId: number;
   accountName: string;
   customEntryFqdn: string;
+  brandName?: string | null;
   logoUrl: string;
+  logoPath?: string | null;
+  primaryLogoPath?: string | null;
+  primaryLogoUrl?: string | null;
+  appLogoPath?: string | null;
+  appLogoUrl?: string | null;
+  mobileLogoPath?: string | null;
+  mobileLogoUrl?: string | null;
+  faviconPath?: string | null;
+  faviconUrl?: string | null;
+  logoDarkPath?: string | null;
+  logoDarkUrl?: string | null;
+  logoLightPath?: string | null;
+  logoLightUrl?: string | null;
   primaryColorHex: string;
   secondaryColorHex: string;
   isActive: boolean;
@@ -16,7 +30,21 @@ export interface WhiteLabel {
 export interface WhiteLabelFormData {
   accountId: number;
   customEntryFqdn: string;
+  brandName?: string | null;
   logoUrl: string;
+  logoPath?: string | null;
+  primaryLogoPath?: string | null;
+  primaryLogoUrl?: string | null;
+  appLogoPath?: string | null;
+  appLogoUrl?: string | null;
+  mobileLogoPath?: string | null;
+  mobileLogoUrl?: string | null;
+  faviconPath?: string | null;
+  faviconUrl?: string | null;
+  logoDarkPath?: string | null;
+  logoDarkUrl?: string | null;
+  logoLightPath?: string | null;
+  logoLightUrl?: string | null;
   primaryColorHex: string;
   secondaryColorHex: string;
   isActive: boolean;
@@ -25,7 +53,21 @@ export interface WhiteLabelFormData {
 // White Label Update Data (PUT request)
 export interface WhiteLabelUpdateData {
   customEntryFqdn: string;
+  brandName?: string | null;
   logoUrl: string;
+  logoPath?: string | null;
+  primaryLogoPath?: string | null;
+  primaryLogoUrl?: string | null;
+  appLogoPath?: string | null;
+  appLogoUrl?: string | null;
+  mobileLogoPath?: string | null;
+  mobileLogoUrl?: string | null;
+  faviconPath?: string | null;
+  faviconUrl?: string | null;
+  logoDarkPath?: string | null;
+  logoDarkUrl?: string | null;
+  logoLightPath?: string | null;
+  logoLightUrl?: string | null;
   primaryColorHex: string;
   secondaryColorHex: string;
   isActive: boolean;

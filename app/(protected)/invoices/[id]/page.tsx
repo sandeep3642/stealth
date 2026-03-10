@@ -1,0 +1,373 @@
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import PageHeader from "@/components/PageHeader";
+import { useTheme } from "@/context/ThemeContext";
+import { getAccountHierarchy } from "@/services/accountService";
+import { getSubscriptions } from "@/services/subscriptionService";
+import { createManualInvoice } from "@/services/invoiceService";
+import { getCurrencies } from "@/services/commonServie";
+
+const formatDateTimeLocal = (date: Date) => {
+  const y = date.getFullYear();
+  const m = `${date.getMonth() + 1}`.padStart(2, "0");
+  const d = `${date.getDate()}`.padStart(2, "0");
+  const h = `${date.getHours()}`.padStart(2, "0");
+  const min = `${date.getMinutes()}`.padStart(2, "0");
+  return `${y}-${m}-${d}T${h}:${min}`;
+};
+
+const AddInvoicePage = () => {
+  const { isDark } = useTheme();
+  const router = useRouter();
+  const params = useParams();
+  const id = String(params?.id || "0");
+  const isAddMode = id === "0";
+
+  const [loading, setLoading] = useState(false);
+  const [loadingDropdowns, setLoadingDropdowns] = useState(true);
+
+  const [accountOptions, setAccountOptions] = useState<
+    Array<{ id: number; value: string }>
+  >([]);
+  const [subscriptionOptions, setSubscriptionOptions] = useState<
+    Array<{ id: number; name: string }>
+  >([]);
+  const [currencyOptions, setCurrencyOptions] = useState<
+    Array<{ id: number; value: string }>
+  >([]);
+
+  const [formData, setFormData] = useState({
+    accountId: 0,
+    subscriptionId: 0,
+    amount: "",
+    currency: "",
+    invoiceDate: formatDateTimeLocal(new Date()),
+    dueDate: formatDateTimeLocal(
+      new Date(new Date().setDate(new Date().getDate() + 30)),
+    ),
+  });
+
+  const getActorId = () => {
+    if (typeof window === "undefined") return 1;
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      return Number(user?.accountId || 1);
+    } catch {
+      return 1;
+    }
+  };
+
+  const actorId = useMemo(() => getActorId(), []);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const fetchDropdowns = async () => {
+    setLoadingDropdowns(true);
+    try {
+      const [accountsRes, subscriptionsRes, currenciesRes] = await Promise.all([
+        getAccountHierarchy(),
+        getSubscriptions(1, 500, ""),
+        getCurrencies(),
+      ]);
+
+      const accounts = Array.isArray(accountsRes?.data) ? accountsRes.data : [];
+      const subscriptionsRaw = Array.isArray(subscriptionsRes?.data?.items)
+        ? subscriptionsRes.data.items
+        : [];
+      const subscriptions = subscriptionsRaw.map((s: any) => ({
+        id: Number(s?.id || s?.subscriptionId || 0),
+        name: String(
+          s?.planName && s?.accountName
+            ? `${s.planName} - ${s.accountName}`
+            : s?.planName || s?.subscriptionName || `Subscription ${s?.id || ""}`,
+        ),
+      }));
+
+      const currencies = Array.isArray(currenciesRes?.data)
+        ? currenciesRes.data
+        : [];
+
+      setAccountOptions(accounts);
+      setSubscriptionOptions(subscriptions);
+      setCurrencyOptions(currencies);
+
+      setFormData((prev) => ({
+        ...prev,
+        accountId: prev.accountId || Number(accounts?.[0]?.id || actorId),
+        subscriptionId: prev.subscriptionId || Number(subscriptions?.[0]?.id || 0),
+        currency: prev.currency || String(currencies?.[0]?.value || ""),
+      }));
+    } catch (error) {
+      toast.error("Failed to load dropdown data");
+    } finally {
+      setLoadingDropdowns(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!isAddMode) {
+      toast.info("Edit invoice is not enabled yet.");
+      return;
+    }
+
+    if (!formData.accountId || !formData.subscriptionId) {
+      toast.error("Please select Account and Subscription");
+      return;
+    }
+
+    if (!formData.currency) {
+      toast.error("Please select currency");
+      return;
+    }
+
+    const amountNum = Number(formData.amount || 0);
+    if (amountNum <= 0) {
+      toast.error("Amount must be greater than 0");
+      return;
+    }
+
+    const invoiceDate = new Date(formData.invoiceDate);
+    const dueDate = new Date(formData.dueDate);
+    if (Number.isNaN(invoiceDate.getTime()) || Number.isNaN(dueDate.getTime())) {
+      toast.error("Please provide valid invoice and due dates");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const nowIso = new Date().toISOString();
+      const payload = {
+        accountId: Number(formData.accountId),
+        subscriptionId: Number(formData.subscriptionId),
+        amount: amountNum,
+        currency: formData.currency,
+        invoiceDate: invoiceDate.toISOString(),
+        dueDate: dueDate.toISOString(),
+        createdBy: actorId,
+        updatedBy: actorId,
+        createdDate: nowIso,
+        updatedDate: nowIso,
+      };
+
+      const response = await createManualInvoice(payload);
+      if (response?.success || response?.statusCode === 200) {
+        toast.success(response?.message || "Invoice created successfully");
+        router.push("/invoices");
+      } else {
+        toast.error(response?.message || "Failed to create invoice");
+      }
+    } catch (error) {
+      toast.error("Failed to create invoice");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDropdowns();
+  }, []);
+
+  return (
+    <div className={`${isDark ? "dark" : ""} mt-10`}>
+      <div
+        className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
+      >
+        <div className="mb-4 sm:mb-6">
+          <PageHeader
+            title={isAddMode ? "Add Invoice" : "Invoice"}
+            subtitle="Create manual billing invoice."
+            breadcrumbs={[{ label: "Billing" }, { label: "Invoices" }]}
+            showButton={false}
+          />
+        </div>
+
+        <div
+          className={`rounded-xl border p-4 sm:p-6 max-w-4xl ${
+            isDark ? "border-gray-700 bg-gray-900" : "border-gray-200 bg-white"
+          }`}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div>
+              <label
+                className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                Account
+              </label>
+              <select
+                name="accountId"
+                value={formData.accountId}
+                onChange={handleInputChange}
+                disabled={loadingDropdowns}
+                className={`w-full px-4 py-3 rounded-lg border ${
+                  isDark
+                    ? "bg-gray-800 border-gray-700 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                }`}
+              >
+                {accountOptions.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.value}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                Subscription
+              </label>
+              <select
+                name="subscriptionId"
+                value={formData.subscriptionId}
+                onChange={handleInputChange}
+                disabled={loadingDropdowns}
+                className={`w-full px-4 py-3 rounded-lg border ${
+                  isDark
+                    ? "bg-gray-800 border-gray-700 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                }`}
+              >
+                {subscriptionOptions.map((subscription) => (
+                  <option key={subscription.id} value={subscription.id}>
+                    {subscription.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                Amount
+              </label>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                name="amount"
+                value={formData.amount}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-3 rounded-lg border ${
+                  isDark
+                    ? "bg-gray-800 border-gray-700 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                }`}
+              />
+            </div>
+
+            <div>
+              <label
+                className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                Currency
+              </label>
+              <select
+                name="currency"
+                value={formData.currency}
+                onChange={handleInputChange}
+                disabled={loadingDropdowns}
+                className={`w-full px-4 py-3 rounded-lg border ${
+                  isDark
+                    ? "bg-gray-800 border-gray-700 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                }`}
+              >
+                {currencyOptions.map((currency) => (
+                  <option key={currency.id} value={currency.value}>
+                    {currency.value}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                Invoice Date
+              </label>
+              <input
+                type="datetime-local"
+                name="invoiceDate"
+                value={formData.invoiceDate}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-3 rounded-lg border ${
+                  isDark
+                    ? "bg-gray-800 border-gray-700 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                }`}
+              />
+            </div>
+
+            <div>
+              <label
+                className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                  isDark ? "text-gray-400" : "text-gray-600"
+                }`}
+              >
+                Due Date
+              </label>
+              <input
+                type="datetime-local"
+                name="dueDate"
+                value={formData.dueDate}
+                onChange={handleInputChange}
+                className={`w-full px-4 py-3 rounded-lg border ${
+                  isDark
+                    ? "bg-gray-800 border-gray-700 text-white"
+                    : "bg-white border-gray-300 text-gray-900"
+                }`}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 mt-6">
+            <button
+              onClick={() => router.push("/invoices")}
+              className={`px-5 py-2.5 rounded-lg border ${
+                isDark
+                  ? "border-gray-700 text-gray-200"
+                  : "border-gray-300 text-gray-700"
+              }`}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={loading || loadingDropdowns}
+              className="px-5 py-2.5 rounded-lg bg-purple-600 text-white disabled:opacity-50"
+            >
+              {loading ? "Saving..." : "Create Invoice"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AddInvoicePage;

@@ -18,10 +18,8 @@ import type {
   DropdownOption,
   RouteMasterFormData,
 } from "@/interfaces/routeMaster.interface";
-import {
-  getAllAccounts,
-  getGeofenceDropdownByAccount,
-} from "@/services/commonServie";
+import { getAccountHierarchy } from "@/services/accountService";
+import { getGeofenceDropdownByAccount } from "@/services/commonServie";
 import { getGeofenceById } from "@/services/geofenceService";
 import {
   getRouteMasterById,
@@ -42,6 +40,34 @@ interface GeofenceLatLng {
   lat: number;
   lng: number;
 }
+
+const getEncodedPathFromDirections = (
+  response: google.maps.DirectionsResult,
+): string => {
+  const route = response?.routes?.[0];
+  const fromOverview = String(route?.overview_polyline?.points || "").trim();
+  if (fromOverview) return fromOverview;
+
+  const canEncode = Boolean(window?.google?.maps?.geometry?.encoding?.encodePath);
+  if (!canEncode) return "";
+
+  const overviewPath = Array.isArray(route?.overview_path) ? route.overview_path : [];
+  if (overviewPath.length > 1) {
+    return window.google.maps.geometry.encoding.encodePath(overviewPath);
+  }
+
+  const legs = Array.isArray(route?.legs) ? route.legs : [];
+  const stepPath = legs.flatMap((leg) =>
+    Array.isArray(leg?.steps)
+      ? leg.steps.flatMap((step) => (Array.isArray(step?.path) ? step.path : []))
+      : [],
+  );
+  if (stepPath.length > 1) {
+    return window.google.maps.geometry.encoding.encodePath(stepPath);
+  }
+
+  return "";
+};
 
 const toOptions = (response: any): DropdownOption[] => {
   const data = Array.isArray(response?.data)
@@ -100,6 +126,18 @@ const AddEditRouteMasterPage: React.FC = () => {
     [],
   );
 
+  // Stores Google Maps derived data to be sent on save/update
+  const [routeMetrics, setRouteMetrics] = useState<{
+    routePath: string;
+    totalDistance: string;
+    totalTime: string;
+    segmentMetrics: { distanceMetres: number; durationSeconds: number }[];
+    waypointKey: string;
+  } | null>(null);
+
+  // Holds the encoded polyline fetched in edit mode until Maps SDK is ready
+  const [savedEncodedPath, setSavedEncodedPath] = useState<string>("");
+
   const fetchGeofenceDropdown = async (accountId: number) => {
     const res = await getGeofenceDropdownByAccount(accountId);
     return toOptions(res);
@@ -107,8 +145,14 @@ const AddEditRouteMasterPage: React.FC = () => {
 
   const fetchAccounts = async () => {
     try {
-      const response = await getAllAccounts();
-      setAccounts(toOptions(response));
+      const response = await getAccountHierarchy();
+      const accountOptions = Array.isArray(response?.data) ? response.data : [];
+      setAccounts(
+        accountOptions.map((item: any) => ({
+          id: Number(item?.id || 0),
+          value: String(item?.value || item?.name || item?.id || ""),
+        })),
+      );
     } catch (error) {
       console.error("Error fetching accounts:", error);
     }
@@ -154,6 +198,38 @@ const AddEditRouteMasterPage: React.FC = () => {
         );
         setGeofences(geofenceOptions);
       }
+
+      // ── Restore saved route on edit mode ────────────────────────────────
+      // Store the encoded polyline; a useEffect below decodes it once the
+      // Maps SDK has finished loading (isLoaded becomes true).
+      const savedRoutePath = String(data?.routePath || "");
+      if (savedRoutePath) {
+        setSavedEncodedPath(savedRoutePath);
+      }
+
+      // Restore stored metrics so re-saving without re-previewing still
+      // sends the correct distance/time values.
+      const storedMetrics = Array.isArray(data?.stopDetails)
+        ? data.stopDetails.map((seg: any) => ({
+            distanceMetres: Number(seg?.distance || 0),
+            durationSeconds: Number(seg?.time || 0),
+          }))
+        : [];
+
+      setRouteMetrics({
+        routePath: savedRoutePath,
+        totalDistance: String(data?.totalDistance || "0"),
+        totalTime: String(data?.totalTime || "0"),
+        segmentMetrics: storedMetrics,
+        waypointKey: [
+          Number(data?.startGeofenceId || 0),
+          ...parsedStops.filter((item: number) => item > 0),
+          Number(data?.endGeofenceId || 0),
+        ]
+          .filter((item) => item > 0)
+          .join("->"),
+      });
+      // ─────────────────────────────────────────────────────────────────────
     } catch (error) {
       console.error("Error fetching route by id:", error);
       toast.error("Failed to fetch route details");
@@ -179,6 +255,45 @@ const AddEditRouteMasterPage: React.FC = () => {
       fetchById();
     }
   }, [isEditMode, fetchById]);
+
+  // Decode the saved encoded polyline once the Maps SDK is loaded and
+  // display it on the map in edit mode without re-calling the Directions API.
+  useEffect(() => {
+    if (!isLoaded || !savedEncodedPath || !window?.google?.maps?.geometry)
+      return;
+
+    const decodedPath =
+      window.google.maps.geometry.encoding.decodePath(savedEncodedPath);
+
+    if (decodedPath.length < 2) return;
+
+    const bounds = decodedPath.reduce(
+      (b: google.maps.LatLngBounds, point) => b.extend(point),
+      new window.google.maps.LatLngBounds(),
+    );
+
+    // Build a minimal synthetic DirectionsResult for DirectionsRenderer
+    const syntheticResult = {
+      routes: [
+        {
+          overview_polyline: { points: savedEncodedPath },
+          overview_path: decodedPath,
+          bounds,
+          legs: [],
+          waypoint_order: [],
+          warnings: [],
+          copyrights: "",
+          summary: "",
+          fare: undefined,
+        },
+      ],
+      geocoded_waypoints: [],
+      available_travel_modes: [],
+      request: {},
+    } as unknown as google.maps.DirectionsResult;
+
+    setDirectionsResult(syntheticResult);
+  }, [isLoaded, savedEncodedPath]);
 
   useEffect(() => {
     const accountId = Number(formData.accountId || 0);
@@ -230,6 +345,7 @@ const AddEditRouteMasterPage: React.FC = () => {
     formData.stopGeofenceIds,
     formData.endGeofenceId,
   ]);
+  const waypointKey = useMemo(() => waypointIds.join("->"), [waypointIds]);
 
   const resolveGeofenceLatLng = useCallback(
     async (geofenceId: number): Promise<GeofenceLatLng | null> => {
@@ -290,75 +406,117 @@ const AddEditRouteMasterPage: React.FC = () => {
     }));
   };
 
-  const calculateRoute = async () => {
+  const buildRoutePreviewData = useCallback(async () => {
     if (!isLoaded || !window.google) {
       toast.error("Google Maps SDK is not loaded");
-      return;
+      return null;
     }
     if (!formData.startGeofenceId || !formData.endGeofenceId) {
       toast.error("Please select start and end geofence");
-      return;
+      return null;
     }
     if (waypointIds.length < 2) {
       toast.error("Please select at least start and end geofence");
-      return;
+      return null;
     }
 
+    const resolvedPoints = await Promise.all(
+      waypointIds.map(async (id) => ({
+        id,
+        point: await resolveGeofenceLatLng(id),
+      })),
+    );
+    const invalidPoint = resolvedPoints.find((item) => !item.point);
+    if (invalidPoint) {
+      toast.error(`Unable to resolve geofence coordinates for ID ${invalidPoint.id}`);
+      return null;
+    }
+
+    const getGeofenceName = (id: number): string => {
+      const found = geofences.find((g) => Number(g.id) === id);
+      return found?.value || `Geofence ${id}`;
+    };
+    const geofenceNames = waypointIds.map((id) => getGeofenceName(id));
+
+    const routePoints = resolvedPoints.map(
+      (item) => item.point as google.maps.LatLngLiteral,
+    );
+    const directionsService = new window.google.maps.DirectionsService();
+    const response = await directionsService.route({
+      origin: routePoints[0],
+      destination: routePoints[routePoints.length - 1],
+      waypoints: routePoints.slice(1, -1).map((point) => ({
+        location: point,
+        stopover: true,
+      })),
+      optimizeWaypoints: false,
+      travelMode: window.google.maps.TravelMode.DRIVING,
+    });
+
+    const legs = response.routes?.[0]?.legs || [];
+    const nextSegmentSummaries = legs.map((leg, index) => ({
+      from: geofenceNames[index] || leg.start_address,
+      to: geofenceNames[index + 1] || leg.end_address,
+      distanceText: leg.distance?.text || "-",
+      durationText: leg.duration?.text || "-",
+    }));
+    const overviewPolyline = getEncodedPathFromDirections(response);
+    if (!overviewPolyline) {
+      toast.error("Google encoded route path not available for selected points");
+      return null;
+    }
+    const totalDistanceMetres = legs.reduce(
+      (sum, leg) => sum + (leg.distance?.value || 0),
+      0,
+    );
+    const totalDurationSeconds = legs.reduce(
+      (sum, leg) => sum + (leg.duration?.value || 0),
+      0,
+    );
+
+    return {
+      response,
+      segmentSummaries: nextSegmentSummaries,
+      routeMetrics: {
+        routePath: overviewPolyline,
+        totalDistance: String(totalDistanceMetres),
+        totalTime: String(totalDurationSeconds),
+        segmentMetrics: legs.map((leg) => ({
+          distanceMetres: leg.distance?.value || 0,
+          durationSeconds: leg.duration?.value || 0,
+        })),
+        waypointKey,
+      },
+    };
+  }, [
+    formData.endGeofenceId,
+    formData.startGeofenceId,
+    geofences,
+    isLoaded,
+    resolveGeofenceLatLng,
+    waypointIds,
+    waypointKey,
+  ]);
+
+  const calculateRoute = async () => {
     try {
       setPreviewLoading(true);
-      const resolvedPoints = await Promise.all(
-        waypointIds.map(async (id) => ({
-          id,
-          point: await resolveGeofenceLatLng(id),
-        })),
-      );
-      const invalidPoint = resolvedPoints.find((item) => !item.point);
-      if (invalidPoint) {
-        toast.error(
-          `Unable to resolve geofence coordinates for ID ${invalidPoint.id}`,
-        );
-        setPreviewLoading(false);
+      const previewData = await buildRoutePreviewData();
+      if (!previewData) {
+        setDirectionsResult(null);
+        setSegmentSummaries([]);
+        setRouteMetrics(null);
         return;
       }
-
-      // Map geofence IDs to their names from the geofences dropdown
-      const getGeofenceName = (id: number): string => {
-        const found = geofences.find((g) => Number(g.id) === id);
-        return found?.value || `Geofence ${id}`;
-      };
-      const geofenceNames = waypointIds.map((id) => getGeofenceName(id));
-
-      const routePoints = resolvedPoints.map(
-        (item) => item.point as google.maps.LatLngLiteral,
-      );
-      const directionsService = new window.google.maps.DirectionsService();
-
-      const response = await directionsService.route({
-        origin: routePoints[0],
-        destination: routePoints[routePoints.length - 1],
-        waypoints: routePoints.slice(1, -1).map((point) => ({
-          location: point,
-          stopover: true,
-        })),
-        optimizeWaypoints: false,
-        travelMode: window.google.maps.TravelMode.DRIVING,
-      });
-
-      setDirectionsResult(response);
-      const legs = response.routes?.[0]?.legs || [];
-      setSegmentSummaries(
-        legs.map((leg, index) => ({
-          from: geofenceNames[index] || leg.start_address,
-          to: geofenceNames[index + 1] || leg.end_address,
-          distanceText: leg.distance?.text || "-",
-          durationText: leg.duration?.text || "-",
-        })),
-      );
+      setDirectionsResult(previewData.response);
+      setSegmentSummaries(previewData.segmentSummaries);
+      setRouteMetrics(previewData.routeMetrics);
     } catch (error) {
       console.error("Directions error:", error);
       toast.error("Unable to build route preview for selected points");
       setDirectionsResult(null);
       setSegmentSummaries([]);
+      setRouteMetrics(null);
     } finally {
       setPreviewLoading(false);
     }
@@ -398,26 +556,59 @@ const AddEditRouteMasterPage: React.FC = () => {
     if (!validateForm()) return;
     const { userId } = getUserData();
 
-    const payload = {
-      accountId: Number(formData.accountId),
-      routeName: formData.routeName.trim(),
-      isGeofenceRelated: Boolean(formData.isGeofenceRelated),
-      startGeofenceId: Number(formData.startGeofenceId),
-      endGeofenceId: Number(formData.endGeofenceId),
-      stopGeofenceIds: formData.stopGeofenceIds
-        .map((id) => Number(id))
-        .filter((id) => id > 0),
-      isActive: Boolean(formData.isActive),
-      ...(isEditMode
-        ? { updatedBy: Number(userId || 0) }
-        : { createdBy: Number(userId || 0) }),
-    };
-
     try {
       setLoading(true);
+      let latestRouteMetrics = routeMetrics;
+      const shouldRecalculateRoute =
+        waypointIds.length >= 2 &&
+        (!latestRouteMetrics?.routePath ||
+          latestRouteMetrics.waypointKey !== waypointKey);
+
+      if (shouldRecalculateRoute) {
+        const previewData = await buildRoutePreviewData();
+        if (!previewData) {
+          setLoading(false);
+          return;
+        }
+        setDirectionsResult(previewData.response);
+        setSegmentSummaries(previewData.segmentSummaries);
+        setRouteMetrics(previewData.routeMetrics);
+        latestRouteMetrics = previewData.routeMetrics;
+      }
+
+      if (!String(latestRouteMetrics?.routePath || "").trim()) {
+        toast.error(
+          "Route create blocked: Google encoded route path is empty. Please click View Route and try again.",
+        );
+        setLoading(false);
+        return;
+      }
+
+      const payload = {
+        accountId: Number(formData.accountId),
+        routeName: formData.routeName.trim(),
+        isGeofenceRelated: Boolean(formData.isGeofenceRelated),
+        startGeofenceId: Number(formData.startGeofenceId),
+        endGeofenceId: Number(formData.endGeofenceId),
+        stopGeofenceIds: formData.stopGeofenceIds
+          .map((id) => Number(id))
+          .filter((id) => id > 0),
+        isActive: Boolean(formData.isActive),
+        // Always send latest Google Maps derived fields
+        routePath: latestRouteMetrics?.routePath || "",
+        totalDistance: latestRouteMetrics?.totalDistance || "0",
+        totalTime: latestRouteMetrics?.totalTime || "0",
+        segmentMetrics: latestRouteMetrics?.segmentMetrics || [],
+        ...(isEditMode
+          ? { updatedBy: Number(userId || 0) }
+          : { createdBy: Number(userId || 0) }),
+      };
+
       const response = isEditMode
         ? await updateRouteMaster(routeId, payload)
         : await saveRouteMaster(payload);
+
+      console.log(response, "ressssssssssssss");
 
       if (response?.success || response?.statusCode === 200) {
         toast.success(

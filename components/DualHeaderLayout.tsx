@@ -53,6 +53,21 @@ import { useColor } from "../context/ColorContext";
 import { useLayout } from "../context/LayoutContext";
 import { useTheme } from "../context/ThemeContext";
 
+const resolveProfileImageUrl = (profileImagePath?: string): string => {
+  const path = String(profileImagePath || "").trim();
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+
+  const baseUrl = String(process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(
+    /\/+$/,
+    "",
+  );
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  if (!baseUrl) return normalizedPath;
+  return `${baseUrl}${normalizedPath}`;
+};
+
 const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -73,6 +88,8 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   );
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [profileImageUrl, setProfileImageUrl] = useState<string>("");
+  const [isProfileImageError, setIsProfileImageError] = useState(false);
   const [secondaryColorHex, setSecondaryColorHex] = useState<string>("");
   const [primaryColorHex, setPrimaryColorHex] = useState<string>("");
 
@@ -91,7 +108,10 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const userData = localStorage.getItem("user");
-      setUser(userData ? JSON.parse(userData) : null);
+      const parsedUser = userData ? JSON.parse(userData) : null;
+      setUser(parsedUser);
+      setProfileImageUrl(resolveProfileImageUrl(parsedUser?.profileImagePath));
+      setIsProfileImageError(false);
     }
   }, []);
 
@@ -215,7 +235,6 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
     {
       title: "OVERVIEW",
       items: [
-        { id: "home", label: "Home", icon: Home, active: false, path: "/home" },
         {
           id: "dashboard",
           label: "Dashboard",
@@ -817,11 +836,20 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
                 onClick={() => setShowProfileMenu((prev) => !prev)}
                 className={`flex items-center gap-2 ${headerHoverBg} rounded-lg p-2`}
               >
-                <div
-                  className={`w-8 h-8 ${headerLogo} rounded-full flex items-center justify-center ${headerLogoText} text-sm font-medium`}
-                >
-                  {getInitials(user?.fullName || "U")}
-                </div>
+                {profileImageUrl && !isProfileImageError ? (
+                  <img
+                    src={profileImageUrl}
+                    alt={user?.fullName || "User"}
+                    className="w-8 h-8 rounded-full object-cover"
+                    onError={() => setIsProfileImageError(true)}
+                  />
+                ) : (
+                  <div
+                    className={`w-8 h-8 ${headerLogo} rounded-full flex items-center justify-center ${headerLogoText} text-sm font-medium`}
+                  >
+                    {getInitials(user?.fullName || "U")}
+                  </div>
+                )}
 
                 <div className="text-right hidden xl:block">
                   <div className={`text-sm font-medium ${headerText}`}>

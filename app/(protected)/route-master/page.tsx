@@ -15,7 +15,7 @@ import type {
   RouteMasterRow,
   RouteSummary,
 } from "@/interfaces/routeMaster.interface";
-import { getAllAccounts } from "@/services/commonServie";
+import { getAccountHierarchy } from "@/services/accountService";
 import {
   deleteRouteMaster,
   getRouteMasters,
@@ -23,8 +23,8 @@ import {
 
 const EMPTY_SUMMARY: RouteSummary = {
   totalRoutes: 0,
-  geofenceRelated: 0,
-  nonGeofenceRelated: 0,
+  totalActiveRoutes: 0,
+  totalInactiveRoutes: 0,
 };
 
 const getLocalAccountId = (): number => {
@@ -112,7 +112,7 @@ const RouteMasterPage: React.FC = () => {
 
   const fetchAccounts = async () => {
     try {
-      const response = await getAllAccounts();
+      const response = await getAccountHierarchy();
       const accountList = Array.isArray(response?.data) ? response.data : [];
       setAccounts(
         accountList.map((item: any) => ({
@@ -132,7 +132,6 @@ const RouteMasterPage: React.FC = () => {
         page: pageNo,
         pageSize,
         accountId: selectedAccountId,
-        search: debouncedQuery,
       });
 
       const listData = response?.data?.routes || response?.data?.routeMasters;
@@ -155,10 +154,11 @@ const RouteMasterPage: React.FC = () => {
       setTotalRecords(total);
       setSummary({
         totalRoutes: Number(summaryData?.totalRoutes || total),
-        geofenceRelated,
-        nonGeofenceRelated: Number(
-          summaryData?.nonGeofenceRelated ||
-            Math.max(total - geofenceRelated, 0),
+        totalActiveRoutes: Number(
+          summaryData?.totalActiveRoutes || 0,
+        ),
+        totalInactiveRoutes: Number(
+          summaryData?.totalInactiveRoutes || 0,
         ),
       });
     } catch (error) {
@@ -278,16 +278,16 @@ const RouteMasterPage: React.FC = () => {
           />
           <MetricCard
             icon={MapPin}
-            label="GEOFENCE ROUTES"
-            value={summary.geofenceRelated}
+            label="ACTIVE ROUTES"
+            value={summary.totalActiveRoutes}
             iconBgColor="bg-emerald-100 dark:bg-emerald-900/30"
             iconColor="text-emerald-600 dark:text-emerald-400"
             isDark={isDark}
           />
           <MetricCard
             icon={GitBranch}
-            label="NON-GEOFENCE"
-            value={summary.nonGeofenceRelated}
+            label="INACTIVE ROUTES"
+            value={summary.totalInactiveRoutes}
             iconBgColor="bg-orange-100 dark:bg-orange-900/30"
             iconColor="text-orange-600 dark:text-orange-400"
             isDark={isDark}

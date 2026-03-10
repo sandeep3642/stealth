@@ -1,15 +1,39 @@
 import api from "./apiService";
 
 export const getPlans = async (page, pageSize, searchQuery) => {
-  const res = await api.get(
-    `/api/plans?page=${page}&pageSize=${pageSize}&search=${searchQuery}`,
-  );
-  return res.data;
+  const skip = Math.max((Number(page || 1) - 1) * Number(pageSize || 10), 0);
+  const take = Number(pageSize || 10);
+  const res = await api.get(`/api/billing/plans`, {
+    params: {
+      skip,
+      take,
+      search: searchQuery || undefined,
+    },
+  });
+
+  const payload = res?.data || {};
+  const rawItems = Array.isArray(payload?.data)
+    ? payload.data
+    : Array.isArray(payload?.data?.items)
+      ? payload.data.items
+      : [];
+
+  return {
+    ...payload,
+    data: {
+      items: rawItems,
+      totalRecords: Number(
+        payload?.data?.totalRecords ??
+          payload?.totalRecords ??
+          rawItems.length,
+      ),
+    },
+  };
 };
 
 export const createPlan = async (payload) => {
   try {
-    const res = await api.post(`/api/plans`, payload);
+    const res = await api.post(`/api/billing/plans`, payload);
     return res.data;
   } catch (error) {
     return (
@@ -24,13 +48,13 @@ export const createPlan = async (payload) => {
 };
 
 export const deletePlan = async (id) => {
-  const res = await api.delete(`/api/plans/${id}`);
+  const res = await api.delete(`/api/billing/plans/${id}`);
   return res.data;
 };
 
 export const updatePlan = async (id, payload) => {
   try {
-    const res = await api.put(`/api/plans/${id}`, payload);
+    const res = await api.put(`/api/billing/plans/${id}`, payload);
     return res.data;
   } catch (error) {
     return (
@@ -45,6 +69,11 @@ export const updatePlan = async (id, payload) => {
 };
 
 export const getById = async (id) => {
-  const res = await api.get(`/api/plans/${id}`);
+  const res = await api.get(`/api/billing/plans/${id}`);
+  return res.data;
+};
+
+export const getSolutions = async () => {
+  const res = await api.get(`/api/solutions`);
   return res.data;
 };

@@ -17,8 +17,8 @@ export interface RouteMasterRow {
 
 export interface RouteSummary {
   totalRoutes: number;
-  geofenceRelated: number;
-  nonGeofenceRelated: number;
+  totalActiveRoutes: number;
+  totalInactiveRoutes: number;
 }
 
 export interface RouteMasterFormData {

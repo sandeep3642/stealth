@@ -22,13 +22,17 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
-import { getById, updatePlan, createPlan } from "@/services/planService";
-import { getCurrencies, getFormModulesDropdown } from "@/services/commonServie";
+import {
+  createPlan,
+  getById,
+  getSolutions,
+  updatePlan,
+} from "@/services/planService";
+import { getCurrencies } from "@/services/commonServie";
 import {
   CardProps,
   Currency,
   FormModule,
-  TenantCategory,
 } from "@/interfaces/plan.interface";
 
 // Mock Theme and Color Contexts
@@ -55,16 +59,34 @@ const PlansManagement = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
 
+  const getStoredAccountId = () => {
+    if (typeof window === "undefined") return 1;
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      return Number(user?.accountId || 1);
+    } catch {
+      return 1;
+    }
+  };
+
   const [formData, setFormData] = useState({
+    accountId: 1,
     planName: "",
+    description: "",
     categoryID: 1,
     tenantCategory: "End User (Direct)",
     currencyId: 0,
     settlementCurrency: "",
     billingInterval: "Monthly",
     contractValidity: "1 Year",
-    pricingModel: "Fixed (Flat Account-based)",
+    pricingModel: "Fixed",
+    planStatus: "Active",
+    tierId: 1,
     initialBasePrice: "",
+    minUnits: "",
+    maxUnits: "",
+    licensePricePerUnit: "",
+    discountPercentage: "",
     amcCharge: "",
     platformSubCharge: "",
     hardwareRestrictions: false,
@@ -79,14 +101,13 @@ const PlansManagement = () => {
   });
 
   const [entitlements, setEntitlements] = useState<Record<number, boolean>>({});
-  const [pendingPlanData, setPendingPlanData] = useState<any>(null);
+  const [pendingPlanData, setPendingPlanData] = useState<{
+    solutionIds: number[];
+  } | null>(null);
 
   // Dropdown data from API
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [formModules, setFormModules] = useState<FormModule[]>([]);
-  const [tenantCategories, setTenantCategories] = useState<TenantCategory[]>(
-    [],
-  );
   const [loadingDropdowns, setLoadingDropdowns] = useState(true);
 
   const [loading, setLoading] = useState(false);
@@ -104,10 +125,10 @@ const PlansManagement = () => {
   ];
 
   const billingIntervals = ["Monthly", "Yearly"];
-  const contractValidities = ["1 Year", "2 Years", "Lifetime"];
+  const contractValidities = ["1 Year", "2 Years"];
   const pricingModels = [
-    "Fixed (Flat Account-based)",
-    "License-based (Variable per Unit)",
+    "Fixed",
+    "License-based",
   ];
 
   // Fetch dropdown data on component mount
@@ -121,6 +142,21 @@ const PlansManagement = () => {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (!currencies.length || !formData.currencyId) return;
+    const selectedCurrency = currencies.find(
+      (currency) => currency.id === Number(formData.currencyId),
+    );
+    if (!selectedCurrency?.value) return;
+    const code = selectedCurrency.value.split(" - ")[0];
+    if (code && code !== formData.settlementCurrency) {
+      setFormData((prev) => ({
+        ...prev,
+        settlementCurrency: code,
+      }));
+    }
+  }, [currencies, formData.currencyId, formData.settlementCurrency]);
+
   // Apply pending entitlements when formModules loads after plan details
   useEffect(() => {
     if (pendingPlanData && formModules.length > 0) {
@@ -128,7 +164,7 @@ const PlansManagement = () => {
       console.log("📦 Form Modules:", formModules);
       console.log(
         "🎯 Pending Entitlement IDs:",
-        pendingPlanData.entitlementModuleIds,
+        pendingPlanData.solutionIds,
       );
 
       const updatedEntitlements: Record<number, boolean> = {};
@@ -140,10 +176,10 @@ const PlansManagement = () => {
 
       // Set selected ones to true
       if (
-        pendingPlanData.entitlementModuleIds &&
-        Array.isArray(pendingPlanData.entitlementModuleIds)
+        pendingPlanData.solutionIds &&
+        Array.isArray(pendingPlanData.solutionIds)
       ) {
-        pendingPlanData.entitlementModuleIds.forEach((moduleId: number) => {
+        pendingPlanData.solutionIds.forEach((moduleId: number) => {
           updatedEntitlements[moduleId] = true;
         });
       }
@@ -174,16 +210,20 @@ const PlansManagement = () => {
         }
       }
 
-      // Fetch form modules for entitlement matrix
-      const formModulesResponse = await getFormModulesDropdown();
-      console.log("📦 Form Modules Response:", formModulesResponse);
-
-      if (formModulesResponse?.success && formModulesResponse?.data) {
-        setFormModules(formModulesResponse.data);
+      // Fetch solutions for entitlement matrix
+      const solutionsResponse = await getSolutions();
+      if (solutionsResponse?.success && solutionsResponse?.data) {
+        const mappedSolutions = solutionsResponse.data.map((item: any) => ({
+          id: Number(item?.id || 0),
+          value: String(
+            item?.name || item?.solutionName || item?.value || `Solution ${item?.id || ""}`,
+          ),
+        }));
+        setFormModules(mappedSolutions);
 
         // Initialize entitlements with false for all modules
         const initialEntitlements: Record<number, boolean> = {};
-        formModulesResponse.data.forEach((module: FormModule) => {
+        mappedSolutions.forEach((module: FormModule) => {
           initialEntitlements[module.id] = false;
         });
 
@@ -194,15 +234,15 @@ const PlansManagement = () => {
 
         // If we have pending plan data (from edit mode), apply the entitlements now
         if (
-          pendingPlanData?.entitlementModuleIds &&
-          Array.isArray(pendingPlanData.entitlementModuleIds)
+          pendingPlanData?.solutionIds &&
+          Array.isArray(pendingPlanData.solutionIds)
         ) {
           console.log(
             "⏳ Applying pending entitlements:",
-            pendingPlanData.entitlementModuleIds,
+            pendingPlanData.solutionIds,
           );
 
-          pendingPlanData.entitlementModuleIds.forEach((moduleId: number) => {
+          pendingPlanData.solutionIds.forEach((moduleId: number) => {
             initialEntitlements[moduleId] = true;
           });
 
@@ -236,43 +276,47 @@ const PlansManagement = () => {
         const data = response.data;
 
         console.log(
-          "🎯 Entitlement Module IDs from API:",
-          data.entitlementModuleIds,
+          "🎯 Solution IDs from API:",
+          data.solutionIds,
         );
         console.log("📦 Current Form Modules:", formModules);
 
-        // Map API response to form data
-        setFormData({
-          planName: data.structure?.planName || "",
-          categoryID: data.structure?.categoryID || 0,
-          tenantCategory: data.structure?.tenantCategory || "End User (Direct)",
-          currencyId: data.structure?.currencyId || 0,
-          settlementCurrency: data.structure?.settlementCurrency || "",
-          billingInterval: data.structure?.billingInterval || "Monthly",
-          contractValidity: data.structure?.contractValidity || "1 Year",
-          pricingModel:
-            data.structure?.pricingModel || "Fixed (Flat Account-based)",
-          initialBasePrice: data.setupFee?.initialBasePrice?.toString() || "",
-          amcCharge:
-            data.recurringFee?.annualMaintenanceCharge?.toString() || "",
-          platformSubCharge:
-            data.recurringFee?.platformSubscriptionCharge?.toString() || "",
-          hardwareRestrictions: data.hardwareBinding?.isHardwareLocked || false,
-          userCreationLimit:
-            data.userLimits?.userCreationLimit?.toString() || "",
-          supportNumber: data.support?.supportNumber || "",
-          supportEmail: data.support?.supportEmail || "",
-          supportInstructions: data.support?.internalInstructions || "",
-          basePrice: data.pricing?.basePrice?.toString() || "",
-          minimumPrice: data.pricing?.minimumPrice?.toString() || "",
-          allowPriceChange: data.adminGuard?.allowPriceChange ?? true,
-          forceSyncOnChange: data.adminGuard?.forceSyncOnChange ?? true,
+        setFormData((prev) => {
+          const selectedCurrency = currencies.find(
+            (currency) => currency.id === Number(data?.currencyId || 0),
+          );
+          const currencyCode = selectedCurrency?.value
+            ? selectedCurrency.value.split(" - ")[0]
+            : prev.settlementCurrency;
+
+          return {
+            ...prev,
+            accountId: Number(data?.accountId || prev.accountId || 1),
+            planName: String(data?.planName || ""),
+            description: String(data?.description || ""),
+            categoryID: Number(data?.planCategoryId || prev.categoryID || 1),
+            currencyId: Number(data?.currencyId || 0),
+            settlementCurrency: currencyCode,
+            billingInterval:
+              Number(data?.billingCycleId || 1) === 2 ? "Yearly" : "Monthly",
+            contractValidity:
+              Number(data?.contractDuration || 12) === 24 ? "2 Years" : "1 Year",
+            pricingModel: String(data?.pricingModel || "Fixed"),
+            planStatus: String(data?.planStatus || "Active"),
+            tierId: Number(data?.tierId || 1),
+            initialBasePrice: String(data?.baseRate ?? ""),
+            minUnits: String(data?.minUnits ?? ""),
+            maxUnits: String(data?.maxUnits ?? ""),
+            licensePricePerUnit: String(data?.licensePricePerUnit ?? ""),
+            discountPercentage: String(data?.discountPercentage ?? ""),
+            amcCharge: String(data?.recurringAmcFee ?? ""),
+            platformSubCharge: String(data?.recurringPlatformFee ?? ""),
+          };
         });
 
         // Handle entitlement module IDs
         if (
-          data.entitlementModuleIds &&
-          Array.isArray(data.entitlementModuleIds)
+          data.solutionIds && Array.isArray(data.solutionIds)
         ) {
           // If formModules are already loaded, apply entitlements immediately
           if (formModules.length > 0) {
@@ -288,7 +332,7 @@ const PlansManagement = () => {
             });
 
             // Set selected ones to true
-            data.entitlementModuleIds.forEach((moduleId: number) => {
+            data.solutionIds.forEach((moduleId: number) => {
               updatedEntitlements[moduleId] = true;
             });
 
@@ -299,7 +343,7 @@ const PlansManagement = () => {
             console.log(
               "⏳ Modules not loaded yet, storing plan data as pending",
             );
-            setPendingPlanData(data);
+            setPendingPlanData({ solutionIds: data.solutionIds });
           }
         }
       }
@@ -333,50 +377,40 @@ const PlansManagement = () => {
     setLoading(true);
     setSubmitStatus({ type: null, message: "" });
 
-    // Get selected entitlement module IDs
-    const entitlementModuleIds = Object.entries(entitlements)
+    // Get selected solution IDs
+    const solutionIds = Object.entries(entitlements)
       .filter(([_, enabled]) => enabled)
       .map(([id]) => parseInt(id));
 
-    // Map form data to API payload structure
+    const accountId = Number(formData.accountId || getStoredAccountId() || 1);
+    const isLicenseBased = formData.pricingModel === "License-based";
     const payload = {
-      structure: {
-        planName: formData.planName,
-        categoryID: formData.categoryID,
-        tenantCategory: formData.tenantCategory,
-        currencyId: formData.currencyId,
-        settlementCurrency: formData.settlementCurrency,
-        billingInterval: formData.billingInterval,
-        contractValidity: formData.contractValidity,
-        pricingModel: 1, // You may need to map this to a number based on your backend
-      },
-      setupFee: {
-        initialBasePrice: parseFloat(formData.initialBasePrice) || 0,
-      },
-      unitLicenses: [], // Add unit licenses if needed
-      recurringFee: {
-        annualMaintenanceCharge: parseFloat(formData.amcCharge) || 0,
-        platformSubscriptionCharge: parseFloat(formData.platformSubCharge) || 0,
-      },
-      entitlementModuleIds: entitlementModuleIds,
-      hardwareBinding: {
-        isHardwareLocked: formData.hardwareRestrictions,
-        allowedDeviceFamilyIds: [], // Add device family selection if needed
-      },
-      userLimits: {
-        userCreationLimit: parseInt(formData.userCreationLimit) || 0,
-      },
-      support: {
-        supportNumber: formData.supportNumber,
-        supportEmail: formData.supportEmail,
-        internalInstructions: formData.supportInstructions,
-      },
-      adminGuard: {
-        allowPriceChange: formData.allowPriceChange,
-        forceSyncOnChange: formData.forceSyncOnChange,
-      },
-      featureIds: [], // Add feature IDs if needed
-      addonIds: [], // Add addons if needed
+      accountId,
+      planName: formData.planName,
+      description: formData.description || formData.supportInstructions || "",
+      planCategoryId: Number(formData.categoryID || 1),
+      currencyId: Number(formData.currencyId || 1),
+      billingCycleId: formData.billingInterval === "Yearly" ? 2 : 1,
+      contractDuration: formData.contractValidity === "2 Years" ? 24 : 12,
+      pricingModel: isLicenseBased ? "License-based" : "Fixed",
+      planStatus: formData.planStatus || "Active",
+      tierId: Number(formData.tierId || 1),
+      baseRate: Number(formData.initialBasePrice || 0),
+      minUnits: isLicenseBased ? 0 : Number(formData.minUnits || 0),
+      maxUnits: isLicenseBased ? 0 : Number(formData.maxUnits || 0),
+      licensePricePerUnit: isLicenseBased
+        ? Number(formData.licensePricePerUnit || 0)
+        : 0,
+      discountPercentage: isLicenseBased
+        ? Number(formData.discountPercentage || 0)
+        : 0,
+      recurringPlatformFee: Number(formData.platformSubCharge || 0),
+      recurringAmcFee: Number(formData.amcCharge || 0),
+      solutionIds,
+      createdBy: accountId,
+      updatedBy: accountId,
+      createdDate: new Date().toISOString(),
+      updatedDate: new Date().toISOString(),
     };
 
     try {
@@ -448,6 +482,9 @@ const PlansManagement = () => {
     }
     return "$";
   };
+
+  const isLicenseBased = formData.pricingModel === "License-based";
+  const selectedCurrencyCode = formData.settlementCurrency || "USD";
 
   return (
     <div className={`${isDark ? "dark" : ""}`}>
@@ -736,25 +773,28 @@ const PlansManagement = () => {
                       ))}
                     </select>
                   </div>
-                </div>
-              </Card>
 
-              {/* Pricing */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* One-Time Setup Fee */}
-                <Card isDark={isDark}>
-                  <div className="mb-6">
-                    <h3
-                      className={`text-lg font-bold flex items-center gap-2 ${
-                        isDark ? "text-white" : "text-gray-900"
+                  <div>
+                    <label
+                      className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                        isDark ? "text-gray-400" : "text-gray-600"
                       }`}
                     >
-                      <CreditCard
-                        style={{ color: selectedColor }}
-                        className="w-5 h-5"
-                      />
-                      One-Time / Setup Fee
-                    </h3>
+                      Plan Status
+                    </label>
+                    <select
+                      name="planStatus"
+                      value={formData.planStatus}
+                      onChange={handleInputChange}
+                      className={`w-full px-4 py-3 rounded-lg border ${
+                        isDark
+                          ? "bg-gray-800 border-gray-700 text-white"
+                          : "bg-white border-gray-300 text-gray-900"
+                      } focus:ring-2 focus:ring-purple-500 outline-none transition-all`}
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
                   </div>
 
                   <div>
@@ -763,93 +803,304 @@ const PlansManagement = () => {
                         isDark ? "text-gray-400" : "text-gray-600"
                       }`}
                     >
-                      Initial Base Price (USD)
+                      Tier
                     </label>
-                    <input
-                      type="number"
-                      name="initialBasePrice"
-                      value={formData.initialBasePrice}
+                    <select
+                      name="tierId"
+                      value={formData.tierId}
                       onChange={handleInputChange}
-                      placeholder="0"
                       className={`w-full px-4 py-3 rounded-lg border ${
                         isDark
                           ? "bg-gray-800 border-gray-700 text-white"
                           : "bg-white border-gray-300 text-gray-900"
                       } focus:ring-2 focus:ring-purple-500 outline-none transition-all`}
-                    />
-                  </div>
-                </Card>
-
-                {/* Recurring Fees */}
-                <Card isDark={isDark}>
-                  <div className="mb-6">
-                    <h3
-                      className={`text-lg font-bold flex items-center gap-2 ${
-                        isDark ? "text-white" : "text-gray-900"
-                      }`}
                     >
-                      <DollarSign
-                        style={{ color: selectedColor }}
-                        className="w-5 h-5"
-                      />
-                      Recurring Fees (Year 2+)
-                    </h3>
-                    <p
-                      className={`text-sm mt-1 ${
-                        isDark ? "text-gray-400" : "text-gray-600"
-                      }`}
-                    >
-                      Annual maintenance and platform subscription.
-                    </p>
+                      <option value={1}>BASIC</option>
+                      <option value={2}>PRO</option>
+                      <option value={3}>ENTERPRISE</option>
+                    </select>
                   </div>
+                </div>
+              </Card>
 
-                  <div className="space-y-4">
-                    <div>
-                      <label
-                        className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
-                          isDark ? "text-gray-400" : "text-gray-600"
+              {/* Pricing */}
+              {isLicenseBased ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card isDark={isDark}>
+                    <div className="mb-6">
+                      <h3
+                        className={`text-lg font-bold flex items-center gap-2 ${
+                          isDark ? "text-white" : "text-gray-900"
                         }`}
                       >
-                        AMC Charge (USD)
-                      </label>
-                      <input
-                        type="number"
-                        name="amcCharge"
-                        value={formData.amcCharge}
-                        onChange={handleInputChange}
-                        placeholder="0"
-                        className={`w-full px-4 py-3 rounded-lg border ${
-                          isDark
-                            ? "bg-gray-800 border-gray-700 text-white"
-                            : "bg-white border-gray-300 text-gray-900"
-                        } focus:ring-2 focus:ring-purple-500 outline-none transition-all`}
-                      />
+                        <CreditCard
+                          style={{ color: selectedColor }}
+                          className="w-5 h-5"
+                        />
+                        License Pricing
+                      </h3>
                     </div>
 
-                    <div>
-                      <label
-                        className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
-                          isDark ? "text-gray-400" : "text-gray-600"
+                    <div className="space-y-4">
+                      <div>
+                        <label
+                          className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                            isDark ? "text-gray-400" : "text-gray-600"
+                          }`}
+                        >
+                          Plan Price (Per Unit) ({selectedCurrencyCode})
+                        </label>
+                        <input
+                          type="number"
+                          name="licensePricePerUnit"
+                          value={formData.licensePricePerUnit}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                          className={`w-full px-4 py-3 rounded-lg border ${
+                            isDark
+                              ? "bg-gray-800 border-gray-700 text-white"
+                              : "bg-white border-gray-300 text-gray-900"
+                          } focus:ring-2 focus:ring-purple-500 outline-none transition-all`}
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                            isDark ? "text-gray-400" : "text-gray-600"
+                          }`}
+                        >
+                          Inactive/Paused Discount (%)
+                        </label>
+                        <input
+                          type="number"
+                          name="discountPercentage"
+                          value={formData.discountPercentage}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                          className={`w-full px-4 py-3 rounded-lg border ${
+                            isDark
+                              ? "bg-gray-800 border-gray-700 text-white"
+                              : "bg-white border-gray-300 text-gray-900"
+                          } focus:ring-2 focus:ring-purple-500 outline-none transition-all`}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card isDark={isDark}>
+                    <div className="mb-6">
+                      <h3
+                        className={`text-lg font-bold flex items-center gap-2 ${
+                          isDark ? "text-white" : "text-gray-900"
                         }`}
                       >
-                        Platform Sub Charge (USD)
-                      </label>
-                      <input
-                        type="number"
-                        name="platformSubCharge"
-                        value={formData.platformSubCharge}
-                        onChange={handleInputChange}
-                        placeholder="0"
-                        className={`w-full px-4 py-3 rounded-lg border ${
-                          isDark
-                            ? "bg-gray-800 border-gray-700 text-white"
-                            : "bg-white border-gray-300 text-gray-900"
-                        } focus:ring-2 focus:ring-purple-500 outline-none transition-all`}
-                      />
+                        <DollarSign
+                          style={{ color: selectedColor }}
+                          className="w-5 h-5"
+                        />
+                        Recurring Fees (Year 2+)
+                      </h3>
                     </div>
-                  </div>
-                </Card>
-              </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label
+                          className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                            isDark ? "text-gray-400" : "text-gray-600"
+                          }`}
+                        >
+                          AMC Charge (Annual)
+                        </label>
+                        <input
+                          type="number"
+                          name="amcCharge"
+                          value={formData.amcCharge}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                          className={`w-full px-4 py-3 rounded-lg border ${
+                            isDark
+                              ? "bg-gray-800 border-gray-700 text-white"
+                              : "bg-white border-gray-300 text-gray-900"
+                          } focus:ring-2 focus:ring-purple-500 outline-none transition-all`}
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                            isDark ? "text-gray-400" : "text-gray-600"
+                          }`}
+                        >
+                          Platform Sub Charge
+                        </label>
+                        <input
+                          type="number"
+                          name="platformSubCharge"
+                          value={formData.platformSubCharge}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                          className={`w-full px-4 py-3 rounded-lg border ${
+                            isDark
+                              ? "bg-gray-800 border-gray-700 text-white"
+                              : "bg-white border-gray-300 text-gray-900"
+                          } focus:ring-2 focus:ring-purple-500 outline-none transition-all`}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card isDark={isDark}>
+                    <div className="mb-6">
+                      <h3
+                        className={`text-lg font-bold flex items-center gap-2 ${
+                          isDark ? "text-white" : "text-gray-900"
+                        }`}
+                      >
+                        <CreditCard
+                          style={{ color: selectedColor }}
+                          className="w-5 h-5"
+                        />
+                        Pricing & Unit Range
+                      </h3>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label
+                          className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                            isDark ? "text-gray-400" : "text-gray-600"
+                          }`}
+                        >
+                          Initial Base Price ({selectedCurrencyCode})
+                        </label>
+                        <input
+                          type="number"
+                          name="initialBasePrice"
+                          value={formData.initialBasePrice}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                          className={`w-full px-4 py-3 rounded-lg border ${
+                            isDark
+                              ? "bg-gray-800 border-gray-700 text-white"
+                              : "bg-white border-gray-300 text-gray-900"
+                          } focus:ring-2 focus:ring-purple-500 outline-none transition-all`}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label
+                            className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                              isDark ? "text-gray-400" : "text-gray-600"
+                            }`}
+                          >
+                            Min Allowed Units
+                          </label>
+                          <input
+                            type="number"
+                            name="minUnits"
+                            value={formData.minUnits}
+                            onChange={handleInputChange}
+                            placeholder="0"
+                            className={`w-full px-4 py-3 rounded-lg border ${
+                              isDark
+                                ? "bg-gray-800 border-gray-700 text-white"
+                                : "bg-white border-gray-300 text-gray-900"
+                            } focus:ring-2 focus:ring-purple-500 outline-none transition-all`}
+                          />
+                        </div>
+
+                        <div>
+                          <label
+                            className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                              isDark ? "text-gray-400" : "text-gray-600"
+                            }`}
+                          >
+                            Max Allowed Units
+                          </label>
+                          <input
+                            type="number"
+                            name="maxUnits"
+                            value={formData.maxUnits}
+                            onChange={handleInputChange}
+                            placeholder="0"
+                            className={`w-full px-4 py-3 rounded-lg border ${
+                              isDark
+                                ? "bg-gray-800 border-gray-700 text-white"
+                                : "bg-white border-gray-300 text-gray-900"
+                            } focus:ring-2 focus:ring-purple-500 outline-none transition-all`}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card isDark={isDark}>
+                    <div className="mb-6">
+                      <h3
+                        className={`text-lg font-bold flex items-center gap-2 ${
+                          isDark ? "text-white" : "text-gray-900"
+                        }`}
+                      >
+                        <DollarSign
+                          style={{ color: selectedColor }}
+                          className="w-5 h-5"
+                        />
+                        Recurring Fees (Year 2+)
+                      </h3>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label
+                          className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                            isDark ? "text-gray-400" : "text-gray-600"
+                          }`}
+                        >
+                          AMC Charge (Annual)
+                        </label>
+                        <input
+                          type="number"
+                          name="amcCharge"
+                          value={formData.amcCharge}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                          className={`w-full px-4 py-3 rounded-lg border ${
+                            isDark
+                              ? "bg-gray-800 border-gray-700 text-white"
+                              : "bg-white border-gray-300 text-gray-900"
+                          } focus:ring-2 focus:ring-purple-500 outline-none transition-all`}
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          className={`block text-xs font-bold mb-2 uppercase tracking-wide ${
+                            isDark ? "text-gray-400" : "text-gray-600"
+                          }`}
+                        >
+                          Platform Sub Charge
+                        </label>
+                        <input
+                          type="number"
+                          name="platformSubCharge"
+                          value={formData.platformSubCharge}
+                          onChange={handleInputChange}
+                          placeholder="0"
+                          className={`w-full px-4 py-3 rounded-lg border ${
+                            isDark
+                              ? "bg-gray-800 border-gray-700 text-white"
+                              : "bg-white border-gray-300 text-gray-900"
+                          } focus:ring-2 focus:ring-purple-500 outline-none transition-all`}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              )}
 
               {/* Entitlement Matrix */}
               <Card isDark={isDark}>

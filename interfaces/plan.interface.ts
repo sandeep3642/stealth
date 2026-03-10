@@ -3,11 +3,9 @@ export interface PlanData {
   planId: string;
   no: number;
   planName: string;
-  duration: string;
-  category: string;
-  pricing: string;
-  userLimit: string;
-  status: string;
+  tenantCategory?: string;
+  initialBasePrice?: string;
+  isActive?: string;
 }
 
 export interface CardProps {

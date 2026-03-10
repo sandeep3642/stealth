@@ -41,7 +41,6 @@ const ManagePlans: React.FC = () => {
     {
       key: "tenantCategory",
       label: "CATEGORY",
-      type: "badge" as const,
       visible: true,
     },
     {
@@ -75,7 +74,7 @@ const ManagePlans: React.FC = () => {
       const response = await deletePlan(row.planId);
       if (response && response.statusCode === 200) {
         toast.success(response.message);
-        setData(response.data.items);
+        getPlansList();
       } else {
         toast.error(response.message || "Something went wrong.");
       }
@@ -97,8 +96,18 @@ const ManagePlans: React.FC = () => {
     try {
       const response = await getPlans(pageNo, pageSize, debouncedQuery);
       if (response && response.statusCode === 200) {
-        // toast.success(response.message);
-        setData(response.data.items);
+        const items = Array.isArray(response?.data?.items)
+          ? response.data.items
+          : [];
+        const mapped = items.map((item: any, index: number) => ({
+          planId: String(item?.id || 0),
+          no: (pageNo - 1) * pageSize + index + 1,
+          planName: String(item?.planName || "-"),
+          tenantCategory: String(item?.pricingModel || "-"),
+          initialBasePrice: `₹${Number(item?.baseRate || 0).toLocaleString("en-IN")}`,
+          isActive: String(item?.planStatus || "Inactive"),
+        }));
+        setData(mapped);
       }
 
       // Mock data for now

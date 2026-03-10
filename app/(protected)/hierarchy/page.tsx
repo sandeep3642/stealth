@@ -1,60 +1,85 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { useTheme } from "@/context/ThemeContext";
 import HierarchicalTable from "@/components/HierarchicalTable";
 import PageHeader from "@/components/PageHeader";
-import ThemeCustomizer from "@/components/ThemeCustomizer";
+import type { HierarchyNode } from "@/interfaces/table.interface";
+import { getAccountHierarchy } from "@/services/accountService";
+
+interface AccountHierarchyApiNode {
+  accountId?: number;
+  accountName?: string;
+  accountCode?: string;
+  status?: boolean;
+  children?: AccountHierarchyApiNode[];
+}
+
+const TYPE_BY_LEVEL = [
+  "DISTRIBUTOR",
+  "ENTERPRISE",
+  "DEALER",
+  "SUB ACCOUNT",
+] as const;
+
+const toHierarchyNodes = (
+  nodes: AccountHierarchyApiNode[],
+  level = 0,
+): HierarchyNode[] => {
+  if (!Array.isArray(nodes)) return [];
+
+  return nodes.map((node, index) => {
+    const id = String(node?.accountId || `${level}-${index}`);
+    const name = String(node?.accountName || "Unknown Account");
+    const code = String(node?.accountCode || `ACC-${id}`);
+    const children = toHierarchyNodes(node?.children || [], level + 1);
+
+    return {
+      id,
+      name,
+      type: TYPE_BY_LEVEL[Math.min(level, TYPE_BY_LEVEL.length - 1)],
+      code,
+      status: node?.status ? "Active" : "Suspended",
+      managed: `${children.length} Child ${children.length === 1 ? "Account" : "Accounts"}`,
+      avatar: name
+        .split(" ")
+        .filter(Boolean)
+        .map((item) => item[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase(),
+      avatarColor: level % 2 === 0 ? "#8b5cf6" : "#64748b",
+      children,
+    };
+  });
+};
 
 const Hierarchy: React.FC = () => {
   const { isDark } = useTheme();
+  const [hierarchyData, setHierarchyData] = useState<HierarchyNode[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const hierarchyData = [
-    {
-      id: "1",
-      name: "Alpha Logistics",
-      type: "DISTRIBUTOR",
-      code: "ACC-001",
-      status: "Active",
-      managed: "45 Assets",
-      avatar: "AL",
-      avatarColor: "#8b5cf6",
-      children: [
-        {
-          id: "2",
-          name: "Beta Fleet Services",
-          type: "ENTERPRISE",
-          code: "ACC-002",
-          status: "Active",
-          managed: "20 Assets",
-          avatar: "BE",
-          avatarColor: "#e5e7eb",
-          children: [
-            {
-              id: "3",
-              name: "Delta Quick Cabs",
-              type: "DEALER",
-              code: "ACC-004",
-              status: "Under Review",
-              managed: "15 Assets",
-              avatar: "DE",
-              avatarColor: "#e5e7eb",
-            },
-          ],
-        },
-        {
-          id: "4",
-          name: "Gamma Transport",
-          type: "RESELLER",
-          code: "ACC-003",
-          status: "Suspended",
-          managed: "0 Assets",
-          avatar: "GA",
-          avatarColor: "#8b5cf6",
-        },
-      ],
-    },
-  ];
+  useEffect(() => {
+    const fetchHierarchy = async () => {
+      try {
+        setLoading(true);
+        const response = await getAccountHierarchy();
+        const raw = Array.isArray(response?.rawHierarchy)
+          ? response.rawHierarchy
+          : [];
+        setHierarchyData(toHierarchyNodes(raw));
+      } catch (error) {
+        console.error("Error fetching account hierarchy:", error);
+        toast.error("Failed to load hierarchy data");
+        setHierarchyData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHierarchy();
+  }, []);
 
   const handleEdit = (node: any) => {
     console.log("Edit node:", node);
@@ -68,16 +93,23 @@ const Hierarchy: React.FC = () => {
           title="Hierarchy"
           subtitle="Manage identities, taxonomies, and global parameters."
           breadcrumbs={[{ label: "Accounts" }, { label: "Hierarchy" }]}
+          showButton={false}
+          showBulkUpload={false}
         />
 
-        {/* Hierarchical Table */}
-        <HierarchicalTable
-          title="RELATIONAL MAPPING"
-          subtitle="Recursive visualization of distributor-dealer relationships."
-          data={hierarchyData}
-          onEdit={handleEdit}
-          showSearch={true}
-        />
+        {loading ? (
+          <div className="flex items-center justify-center p-8">
+            <p>Loading hierarchy...</p>
+          </div>
+        ) : (
+          <HierarchicalTable
+            title="RELATIONAL MAPPING"
+            subtitle="Recursive visualization of distributor-dealer relationships."
+            data={hierarchyData}
+            onEdit={handleEdit}
+            showSearch={true}
+          />
+        )}
       </div>
     </div>
   );
