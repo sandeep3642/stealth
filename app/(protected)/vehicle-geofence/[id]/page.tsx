@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Link2, MapPin } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter, useParams } from "next/navigation";
@@ -10,6 +11,7 @@ import {
   getAllAccounts,
   getGeofenceDropdownByAccount,
   getVehicleDropdown,
+  getFormRightForPath,
 } from "@/services/commonServie";
 import {
   getVehicleGeofenceById,
@@ -35,9 +37,17 @@ const AddEditVehicleGeofence: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
   const params = useParams();
+  const t = useTranslations("pages.vehicleGeofence.detail");
 
   const assignmentId = params?.id ? Number(params.id) : 0;
   const isEditMode = assignmentId > 0;
+  const pageRight = getFormRightForPath("/vehicle-geofence");
+  const canRead = pageRight ? Boolean(pageRight.canRead) : true;
+  const canSubmit = pageRight
+    ? isEditMode
+      ? Boolean(pageRight.canUpdate)
+      : Boolean(pageRight.canWrite)
+    : true;
 
   const [accounts, setAccounts] = useState<DropdownOption[]>([]);
   const [vehicles, setVehicles] = useState<DropdownOption[]>([]);
@@ -107,7 +117,7 @@ const AddEditVehicleGeofence: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching dropdowns:", error);
-      toast.error("Failed to load dropdown data");
+      toast.error(t("toast.loadDropdownFailed"));
     }
   };
 
@@ -118,7 +128,7 @@ const AddEditVehicleGeofence: React.FC = () => {
       const data = response?.data || response;
 
       if (!data) {
-        toast.error("Vehicle geofence assignment not found");
+        toast.error(t("toast.notFound"));
         router.push("/vehicle-geofence");
         return;
       }
@@ -134,7 +144,7 @@ const AddEditVehicleGeofence: React.FC = () => {
       await fetchDropdowns(Number(data.accountId || 0));
     } catch (error) {
       console.error("Error fetching assignment by id:", error);
-      toast.error("Failed to fetch assignment details");
+      toast.error(t("toast.fetchFailed"));
       router.push("/vehicle-geofence");
     } finally {
       setFetchingData(false);
@@ -193,9 +203,18 @@ const AddEditVehicleGeofence: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    if (!formData.accountId) return toast.error("Please select account");
-    if (!formData.vehicleId) return toast.error("Please select vehicle");
-    if (!formData.geofenceId) return toast.error("Please select geofence");
+    if (!canSubmit) {
+      toast.error(
+        isEditMode
+          ? t("toast.noUpdatePermission")
+          : t("toast.noAddPermission"),
+      );
+      return;
+    }
+
+    if (!formData.accountId) return toast.error(t("toast.selectAccount"));
+    if (!formData.vehicleId) return toast.error(t("toast.selectVehicle"));
+    if (!formData.geofenceId) return toast.error(t("toast.selectGeofence"));
 
     const { userId } = getUserData();
 
@@ -227,16 +246,16 @@ const AddEditVehicleGeofence: React.FC = () => {
         toast.success(
           response?.message ||
             (isEditMode
-              ? "Assignment updated successfully!"
-              : "Assignment created successfully!"),
+              ? t("toast.updated")
+              : t("toast.created")),
         );
         router.push("/vehicle-geofence");
       } else {
-        toast.error(response?.message || "Save failed");
+        toast.error(response?.message || t("toast.saveFailed"));
       }
     } catch (error) {
       console.error("Error saving vehicle geofence:", error);
-      toast.error("An error occurred while saving assignment");
+      toast.error(t("toast.saveError"));
     } finally {
       setLoading(false);
     }
@@ -246,7 +265,19 @@ const AddEditVehicleGeofence: React.FC = () => {
     return (
       <div className={`${isDark ? "dark" : ""}`}>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <p className="text-foreground">Loading assignment details...</p>
+          <p className="text-foreground">{t("loadingDetails")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canRead) {
+    return (
+      <div className={`${isDark ? "dark" : ""}`}>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <p className="text-foreground">
+            {t("noReadPermission")}
+          </p>
         </div>
       </div>
     );
@@ -258,7 +289,7 @@ const AddEditVehicleGeofence: React.FC = () => {
         <div className="w-full max-w-4xl">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-6 px-4 sm:px-0">
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
-              {isEditMode ? "Edit Vehicle Geofence" : "Assign Vehicle Geofence"}
+              {isEditMode ? t("editTitle") : t("createTitle")}
             </h1>
           </div>
 
@@ -276,12 +307,12 @@ const AddEditVehicleGeofence: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-foreground mb-1">
-                    Assignment Parameters
+                    {t("section.assignmentParameters")}
                   </h2>
                   <p className="text-sm text-foreground opacity-60">
                     {isEditMode
-                      ? "Update mapped geofence details for this vehicle."
-                      : "Create a new vehicle-geofence assignment."}
+                      ? t("section.editDescription")
+                      : t("section.createDescription")}
                   </p>
                 </div>
               </div>
@@ -289,7 +320,7 @@ const AddEditVehicleGeofence: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    Account <span className="text-red-500">*</span>
+                    {t("fields.account")} <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="accountId"
@@ -302,7 +333,7 @@ const AddEditVehicleGeofence: React.FC = () => {
                         : "bg-white border-gray-300 text-gray-900"
                     } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
-                    <option value={0}>Select Account</option>
+                    <option value={0}>{t("fields.selectAccount")}</option>
                     {accounts.map((option) => (
                       <option key={option.id} value={option.id}>
                         {option.value}
@@ -313,7 +344,7 @@ const AddEditVehicleGeofence: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    Vehicle <span className="text-red-500">*</span>
+                    {t("fields.vehicle")} <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="vehicleId"
@@ -326,7 +357,7 @@ const AddEditVehicleGeofence: React.FC = () => {
                         : "bg-white border-gray-300 text-gray-900"
                     } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
-                    <option value={0}>Select Vehicle</option>
+                    <option value={0}>{t("fields.selectVehicle")}</option>
                     {vehicles.map((option) => (
                       <option key={option.id} value={option.id}>
                         {option.value}
@@ -337,7 +368,7 @@ const AddEditVehicleGeofence: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    Geofence <span className="text-red-500">*</span>
+                    {t("fields.geofence")} <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="geofenceId"
@@ -350,7 +381,7 @@ const AddEditVehicleGeofence: React.FC = () => {
                         : "bg-white border-gray-300 text-gray-900"
                     } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
-                    <option value={0}>Select Geofence</option>
+                    <option value={0}>{t("fields.selectGeofence")}</option>
                     {geofences.map((option) => (
                       <option key={option.id} value={option.id}>
                         {option.value}
@@ -362,11 +393,11 @@ const AddEditVehicleGeofence: React.FC = () => {
 
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-foreground mb-2">
-                  Remarks
+                  {t("fields.remarks")}
                 </label>
                 <textarea
                   name="remarks"
-                  placeholder="Add optional notes..."
+                  placeholder={t("fields.remarksPlaceholder")}
                   value={formData.remarks}
                   onChange={handleChange}
                   rows={4}
@@ -384,11 +415,10 @@ const AddEditVehicleGeofence: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-base font-bold text-foreground mb-1">
-                        Assignment Status
+                        {t("section.statusTitle")}
                       </h3>
                       <p className="text-sm text-foreground opacity-60">
-                        Inactive assignment will be excluded from active
-                        mapping.
+                        {t("section.statusDescription")}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -433,21 +463,21 @@ const AddEditVehicleGeofence: React.FC = () => {
                       : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
                   }`}
                 >
-                  Cancel
+                  {t("buttons.cancel")}
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={loading}
+                  disabled={loading || !canSubmit}
                   className="px-8 py-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
                   style={{ backgroundColor: selectedColor }}
                 >
                   {loading
                     ? isEditMode
-                      ? "Updating..."
-                      : "Creating..."
+                      ? t("buttons.updating")
+                      : t("buttons.creating")
                     : isEditMode
-                      ? "Update Assignment"
-                      : "Create Assignment"}
+                      ? t("buttons.update")
+                      : t("buttons.create")}
                 </button>
               </div>
             </div>

@@ -16,6 +16,8 @@ export interface CommonTableProps {
   data: any[];
   onEdit?: (row: any) => void;
   onDelete?: (row: any) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
   showActions?: boolean;
   searchPlaceholder?: string;
   rowsPerPageOptions?: number[];

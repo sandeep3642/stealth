@@ -27,10 +27,8 @@ interface Device {
   serialId: string;
   category: string;
   type: string;
-  network: string;
   networkSub?: string;
   status: string;
-  firmware: string;
   lastUpdated: string;
 }
 
@@ -106,27 +104,6 @@ const DeviceRegistry: React.FC = () => {
       },
       { key: "type", label: "Type", visible: true },
       {
-        key: "network",
-        label: "Network",
-        visible: true,
-        render: (value: string, row: Device) => (
-          <div>
-            <span
-              className={`font-medium ${isDark ? "text-gray-300" : "text-gray-700"}`}
-            >
-              {value}
-            </span>
-            {row.networkSub && (
-              <p
-                className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
-              >
-                {row.networkSub}
-              </p>
-            )}
-          </div>
-        ),
-      },
-      {
         key: "status",
         label: "Status",
         visible: true,
@@ -147,20 +124,7 @@ const DeviceRegistry: React.FC = () => {
           );
         },
       },
-      {
-        key: "firmware",
-        label: "Firmware",
-        visible: true,
-        render: (value: string) => (
-          <span
-            className={`font-mono text-xs px-2 py-0.5 rounded ${
-              isDark ? "bg-gray-800 text-gray-300" : "bg-gray-100 text-gray-500"
-            }`}
-          >
-            {value}
-          </span>
-        ),
-      },
+    
       { key: "lastUpdated", label: "Last Updated", visible: true },
     ],
     [isDark, router, selectedColor],

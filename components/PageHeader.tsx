@@ -8,6 +8,10 @@ import { useColor } from "@/context/ColorContext";
 import { usePathname, useRouter } from "next/navigation";
 import { PageHeaderProps } from "@/interfaces/header.interface";
 import BulkUploadControls from "@/components/BulkUploadControls";
+import {
+  getFormRightForPath,
+  getPermissionPathFromPathname,
+} from "@/services/commonServie";
 
 const PageHeader: React.FC<PageHeaderProps> = ({
   title,
@@ -54,9 +58,10 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   };
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [canShowBulkUpload, setCanShowBulkUpload] = useState(showBulkUpload);
+  const [canShowWriteButton, setCanShowWriteButton] = useState(showWriteButton);
+  const [canShowExportButton, setCanShowExportButton] =
+    useState(showExportButton);
 
   const getModuleKeyFromPath = (): string => {
     if (!pathname) return "";
@@ -75,6 +80,54 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   };
 
   const resolvedModuleKey = bulkUploadModuleKey || getModuleKeyFromPath();
+
+  useEffect(() => {
+    const resolveActionPermissions = () => {
+      if (typeof window === "undefined") {
+        setCanShowBulkUpload(false);
+        setCanShowWriteButton(false);
+        setCanShowExportButton(false);
+        setMounted(true);
+        return;
+      }
+
+      const matchedRight = getFormRightForPath(pathname || "");
+      const normalizedCurrentPath = String(pathname || "")
+        .replace(/\/$/, "")
+        .toLowerCase();
+      const normalizedPermissionPath = getPermissionPathFromPathname(
+        pathname || "",
+      )
+        .replace(/\/$/, "")
+        .toLowerCase();
+      const isDetailRoute =
+        Boolean(normalizedCurrentPath) &&
+        normalizedCurrentPath !== normalizedPermissionPath;
+      const pathSegments = String(pathname || "")
+        .split("/")
+        .filter(Boolean);
+      const lastSegment = pathSegments[pathSegments.length - 1] || "";
+      const isCreateRoute = isDetailRoute && lastSegment === "0";
+      const shouldCheckUpdate = isDetailRoute && !isCreateRoute;
+
+      const hasWriteAccess = matchedRight
+        ? shouldCheckUpdate
+          ? Boolean(matchedRight.canUpdate)
+          : Boolean(matchedRight.canWrite)
+        : true;
+      const hasExportAccess = matchedRight
+        ? Boolean(matchedRight.canExport)
+        : true;
+      const hasBulkAccess = matchedRight ? matchedRight.isBulk !== false : true;
+
+      setCanShowWriteButton(showWriteButton && hasWriteAccess);
+      setCanShowExportButton(showExportButton && hasExportAccess);
+      setCanShowBulkUpload(showBulkUpload && hasBulkAccess);
+      setMounted(true);
+    };
+
+    resolveActionPermissions();
+  }, [pathname, showBulkUpload, showWriteButton, showExportButton]);
 
   return (
     <>
@@ -137,7 +190,10 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         </div>
 
         {/* Action Buttons */}
-        {(showFilterButton || showExportButton || showButton || showBulkUpload) && (
+        {(showFilterButton ||
+          canShowExportButton ||
+          (showButton && canShowWriteButton) ||
+          canShowBulkUpload) && (
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             {/* Filters Button */}
             {showFilterButton && (
@@ -155,7 +211,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             )}
 
             {/* Export Button */}
-            {showExportButton && (
+            {canShowExportButton && (
               <button
                 onClick={handleExportClick}
                 className={`cursor-pointer px-3 sm:px-4 py-2 sm:py-2.5 md:py-3 rounded-lg flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium transition-colors border ${
@@ -169,12 +225,12 @@ const PageHeader: React.FC<PageHeaderProps> = ({
               </button>
             )}
 
-            {mounted && showBulkUpload && (
+            {mounted && canShowBulkUpload && (
               <BulkUploadControls moduleKey={resolvedModuleKey} />
             )}
 
             {/* Primary Action Button */}
-            {showWriteButton && (
+            {showButton && canShowWriteButton && (
               <button
                 onClick={handleButtonClick}
                 style={{ background: selectedColor }}

@@ -1,16 +1,16 @@
 "use client";
 
-import { CheckCircle, MapPin, ShieldAlert } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
-import { MetricCard } from "@/components/CommonCard";
+import { toast } from "react-toastify";
 import CommonTable from "@/components/CommonTable";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import PageHeader from "@/components/PageHeader";
 import { useTheme } from "@/context/ThemeContext";
 import type { GeofenceZone, ZoneStatus } from "@/interfaces/geofence.interface";
+import { getFormRightForPath } from "@/services/commonServie";
 import { deleteGeofence, getGeofences } from "@/services/geofenceService";
-import { toast } from "react-toastify";
 
 const STATUS_STYLE: Record<ZoneStatus, string> = {
   enabled: "bg-emerald-100 text-emerald-700",
@@ -32,6 +32,9 @@ type ApiZone = {
 export default function GeofencePage() {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.geofence.list");
+  const pageRight = getFormRightForPath("/geofence");
+  const canRead = pageRight ? Boolean(pageRight.canRead) : true;
 
   const [zones, setZones] = useState<GeofenceZone[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -62,8 +65,8 @@ export default function GeofencePage() {
       return {
         id: String(zone?.id ?? `zone-${index}`),
         code: String(zone?.uniqueCode ?? `GF-${index + 1}`),
-        displayName: String(zone?.displayName ?? "Unnamed Zone"),
-        classification: String(zone?.classificationCode ?? "SAFE"),
+        displayName: String(zone?.displayName ?? t("fallback.unnamedZone")),
+        classification: String(zone?.classificationCode ?? t("fallback.safe")),
         geometry,
         status,
         color: zone?.colorTheme || "#6366f1",
@@ -81,7 +84,7 @@ export default function GeofencePage() {
             : undefined,
       };
     },
-    [],
+    [t],
   );
 
   const fetchGeofenceList = useCallback(async () => {
@@ -138,18 +141,18 @@ export default function GeofencePage() {
       const response = await deleteGeofence(zoneToDelete.id);
 
       if (response?.success || response?.statusCode === 200) {
-        toast.success(response?.message || "Geofence deleted successfully");
+        toast.success(response?.message || t("toast.deleted"));
         if (pageNo > 1 && zones.length === 1) {
           setPageNo((prev) => prev - 1);
         } else {
           fetchGeofenceList();
         }
       } else {
-        toast.error(response?.message || "Failed to delete geofence");
+        toast.error(response?.message || t("toast.deleteFailed"));
       }
     } catch (error) {
       console.error("Error deleting geofence:", error);
-      toast.error("Error deleting geofence");
+      toast.error(t("toast.deleteError"));
     } finally {
       setZoneToDelete(null);
       setIsDeleteDialogOpen(false);
@@ -159,7 +162,7 @@ export default function GeofencePage() {
   const columns = [
     {
       key: "identity",
-      label: "GEOFENCE IDENTITY",
+      label: t("table.identity"),
       visible: true,
       render: (_: string, row: GeofenceZone) => (
         <div className="flex items-center gap-2 min-w-0">
@@ -199,7 +202,7 @@ export default function GeofencePage() {
     },
     {
       key: "geometry",
-      label: "GEOMETRY",
+      label: t("table.geometry"),
       visible: true,
       render: (value: GeofenceZone["geometry"]) => (
         <span
@@ -213,7 +216,7 @@ export default function GeofencePage() {
     },
     {
       key: "status",
-      label: "STATUS",
+      label: t("table.status"),
       visible: true,
       render: (value: ZoneStatus) => (
         <span
@@ -225,6 +228,18 @@ export default function GeofencePage() {
     },
   ];
 
+  if (!canRead) {
+    return (
+      <div className={`${isDark ? "dark" : ""} mt-10`}>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <p className="text-foreground">
+            {t("noReadPermission")}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div
@@ -232,14 +247,14 @@ export default function GeofencePage() {
       >
         <div className="mb-4 sm:mb-6">
           <PageHeader
-            title="Geofence Master"
-            subtitle="Manage geofence identities, geometry, and active status."
+            title={t("title")}
+            subtitle={t("subtitle")}
             breadcrumbs={[
-              { label: "Fleet" },
-              { label: "Geofence Master" },
+              { label: t("breadcrumbs.fleet") },
+              { label: t("breadcrumbs.current") },
             ]}
             showButton={true}
-            buttonText="Add Geofence"
+            buttonText={t("addButton")}
             buttonRoute="/geofence/0"
             showExportButton={false}
             showFilterButton={false}
@@ -249,7 +264,7 @@ export default function GeofencePage() {
         <div className="w-full">
           {loadingZones ? (
             <div className="px-4 py-2 text-sm text-gray-500">
-              Loading geofence list...
+              {t("loading")}
             </div>
           ) : (
             <CommonTable
@@ -261,7 +276,7 @@ export default function GeofencePage() {
               onEdit={handleEdit}
               onDelete={handleDelete}
               showActions={true}
-              searchPlaceholder="Search geofences..."
+              searchPlaceholder={t("searchPlaceholder")}
               rowsPerPageOptions={[5, 10, 25, 50]}
               pageNo={pageNo}
               pageSize={pageSize}
@@ -282,10 +297,12 @@ export default function GeofencePage() {
             setZoneToDelete(null);
           }}
           onConfirm={confirmDelete}
-          title="Delete Geofence"
-          message={`Are you sure you want to delete "${zoneToDelete?.displayName}"? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
+          title={t("deleteTitle")}
+          message={t("deleteMessage", {
+            name: zoneToDelete?.displayName || "",
+          })}
+          confirmText={t("confirmDelete")}
+          cancelText={t("cancel")}
           type="danger"
           isDark={isDark}
         />

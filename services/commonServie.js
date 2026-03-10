@@ -62,13 +62,74 @@ export const hasPermission = (rights, pageUrl, permission = "canRead") => {
 
   const form = rights.find((right) => {
     // Normalize paths for comparison (remove trailing slashes)
-    const normalizedRightPath = right.pageUrl?.replace(/\/$/, "");
-    const normalizedPageUrl = pageUrl?.replace(/\/$/, "");
+    const normalizedRightPath = String(right.pageUrl || "")
+      .replace(/\/$/, "")
+      .toLowerCase();
+    const normalizedPageUrl = String(pageUrl || "")
+      .replace(/\/$/, "")
+      .toLowerCase();
 
     return normalizedRightPath === normalizedPageUrl;
   });
 
   return form ? form[permission] : false;
+};
+
+export const getStoredFormRights = () => {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const userString = localStorage.getItem("user");
+    const parsedUser = userString ? JSON.parse(userString) : null;
+    if (Array.isArray(parsedUser?.formRights)) {
+      return parsedUser.formRights;
+    }
+
+    const permissionsString = localStorage.getItem("permissions");
+    const parsedPermissions = permissionsString
+      ? JSON.parse(permissionsString)
+      : [];
+    return Array.isArray(parsedPermissions) ? parsedPermissions : [];
+  } catch (error) {
+    console.error("Failed to read permissions from localStorage:", error);
+    return [];
+  }
+};
+
+export const getPermissionPathFromPathname = (pathname = "") => {
+  const segments = String(pathname)
+    .split("/")
+    .filter(Boolean);
+  if (!segments.length) return "";
+
+  if (segments[0] === "users" && segments[1] === "roles-permissions") {
+    return "/users/roles-permissions";
+  }
+
+  if (segments[0] === "users" && segments[1] === "activity-logs") {
+    return "/users/activity-logs";
+  }
+
+  return `/${segments[0]}`;
+};
+
+export const getFormRightForPath = (pathname = "", rights) => {
+  const resolvedRights = Array.isArray(rights) ? rights : getStoredFormRights();
+  const permissionPath = getPermissionPathFromPathname(pathname);
+  const normalizedPermissionPath = String(permissionPath)
+    .replace(/\/$/, "")
+    .toLowerCase();
+
+  if (!normalizedPermissionPath) return null;
+
+  return (
+    resolvedRights.find((right) => {
+      const rightPath = String(right?.pageUrl || "")
+        .replace(/\/$/, "")
+        .toLowerCase();
+      return rightPath === normalizedPermissionPath;
+    }) || null
+  );
 };
 
 export const filterMenuByPermissions = (menuItems, rights) => {

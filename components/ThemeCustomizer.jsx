@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useLocale } from "next-intl";
 import { useTheme } from "../context/ThemeContext";
 import { useLayout } from "../context/LayoutContext";
 import { useColor } from "../context/ColorContext";
@@ -19,6 +20,8 @@ export default function ThemeCustomizer() {
   const { isDark, setIsDark, setPrimaryHsl } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const { layout, setLayout } = useLayout();
+  const activeLocale = useLocale();
+  const [locale, setLocale] = useState(activeLocale);
 
   const {
     selectedColor,
@@ -37,9 +40,27 @@ export default function ThemeCustomizer() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    setLocale(activeLocale);
+  }, [activeLocale]);
+
   const handlePresetColor = (hex) => {
     handleColorChange(hex);
     setPrimaryHsl(hexToHsl(hex));
+  };
+
+  const handleLocaleChange = (nextLocale) => {
+    setLocale(nextLocale);
+    document.cookie = `locale=${nextLocale}; path=/; max-age=31536000; samesite=lax`;
+    const currentPath = window.location.pathname || "/";
+    const segments = currentPath.split("/").filter(Boolean);
+    const firstSegment = segments[0]?.toLowerCase();
+    const isPrefixed = firstSegment === "en" || firstSegment === "hi";
+    const restPath = isPrefixed ? `/${segments.slice(1).join("/")}` : currentPath;
+    const normalizedRest = restPath === "/" ? "" : restPath;
+    const nextPath =
+      nextLocale === "en" ? normalizedRest || "/" : `/${nextLocale}${normalizedRest}`;
+    window.location.href = `${nextPath}${window.location.search}`;
   };
 
   // Closed state button (floating gear)
@@ -143,6 +164,29 @@ export default function ThemeCustomizer() {
             ))}
           </div>
         </div> */}
+
+        {/* Menu Layout */}
+        <div>
+          <label
+            className={`block text-xs font-medium mb-3 ${
+              isDark ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
+            Language
+          </label>
+          <select
+            value={locale}
+            onChange={(e) => handleLocaleChange(e.target.value)}
+            className={`w-full rounded-lg border px-3 py-2.5 text-sm ${
+              isDark
+                ? "bg-gray-900 border-gray-700 text-gray-100"
+                : "bg-white border-gray-300 text-gray-800"
+            }`}
+          >
+            <option value="en">English</option>
+            <option value="hi">Hindi</option>
+          </select>
+        </div>
 
         {/* Menu Layout */}
         <div>

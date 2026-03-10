@@ -9,14 +9,14 @@ import {
   Plus,
   ShieldCheck,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import CommonTable from "@/components/CommonTable";
 import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { useTheme } from "@/context/ThemeContext";
-import { useColor } from "@/context/ColorContext";
 import { deleteDeviceMap, getDeviceMaps } from "@/services/devicemapService";
-import { getAllAccounts } from "@/services/commonServie";
+import { getAllAccounts, getFormRightForPath } from "@/services/commonServie";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
@@ -41,8 +41,10 @@ const STATIC_COUNTS = {
 
 const DeviceMap: React.FC = () => {
   const { isDark } = useTheme();
-  const { selectedColor } = useColor();
   const router = useRouter();
+  const t = useTranslations("pages.devicemap.list");
+  const pageRight = getFormRightForPath("/devicemap");
+  const canRead = pageRight ? Boolean(pageRight.canRead) : true;
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -61,36 +63,39 @@ const DeviceMap: React.FC = () => {
 
   const columns = useMemo(
     () => [
-      { key: "no", label: "NO", visible: true },
-      { key: "vehicleNo", label: "VEHICLE", visible: true },
-      { key: "deviceNo", label: "DEVICE", visible: true },
+      { key: "no", label: t("table.no"), visible: true },
+      { key: "vehicleNo", label: t("table.vehicle"), visible: true },
+      { key: "deviceNo", label: t("table.device"), visible: true },
       {
         key: "status",
-        label: "STATUS",
+        label: t("table.status"),
         type: "badge" as const,
         visible: true,
       },
       {
         key: "assignedAt",
-        label: "ASSIGNED ON",
+        label: t("table.assignedOn"),
         visible: true,
         render: (value: string) =>
           value ? new Date(value).toLocaleDateString("en-IN") : "-",
       },
     ],
-    [],
+    [t],
   );
 
   const normalizeStatus = (item: any): string => {
     if (typeof item?.status === "string" && item.status.trim()) {
+      const status = item.status.trim().toLowerCase();
+      if (status === "active") return t("status.active");
+      if (status === "inactive") return t("status.inactive");
       return item.status;
     }
 
     if (typeof item?.isActive === "boolean") {
-      return item.isActive ? "Active" : "Inactive";
+      return item.isActive ? t("status.active") : t("status.inactive");
     }
 
-    return "Active";
+    return t("status.active");
   };
 
   const mapRow = (item: any): DeviceMapRow => ({
@@ -188,7 +193,7 @@ const DeviceMap: React.FC = () => {
       setSummaryCounts(getSummaryCounts(response));
     } catch (error) {
       console.error("Error fetching device maps:", error);
-      toast.error("Failed to fetch device mappings");
+      toast.error(t("toast.fetchFailed"));
     } finally {
       setLoading(false);
       setIsInitialLoad(false);
@@ -229,19 +234,31 @@ const DeviceMap: React.FC = () => {
       const response = await deleteDeviceMap(selectedRow.id);
       if (response?.success || response?.statusCode === 200) {
         toast.success(
-          response?.message || "Device mapping deleted successfully",
+          response?.message || t("toast.deleted"),
         );
         fetchDeviceMaps();
       } else {
-        toast.error(response?.message || "Unable to delete device mapping");
+        toast.error(response?.message || t("toast.deleteFailed"));
       }
     } catch (error) {
       console.error("Error deleting device map:", error);
-      toast.error("Error deleting device mapping");
+      toast.error(t("toast.deleteError"));
     } finally {
       setSelectedRow(null);
     }
   };
+
+  if (!canRead) {
+    return (
+      <div className={`${isDark ? "dark" : ""} mt-10`}>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <p className="text-foreground">
+            {t("noReadPermission")}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`${isDark ? "dark" : ""} mt-10`}>
@@ -249,10 +266,16 @@ const DeviceMap: React.FC = () => {
         className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
       >
         <PageHeader
-          title="Vehicle Device Mapping"
-          subtitle="Manage mapped devices and assignment health."
-          breadcrumbs={[{ label: "Fleet" }, { label: "Vehicle Device Mapping" }]}
-          showButton={false}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[
+            { label: t("breadcrumbs.fleet") },
+            { label: t("breadcrumbs.current") },
+          ]}
+          showButton={true}
+          buttonText={t("addButton")}
+          buttonIcon={<Plus className="w-4 h-4" />}
+          buttonRoute="/devicemap/0"
         />
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 sm:mb-6">
@@ -273,7 +296,7 @@ const DeviceMap: React.FC = () => {
               }`}
             >
               {accounts.length === 0 && (
-                <option value={selectedAccountId}>All Accounts</option>
+                <option value={selectedAccountId}>{t("allAccounts")}</option>
               )}
               {accounts.map((account) => (
                 <option key={account.id} value={account.id}>
@@ -285,22 +308,12 @@ const DeviceMap: React.FC = () => {
               className={`w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${isDark ? "text-gray-300" : "text-gray-500"}`}
             />
           </div>
-
-          <button
-            type="button"
-            onClick={() => router.push("/devicemap/0")}
-            style={{ backgroundColor: selectedColor }}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
-          >
-            <Plus className="w-4 h-4" />
-            Add Vehicle Device Mapping
-          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <MetricCard
             icon={Link2}
-            label="TOTAL ASSIGNMENTS"
+            label={t("metrics.totalAssignments")}
             value={summaryCounts.totalAssignments}
             iconBgColor="bg-purple-100 dark:bg-purple-900/30"
             iconColor="text-purple-600 dark:text-purple-400"
@@ -308,7 +321,7 @@ const DeviceMap: React.FC = () => {
           />
           <MetricCard
             icon={ShieldCheck}
-            label="ACTIVE"
+            label={t("metrics.active")}
             value={summaryCounts.active}
             iconBgColor="bg-green-100 dark:bg-green-900/30"
             iconColor="text-green-600 dark:text-green-400"
@@ -316,7 +329,7 @@ const DeviceMap: React.FC = () => {
           />
           <MetricCard
             icon={AlertCircle}
-            label="WITH ISSUES"
+            label={t("metrics.withIssues")}
             value={summaryCounts.withIssues}
             iconBgColor="bg-orange-100 dark:bg-orange-900/30"
             iconColor="text-orange-600 dark:text-orange-400"
@@ -326,7 +339,7 @@ const DeviceMap: React.FC = () => {
 
         {loading ? (
           <div className="flex items-center justify-center p-8">
-            <p>Loading device maps...</p>
+            <p>{t("loading")}</p>
           </div>
         ) : (
           <CommonTable
@@ -335,7 +348,7 @@ const DeviceMap: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             showActions={true}
-            searchPlaceholder="Search device maps..."
+            searchPlaceholder={t("searchPlaceholder")}
             rowsPerPageOptions={[10, 25, 50, 100]}
             defaultRowsPerPage={10}
             pageNo={pageNo}
@@ -358,10 +371,10 @@ const DeviceMap: React.FC = () => {
             setSelectedRow(null);
           }}
           onConfirm={confirmDelete}
-          title="Delete Device Map"
-          message={`Are you sure you want to delete mapping for "${selectedRow?.vehicleNo}"? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
+          title={t("deleteTitle")}
+          message={t("deleteMessage", { name: selectedRow?.vehicleNo || "" })}
+          confirmText={t("confirmDelete")}
+          cancelText={t("cancel")}
           type="danger"
           isDark={isDark}
         />

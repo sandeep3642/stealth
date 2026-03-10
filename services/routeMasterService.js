@@ -145,7 +145,7 @@ export const getRouteMasterById = async (id) => {
           time: String(item?.time || "0"),
         })),
         isGeofenceRelated: true,
-        isActive: true,
+        isActive: Boolean(route?.isActive ?? true),
         createdBy: route?.createdBy || "",
       },
     };
@@ -219,6 +219,7 @@ export const saveRouteMaster = async (payload) => {
       endGeoId: Number(payload?.endGeofenceId || 0),
       totalDistance: String(payload?.totalDistance || "0"),
       totalTime: String(payload?.totalTime || "0"),
+      isActive: Boolean(payload?.isActive ?? true),
       stopDetails: buildStopDetails(
         payload?.startGeofenceId,
         payload?.endGeofenceId,
@@ -265,6 +266,7 @@ export const updateRouteMaster = async (id, payload) => {
       endGeoId: Number(payload?.endGeofenceId || 0),
       totalDistance: String(payload?.totalDistance || "0"),
       totalTime: String(payload?.totalTime || "0"),
+      isActive: Boolean(payload?.isActive ?? true),
       stopDetails: buildStopDetails(
         payload?.startGeofenceId,
         payload?.endGeofenceId,

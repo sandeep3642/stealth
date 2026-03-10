@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   Building2,
@@ -9,24 +8,25 @@ import {
   MapPin,
   Plus,
 } from "lucide-react";
-import CommonTable from "@/components/CommonTable";
-import PageHeader from "@/components/PageHeader";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import { MetricCard } from "@/components/CommonCard";
+import CommonTable from "@/components/CommonTable";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
+import PageHeader from "@/components/PageHeader";
 import { useTheme } from "@/context/ThemeContext";
-import { useColor } from "@/context/ColorContext";
-import { getAllAccounts } from "@/services/commonServie";
-import {
-  deleteVehicleGeofence,
-  getVehicleGeofences,
-} from "@/services/vehicleGeofenceService";
 import type {
   VehicleGeofenceItem,
   VehicleGeofenceRow,
   VehicleGeofenceSummary,
 } from "@/interfaces/vehicleGeofence.interface";
-import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { getAllAccounts, getFormRightForPath } from "@/services/commonServie";
+import {
+  deleteVehicleGeofence,
+  getVehicleGeofences,
+} from "@/services/vehicleGeofenceService";
 
 interface AccountOption {
   id: number;
@@ -41,8 +41,10 @@ const EMPTY_SUMMARY: VehicleGeofenceSummary = {
 
 const VehicleGeofencePage: React.FC = () => {
   const { isDark } = useTheme();
-  const { selectedColor } = useColor();
   const router = useRouter();
+  const t = useTranslations("pages.vehicleGeofence.list");
+  const pageRight = getFormRightForPath("/vehicle-geofence");
+  const canRead = pageRight ? Boolean(pageRight.canRead) : true;
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -64,26 +66,26 @@ const VehicleGeofencePage: React.FC = () => {
 
   const columns = useMemo(
     () => [
-      { key: "no", label: "NO", visible: true },
-      { key: "vehicleNo", label: "VEHICLE", visible: true },
-      { key: "geofenceName", label: "GEOFENCE", visible: true },
-      { key: "geometryType", label: "GEOMETRY", visible: true },
-      { key: "remarks", label: "REMARKS", visible: true },
+      { key: "no", label: t("table.no"), visible: true },
+      { key: "vehicleNo", label: t("table.vehicle"), visible: true },
+      { key: "geofenceName", label: t("table.geofence"), visible: true },
+      { key: "geometryType", label: t("table.geometry"), visible: true },
+      { key: "remarks", label: t("table.remarks"), visible: true },
       {
         key: "status",
-        label: "STATUS",
+        label: t("table.status"),
         type: "badge" as const,
         visible: true,
       },
       {
         key: "createdAt",
-        label: "CREATED ON",
+        label: t("table.createdOn"),
         visible: true,
         render: (value: string) =>
           value ? new Date(value).toLocaleString("en-IN") : "-",
       },
     ],
-    [],
+    [t],
   );
 
   const getAccountIdFromStorage = (): number => {
@@ -107,7 +109,7 @@ const VehicleGeofencePage: React.FC = () => {
     geofenceName: String(item?.geofenceName || "-"),
     geometryType: String(item?.geometryType || "-"),
     remarks: String(item?.remarks || "-"),
-    status: item?.isActive ? "Active" : "Inactive",
+    status: item?.isActive ? t("status.active") : t("status.inactive"),
     createdAt: String(item?.createdAt || ""),
   });
 
@@ -145,7 +147,7 @@ const VehicleGeofencePage: React.FC = () => {
       setTotalRecords(Number(listData?.totalRecords || listItems.length));
     } catch (error) {
       console.error("Error fetching vehicle geofence list:", error);
-      toast.error("Failed to fetch vehicle geofence assignments");
+      toast.error(t("toast.fetchFailed"));
     } finally {
       setLoading(false);
       setIsInitialLoad(false);
@@ -184,19 +186,31 @@ const VehicleGeofencePage: React.FC = () => {
     try {
       const response = await deleteVehicleGeofence(selectedRow.id);
       if (response?.success || response?.statusCode === 200) {
-        toast.success(response?.message || "Assignment deleted successfully");
+        toast.success(response?.message || t("toast.deleted"));
         fetchVehicleGeofences();
       } else {
-        toast.error(response?.message || "Unable to delete assignment");
+        toast.error(response?.message || t("toast.deleteFailed"));
       }
     } catch (error) {
       console.error("Error deleting vehicle geofence assignment:", error);
-      toast.error("Error deleting assignment");
+      toast.error(t("toast.deleteError"));
     } finally {
       setSelectedRow(null);
       setIsDeleteDialogOpen(false);
     }
   };
+
+  if (!canRead) {
+    return (
+      <div className={`${isDark ? "dark" : ""} mt-10`}>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <p className="text-foreground">
+            {t("noReadPermission")}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`${isDark ? "dark" : ""} mt-10`}>
@@ -204,13 +218,16 @@ const VehicleGeofencePage: React.FC = () => {
         className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
       >
         <PageHeader
-          title="Vehicle Geofence"
-          subtitle="Manage vehicle and geofence assignment mappings."
+          title={t("title")}
+          subtitle={t("subtitle")}
           breadcrumbs={[
-            { label: "Fleet" },
-            { label: "Vehicle Geofence" },
+            { label: t("breadcrumbs.fleet") },
+            { label: t("breadcrumbs.current") },
           ]}
-          showButton={false}
+          showButton={true}
+          buttonText={t("addButton")}
+          buttonIcon={<Plus className="w-4 h-4" />}
+          buttonRoute="/vehicle-geofence/0"
         />
 
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 sm:mb-6">
@@ -231,7 +248,7 @@ const VehicleGeofencePage: React.FC = () => {
               }`}
             >
               {accounts.length === 0 && (
-                <option value={selectedAccountId}>All Accounts</option>
+                <option value={selectedAccountId}>{t("allAccounts")}</option>
               )}
               {accounts.map((account) => (
                 <option key={account.id} value={account.id}>
@@ -243,22 +260,12 @@ const VehicleGeofencePage: React.FC = () => {
               className={`w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${isDark ? "text-gray-300" : "text-gray-500"}`}
             />
           </div>
-
-          <button
-            type="button"
-            onClick={() => router.push("/vehicle-geofence/0")}
-            style={{ backgroundColor: selectedColor }}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-white text-sm font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
-          >
-            <Plus className="w-4 h-4" />
-            Assign Vehicle Geofence
-          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <MetricCard
             icon={Link2}
-            label="TOTAL ASSIGNMENTS"
+            label={t("metrics.totalAssignments")}
             value={summary.totalAssignments}
             iconBgColor="bg-purple-100 dark:bg-purple-900/30"
             iconColor="text-purple-600 dark:text-purple-400"
@@ -266,7 +273,7 @@ const VehicleGeofencePage: React.FC = () => {
           />
           <MetricCard
             icon={MapPin}
-            label="ACTIVE"
+            label={t("metrics.active")}
             value={summary.active}
             iconBgColor="bg-green-100 dark:bg-green-900/30"
             iconColor="text-green-600 dark:text-green-400"
@@ -274,7 +281,7 @@ const VehicleGeofencePage: React.FC = () => {
           />
           <MetricCard
             icon={AlertCircle}
-            label="INACTIVE"
+            label={t("metrics.inactive")}
             value={summary.inactive}
             iconBgColor="bg-orange-100 dark:bg-orange-900/30"
             iconColor="text-orange-600 dark:text-orange-400"
@@ -284,7 +291,7 @@ const VehicleGeofencePage: React.FC = () => {
 
         {loading ? (
           <div className="flex items-center justify-center p-8">
-            <p>Loading vehicle geofence assignments...</p>
+            <p>{t("loading")}</p>
           </div>
         ) : (
           <CommonTable
@@ -293,7 +300,7 @@ const VehicleGeofencePage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             showActions={true}
-            searchPlaceholder="Search assignments..."
+            searchPlaceholder={t("searchPlaceholder")}
             rowsPerPageOptions={[10, 25, 50, 100]}
             defaultRowsPerPage={10}
             pageNo={pageNo}
@@ -316,10 +323,10 @@ const VehicleGeofencePage: React.FC = () => {
             setSelectedRow(null);
           }}
           onConfirm={confirmDelete}
-          title="Delete Assignment"
-          message={`Are you sure you want to delete "${selectedRow?.vehicleNo}" mapping? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
+          title={t("deleteTitle")}
+          message={t("deleteMessage", { name: selectedRow?.vehicleNo || "" })}
+          confirmText={t("confirmDelete")}
+          cancelText={t("cancel")}
           type="danger"
           isDark={isDark}
         />

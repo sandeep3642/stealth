@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useJsApiLoader } from "@react-google-maps/api";
+import { useTranslations } from "next-intl";
 import { useTheme } from "@/context/ThemeContext";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Save, Pencil } from "lucide-react";
@@ -20,7 +21,7 @@ import {
   getGeofenceById,
   updateGeofence,
 } from "@/services/geofenceService";
-import { getAllAccounts } from "@/services/commonServie";
+import { getAllAccounts, getFormRightForPath } from "@/services/commonServie";
 import {
   getGoogleMapsApiKey,
   GOOGLE_MAPS_LIBRARIES,
@@ -72,10 +73,18 @@ const getClassificationCode = (value: ZoneClassification): string =>
 export default function GeofenceDetailPage() {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.geofence.detail");
   const params = useParams();
   const searchParams = useSearchParams();
   const id = params?.id as string;
   const isCreateMode = id === "0";
+  const pageRight = getFormRightForPath("/geofence");
+  const canRead = pageRight ? Boolean(pageRight.canRead) : true;
+  const canSaveAction = pageRight
+    ? isCreateMode
+      ? Boolean(pageRight.canWrite)
+      : Boolean(pageRight.canUpdate)
+    : true;
   const returnTo = searchParams.get("returnTo");
 
   const [loading, setLoading] = useState(true);
@@ -166,7 +175,7 @@ export default function GeofenceDetailPage() {
       try {
         const response = await getGeofenceById(id);
         if (!response?.success) {
-          toast.error(response?.message || "Failed to load geofence");
+          toast.error(response?.message || t("toast.loadFailed"));
           setLoading(false);
           return;
         }
@@ -207,7 +216,7 @@ export default function GeofenceDetailPage() {
         setIsRedrawing(false); // edit mode starts in view mode, not drawing
       } catch (error) {
         console.error("Error loading geofence:", error);
-        toast.error("Error loading geofence");
+        toast.error(t("toast.loadError"));
       } finally {
         setLoading(false);
       }
@@ -297,7 +306,7 @@ export default function GeofenceDetailPage() {
     () => ({
       id: id || "preview",
       code,
-      displayName: displayName || "New Geofence",
+      displayName: displayName || t("fallback.newGeofence"),
       classification,
       geometry,
       status,
@@ -317,29 +326,39 @@ export default function GeofenceDetailPage() {
       center,
       radius,
       paths,
+      t,
     ],
   );
 
   // ─── Save handler ─────────────────────────────────────────────────────────
   const handleSave = async () => {
+    if (!canSaveAction) {
+      toast.error(
+        isCreateMode
+          ? t("toast.noAddPermission")
+          : t("toast.noUpdatePermission"),
+      );
+      return;
+    }
+
     if (!accountId) {
-      toast.error("Please select an account");
+      toast.error(t("toast.selectAccount"));
       return;
     }
     if (!code.trim() || !displayName.trim()) {
-      toast.error("Unique code and display name are required");
+      toast.error(t("toast.codeNameRequired"));
       return;
     }
     if (!shapeDrawn) {
       toast.error(
         geometry === "polygon"
-          ? "Please draw a polygon on the map before saving"
-          : "Please draw a circle on the map before saving",
+          ? t("toast.drawPolygon")
+          : t("toast.drawCircle"),
       );
       return;
     }
     if (isRedrawing) {
-      toast.error("Please finish drawing your shape on the map before saving");
+      toast.error(t("toast.finishDrawing"));
       return;
     }
 
@@ -359,7 +378,7 @@ export default function GeofenceDetailPage() {
             : [];
 
       if (coordinates.length === 0) {
-        toast.error("Please draw your geofence on the map before saving");
+        toast.error(t("toast.drawBeforeSave"));
         setSaving(false);
         return;
       }
@@ -388,8 +407,8 @@ export default function GeofenceDetailPage() {
       if (response?.success) {
         toast.success(
           isCreateMode
-            ? "Geofence created successfully"
-            : "Geofence updated successfully",
+            ? t("toast.created")
+            : t("toast.updated"),
         );
         if (returnTo && returnTo.startsWith("/")) {
           router.push(returnTo);
@@ -397,11 +416,11 @@ export default function GeofenceDetailPage() {
           router.push("/geofence");
         }
       } else {
-        toast.error(response?.message || "Failed to save geofence");
+        toast.error(response?.message || t("toast.saveFailed"));
       }
     } catch (error) {
       console.error("Error saving geofence:", error);
-      toast.error("Error saving geofence");
+      toast.error(t("toast.saveError"));
     } finally {
       setSaving(false);
     }
@@ -424,8 +443,20 @@ export default function GeofenceDetailPage() {
       >
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-500 mx-auto mb-3" />
-          <p className="text-sm text-gray-400">Loading zone...</p>
+          <p className="text-sm text-gray-400">{t("loadingDetails")}</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!canRead) {
+    return (
+      <div
+        className={`${isDark ? "dark" : ""} flex items-center justify-center h-screen`}
+      >
+        <p className="text-foreground">
+          {t("noReadPermission")}
+        </p>
       </div>
     );
   }
@@ -436,24 +467,24 @@ export default function GeofenceDetailPage() {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title={isCreateMode ? "Create Geofence" : "Edit Geofence"}
+          title={isCreateMode ? t("createTitle") : t("editTitle")}
           subtitle={
             isCreateMode
-              ? "Create new geofence with identity and geometry rules."
-              : "Update geofence identity and operational settings."
+              ? t("subtitleCreate")
+              : t("subtitleEdit")
           }
           breadcrumbs={[
-            { label: "Configurations" },
-            { label: "Geofence Library", href: "/geofence" },
-            { label: isCreateMode ? "Create" : code || "Edit" },
+            { label: t("breadcrumbs.configurations") },
+            { label: t("breadcrumbs.library"), href: "/geofence" },
+            { label: isCreateMode ? t("breadcrumbs.create") : code || t("breadcrumbs.edit") },
           ]}
           showButton={true}
           buttonText={
             saving
-              ? "Saving..."
+              ? t("buttons.saving")
               : isCreateMode
-                ? "Create Geofence"
-                : "Save Changes"
+                ? t("buttons.create")
+                : t("buttons.saveChanges")
           }
           buttonIcon={saving ? undefined : <Save className="w-4 h-4" />}
           onButtonClick={handleSave}
@@ -476,17 +507,17 @@ export default function GeofenceDetailPage() {
                 <h3
                   className={`text-[10px] font-bold tracking-widest mb-3 ${isDark ? "text-gray-400" : "text-gray-500"}`}
                 >
-                  IDENTITY & REGISTRY
+                  {t("section.identity")}
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className={labelCls}>ACCOUNT</label>
+                    <label className={labelCls}>{t("fields.account")}</label>
                     <select
                       value={accountId}
                       onChange={(e) => setAccountId(Number(e.target.value))}
                       className={inputCls}
                     >
-                      <option value={0}>Select account</option>
+                      <option value={0}>{t("fields.selectAccount")}</option>
                       {accounts.map((account) => (
                         <option key={account.id} value={account.id}>
                           {account.value}
@@ -495,7 +526,7 @@ export default function GeofenceDetailPage() {
                     </select>
                   </div>
                   <div>
-                    <label className={labelCls}>UNIQUE CODE</label>
+                    <label className={labelCls}>{t("fields.uniqueCode")}</label>
                     <input
                       type="text"
                       value={code}
@@ -504,7 +535,7 @@ export default function GeofenceDetailPage() {
                     />
                   </div>
                   <div>
-                    <label className={labelCls}>DISPLAY NAME</label>
+                    <label className={labelCls}>{t("fields.displayName")}</label>
                     <input
                       type="text"
                       value={displayName}
@@ -513,12 +544,12 @@ export default function GeofenceDetailPage() {
                     />
                   </div>
                   <div>
-                    <label className={labelCls}>LOCATION (CENTER)</label>
+                    <label className={labelCls}>{t("fields.locationCenter")}</label>
                     <div className="grid grid-cols-2 gap-2">
                       <input
                         type="number"
                         step="0.000001"
-                        placeholder="Latitude"
+                        placeholder={t("fields.latitude")}
                         value={center?.lat ?? ""}
                         onChange={(e) =>
                           setCenter((prev) => ({
@@ -531,7 +562,7 @@ export default function GeofenceDetailPage() {
                       <input
                         type="number"
                         step="0.000001"
-                        placeholder="Longitude"
+                        placeholder={t("fields.longitude")}
                         value={center?.lng ?? ""}
                         onChange={(e) =>
                           setCenter((prev) => ({
@@ -551,7 +582,7 @@ export default function GeofenceDetailPage() {
                           : "border-gray-200 text-gray-700 hover:bg-gray-50"
                       }`}
                     >
-                      Pick on Map
+                      {t("buttons.pickOnMap")}
                     </button>
                   </div>
                 </div>
@@ -562,11 +593,11 @@ export default function GeofenceDetailPage() {
                 <h3
                   className={`text-[10px] font-bold tracking-widest mb-3 ${isDark ? "text-gray-400" : "text-gray-500"}`}
                 >
-                  ZONE CONFIG
+                  {t("section.zoneConfig")}
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className={labelCls}>CLASSIFICATION</label>
+                    <label className={labelCls}>{t("fields.classification")}</label>
                     <select
                       value={classification}
                       onChange={(e) =>
@@ -583,7 +614,7 @@ export default function GeofenceDetailPage() {
                   </div>
 
                   <div>
-                    <label className={labelCls}>GEOMETRY TYPE</label>
+                    <label className={labelCls}>{t("fields.geometryType")}</label>
                     <div className="grid grid-cols-2 gap-3">
                       {(["circle", "polygon"] as GeometryType[]).map((item) => (
                         <button
@@ -606,15 +637,14 @@ export default function GeofenceDetailPage() {
                       <p
                         className={`mt-1.5 text-[10px] ${isDark ? "text-gray-500" : "text-gray-400"}`}
                       >
-                        Changing geometry type will require you to redraw the
-                        shape.
+                        {t("fields.geometryChangeHint")}
                       </p>
                     )}
                   </div>
 
                   {geometry === "circle" && (
                     <div>
-                      <label className={labelCls}>RADIUS (M)</label>
+                      <label className={labelCls}>{t("fields.radius")}</label>
                       <input
                         type="number"
                         value={radius}
@@ -625,19 +655,19 @@ export default function GeofenceDetailPage() {
                   )}
 
                   <div>
-                    <label className={labelCls}>STATUS</label>
+                    <label className={labelCls}>{t("fields.status")}</label>
                     <select
                       value={status}
                       onChange={(e) => setStatus(e.target.value as ZoneStatus)}
                       className={inputCls}
                     >
-                      <option value="enabled">Enabled</option>
-                      <option value="disabled">Disabled</option>
+                      <option value="enabled">{t("fields.enabled")}</option>
+                      <option value="disabled">{t("fields.disabled")}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className={labelCls}>COLOR THEME</label>
+                    <label className={labelCls}>{t("fields.colorTheme")}</label>
                     <div className="flex flex-wrap gap-2">
                       {PRESET_COLORS.map((item) => (
                         <button
@@ -679,14 +709,13 @@ export default function GeofenceDetailPage() {
                   {isRedrawing ? (
                     <>
                       <p>
-                        🖊️ Drawing mode active — click on the map to draw your{" "}
+                        {t("drawing.active")}{" "}
                         <strong>
-                          {geometry === "circle" ? "circle" : "polygon"}
+                          {geometry === "circle" ? t("drawing.circle") : t("drawing.polygon")}
                         </strong>
-                        .{" "}
                         {geometry === "polygon"
-                          ? "Click to add points, double-click to finish."
-                          : "Click center then drag to set radius."}
+                          ? t("drawing.polygonHelp")
+                          : t("drawing.circleHelp")}
                       </p>
                       {!isCreateMode && (
                         <button
@@ -694,13 +723,13 @@ export default function GeofenceDetailPage() {
                           onClick={handleCancelRedraw}
                           className="underline font-semibold"
                         >
-                          Cancel redraw
+                          {t("drawing.cancelRedraw")}
                         </button>
                       )}
                     </>
                   ) : shapeDrawn ? (
                     <div className="flex items-center justify-between">
-                      <span>✅ Shape ready.</span>
+                      <span>{t("drawing.shapeReady")}</span>
                       <button
                         type="button"
                         onClick={handleStartRedraw}
@@ -711,11 +740,11 @@ export default function GeofenceDetailPage() {
                         }`}
                       >
                         <Pencil className="w-3 h-3" />
-                        Redraw Shape
+                        {t("drawing.redraw")}
                       </button>
                     </div>
                   ) : (
-                    <p>⚠️ No shape drawn yet. Click on the map to begin.</p>
+                    <p>{t("drawing.notDrawn")}</p>
                   )}
                 </div>
               </section>
@@ -750,7 +779,7 @@ export default function GeofenceDetailPage() {
                 {isRedrawing && (
                   <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
                     <div className="bg-amber-500 text-white text-xs font-semibold px-4 py-1.5 rounded-full shadow-lg">
-                      ✏️ Drawing mode — draw your {geometry} on the map
+                      {t("drawing.overlay", { geometry })}
                     </div>
                   </div>
                 )}

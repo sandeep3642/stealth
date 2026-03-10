@@ -6,6 +6,7 @@ import { LayoutProvider } from "@/context/LayoutContext";
 import { ColorProvider } from "@/context/ColorContext";
 import { AuthProvider } from "@/context/AuthContext";
 import ToastProvider from "@/providers/ToastProvider";
+import AutoLocaleText from "@/providers/AutoLocaleText";
 import { applyWhiteLabelColors } from "@/utils/themeUtils";
 
 export default function RootClientWrapper({
@@ -29,6 +30,7 @@ export default function RootClientWrapper({
       <ThemeProvider>
         <LayoutProvider>
           <ColorProvider>
+            <AutoLocaleText />
             {children}
             <ToastProvider />
           </ColorProvider>

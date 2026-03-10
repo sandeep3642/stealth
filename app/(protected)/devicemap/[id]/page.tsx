@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Cpu, Link2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter, useParams } from "next/navigation";
@@ -14,6 +15,7 @@ import {
   getDeviceDropdown,
   getAllAccounts,
   getDeviceTypeDropdown,
+  getFormRightForPath,
   getSimDropdownByAccount,
   getVehicleDropdown,
 } from "@/services/commonServie";
@@ -69,9 +71,17 @@ const AddEditDeviceMap: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
   const params = useParams();
+  const t = useTranslations("pages.devicemap.detail");
 
   const deviceMapId = params?.id ? Number(params.id) : 0;
   const isEditMode = deviceMapId > 0;
+  const pageRight = getFormRightForPath("/devicemap");
+  const canRead = pageRight ? Boolean(pageRight.canRead) : true;
+  const canSubmit = pageRight
+    ? isEditMode
+      ? Boolean(pageRight.canUpdate)
+      : Boolean(pageRight.canWrite)
+    : true;
 
   const [accounts, setAccounts] = useState<DropdownOption[]>([]);
   const [vehicles, setVehicles] = useState<DropdownOption[]>([]);
@@ -157,7 +167,7 @@ const AddEditDeviceMap: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching dropdowns:", error);
-      toast.error("Failed to load dropdown data");
+      toast.error(t("toast.dropdownFailed"));
     }
   };
 
@@ -168,7 +178,7 @@ const AddEditDeviceMap: React.FC = () => {
       const data = response?.data || response;
 
       if (!data) {
-        toast.error("Device map details not found");
+        toast.error(t("toast.notFound"));
         router.push("/devicemap");
         return;
       }
@@ -202,7 +212,7 @@ const AddEditDeviceMap: React.FC = () => {
       await fetchDropdowns(Number(data.accountId || 0));
     } catch (error) {
       console.error("Error fetching device map by id:", error);
-      toast.error("Failed to fetch device map details");
+      toast.error(t("toast.fetchFailed"));
       router.push("/devicemap");
     } finally {
       setFetchingData(false);
@@ -284,11 +294,20 @@ const AddEditDeviceMap: React.FC = () => {
   }, [formData.fk_devicetypeid]);
 
   const handleSubmit = async () => {
-    if (!formData.accountId) return toast.error("Please select account");
-    if (!formData.fk_VehicleId) return toast.error("Please select vehicle");
+    if (!canSubmit) {
+      toast.error(
+        isEditMode
+          ? t("toast.noUpdatePermission")
+          : t("toast.noAddPermission"),
+      );
+      return;
+    }
+
+    if (!formData.accountId) return toast.error(t("toast.selectAccount"));
+    if (!formData.fk_VehicleId) return toast.error(t("toast.selectVehicle"));
     if (!formData.fk_devicetypeid)
-      return toast.error("Please select device type");
-    if (!formData.fk_DeviceId) return toast.error("Please select hardware");
+      return toast.error(t("toast.selectDeviceType"));
+    if (!formData.fk_DeviceId) return toast.error(t("toast.selectHardware"));
 
     const { userId } = getUserData();
     const createPayload: CreateDeviceMapPayload = {
@@ -327,16 +346,16 @@ const AddEditDeviceMap: React.FC = () => {
         toast.success(
           response?.message ||
             (isEditMode
-              ? "Device map updated successfully!"
-              : "Device map created successfully!"),
+              ? t("toast.updated")
+              : t("toast.created")),
         );
         router.push("/devicemap");
       } else {
-        toast.error(response?.message || "Save failed");
+        toast.error(response?.message || t("toast.saveFailed"));
       }
     } catch (error) {
       console.error("Error saving device map:", error);
-      toast.error("An error occurred while saving device map");
+      toast.error(t("toast.saveError"));
     } finally {
       setLoading(false);
     }
@@ -350,7 +369,19 @@ const AddEditDeviceMap: React.FC = () => {
     return (
       <div className={`${isDark ? "dark" : ""} `}>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <p className="text-foreground">Loading device map data...</p>
+          <p className="text-foreground">{t("loadingDetails")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canRead) {
+    return (
+      <div className={`${isDark ? "dark" : ""} `}>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <p className="text-foreground">
+            {t("noReadPermission")}
+          </p>
         </div>
       </div>
     );
@@ -363,7 +394,7 @@ const AddEditDeviceMap: React.FC = () => {
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0  mb-6 px-4 sm:px-0">
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
-              {isEditMode ? "Edit Device Map" : "Assign Device"}
+              {isEditMode ? t("editTitle") : t("createTitle")}
             </h1>
           </div>
 
@@ -383,12 +414,12 @@ const AddEditDeviceMap: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-foreground mb-1">
-                    Device Assignment Parameters
+                    {t("section.parameters")}
                   </h2>
                   <p className="text-sm text-foreground opacity-60">
                     {isEditMode
-                      ? "Update mapped device details for this vehicle."
-                      : "Create a new vehicle-device mapping."}
+                      ? t("section.editDescription")
+                      : t("section.createDescription")}
                   </p>
                 </div>
               </div>
@@ -396,7 +427,7 @@ const AddEditDeviceMap: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    Account <span className="text-red-500">*</span>
+                    {t("fields.account")} <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="accountId"
@@ -408,7 +439,7 @@ const AddEditDeviceMap: React.FC = () => {
                         : "bg-white border-gray-300 text-gray-900"
                     } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
-                    <option value={0}>Select Account</option>
+                    <option value={0}>{t("fields.selectAccount")}</option>
                     {accounts.map((option) => (
                       <option key={option.id} value={option.id}>
                         {option.value}
@@ -419,7 +450,7 @@ const AddEditDeviceMap: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    Vehicle <span className="text-red-500">*</span>
+                    {t("fields.vehicle")} <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="fk_VehicleId"
@@ -431,7 +462,7 @@ const AddEditDeviceMap: React.FC = () => {
                         : "bg-white border-gray-300 text-gray-900"
                     } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
-                    <option value={0}>Select Vehicle</option>
+                    <option value={0}>{t("fields.selectVehicle")}</option>
                     {vehicles.map((option) => (
                       <option key={option.id} value={option.id}>
                         {option.value}
@@ -442,7 +473,7 @@ const AddEditDeviceMap: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    Device Type <span className="text-red-500">*</span>
+                    {t("fields.deviceType")} <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="fk_devicetypeid"
@@ -454,7 +485,7 @@ const AddEditDeviceMap: React.FC = () => {
                         : "bg-white border-gray-300 text-gray-900"
                     } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
-                    <option value={0}>Select Device Type</option>
+                    <option value={0}>{t("fields.selectDeviceType")}</option>
                     {deviceTypes.map((option) => (
                       <option key={option.id} value={option.id}>
                         {option.value}
@@ -465,7 +496,7 @@ const AddEditDeviceMap: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    Hardware <span className="text-red-500">*</span>
+                    {t("fields.hardware")} <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="fk_DeviceId"
@@ -477,7 +508,7 @@ const AddEditDeviceMap: React.FC = () => {
                         : "bg-white border-gray-300 text-gray-900"
                     } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
-                    <option value={0}>Select Hardware</option>
+                    <option value={0}>{t("fields.selectHardware")}</option>
                     {hardware.map((option) => (
                       <option key={option.id} value={option.id}>
                         {option.value}
@@ -488,7 +519,7 @@ const AddEditDeviceMap: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    SIM <span className="text-red-500">*</span>
+                    {t("fields.sim")} <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="fk_simid"
@@ -500,7 +531,7 @@ const AddEditDeviceMap: React.FC = () => {
                         : "bg-white border-gray-300 text-gray-900"
                     } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                   >
-                    <option value={0}>Select SIM</option>
+                    <option value={0}>{t("fields.selectSim")}</option>
                     {sims.map((option) => (
                       <option key={option.id} value={option.id}>
                         {option.value}
@@ -511,12 +542,12 @@ const AddEditDeviceMap: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    SIM Number
+                    {t("fields.simNumber")}
                   </label>
                   <input
                     type="text"
                     name="simnno"
-                    placeholder="Enter SIM Number"
+                    placeholder={t("fields.simNumberPlaceholder")}
                     value={formData.simnno}
                     onChange={handleChange}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
@@ -535,7 +566,7 @@ const AddEditDeviceMap: React.FC = () => {
 
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-foreground mb-2">
-                  Installation Date
+                  {t("fields.installationDate")}
                 </label>
                 <input
                   type="datetime-local"
@@ -567,11 +598,11 @@ const AddEditDeviceMap: React.FC = () => {
               {/* Description Field */}
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-foreground mb-2">
-                  Remarks
+                  {t("fields.remarks")}
                 </label>
                 <textarea
                   name="remarks"
-                  placeholder="Add optional notes..."
+                  placeholder={t("fields.remarksPlaceholder")}
                   value={formData.remarks}
                   onChange={handleChange}
                   rows={4}
@@ -591,10 +622,10 @@ const AddEditDeviceMap: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-bold text-foreground mb-1">
-                      Mapping Status
+                      {t("section.statusTitle")}
                     </h3>
                     <p className="text-sm text-foreground opacity-60">
-                      Inactive mappings are excluded from active assignments.
+                      {t("section.statusDescription")}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
@@ -637,21 +668,21 @@ const AddEditDeviceMap: React.FC = () => {
                       : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
                   }`}
                 >
-                  Cancel
+                  {t("buttons.cancel")}
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={loading}
+                  disabled={loading || !canSubmit}
                   className="px-8 py-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
                   style={{ backgroundColor: selectedColor }}
                 >
                   {loading ? (
                     <>
                       <span className="animate-spin">⏳</span>
-                      {isEditMode ? "Updating..." : "Creating..."}
+                      {isEditMode ? t("buttons.updating") : t("buttons.creating")}
                     </>
                   ) : (
-                    <>{isEditMode ? "Update Mapping" : "Create Mapping"}</>
+                    <>{isEditMode ? t("buttons.update") : t("buttons.create")}</>
                   )}
                 </button>
               </div>

@@ -1,15 +1,19 @@
 "use client";
 import React, { useState } from "react";
 import { Search, ChevronDown, Edit2, Trash2 } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useColor } from "@/context/ColorContext";
 import { Column, CommonTableProps } from "@/interfaces/table.interface";
 import { useTheme } from "@/context/ThemeContext";
+import { getFormRightForPath } from "@/services/commonServie";
 
 const CommonTable: React.FC<CommonTableProps> = ({
   columns = [],
   data = [],
   onEdit,
   onDelete,
+  canEdit,
+  canDelete,
   showActions = true,
   searchPlaceholder = "Search...",
   rowsPerPageOptions = [10, 25, 50, 100],
@@ -25,6 +29,24 @@ const CommonTable: React.FC<CommonTableProps> = ({
 }) => {
   const { selectedColor } = useColor();
   const { isDark } = useTheme();
+  const pathname = usePathname();
+  const matchedRight = getFormRightForPath(pathname || "");
+  const canEditByPermission =
+    typeof canEdit === "boolean"
+      ? canEdit
+      : matchedRight
+        ? Boolean(matchedRight.canUpdate)
+        : true;
+  const canDeleteByPermission =
+    typeof canDelete === "boolean"
+      ? canDelete
+      : matchedRight
+        ? Boolean(matchedRight.canDelete)
+        : true;
+  const shouldShowEditAction = Boolean(onEdit && canEditByPermission);
+  const shouldShowDeleteAction = Boolean(onDelete && canDeleteByPermission);
+  const shouldShowActionColumn =
+    showActions && (shouldShowEditAction || shouldShowDeleteAction);
 
   const [columnVisibility, setColumnVisibility] = useState<
     Record<string, boolean>
@@ -33,7 +55,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
     columns.forEach((col) => {
       initialVisibility[col.key] = col.visible !== false;
     });
-    if (showActions) {
+    if (shouldShowActionColumn) {
       initialVisibility.actions = true;
     }
     return initialVisibility;
@@ -313,7 +335,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
                     </th>
                   ),
               )}
-              {showActions && columnVisibility.actions && (
+              {shouldShowActionColumn && columnVisibility.actions && (
                 <th
                   className={`px-3 sm:px-${variant === "simple" ? "4" : "6"} py-3 sm:py-3.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide ${isDark ? "text-white" : "text-black"}`}
                 >
@@ -348,23 +370,23 @@ const CommonTable: React.FC<CommonTableProps> = ({
                       </td>
                     ),
                 )}
-                {showActions && columnVisibility.actions && (
+                {shouldShowActionColumn && columnVisibility.actions && (
                   <td
                     className={`px-3 sm:px-${variant === "simple" ? "4" : "6"} py-3 sm:py-4`}
                   >
                     <div className="flex items-center gap-2 sm:gap-4">
-                      {onEdit && (
+                      {shouldShowEditAction && (
                         <button
-                          onClick={() => onEdit(row)}
+                          onClick={() => onEdit?.(row)}
                           className={`p-1 transition-opacity cursor-pointer opacity-50 hover:opacity-100 ${isDark ? "text-white" : "text-black"}`}
                         >
                           <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                       )}
-                      {onDelete && (
+                      {shouldShowDeleteAction && (
                         <button
                           type="button"
-                          onClick={() => onDelete(row)}
+                          onClick={() => onDelete?.(row)}
                           className="text-red-500 hover:text-red-600 p-1 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -561,7 +583,7 @@ const CommonTable: React.FC<CommonTableProps> = ({
                     </span>
                   </label>
                 ))}
-                {showActions && (
+                {shouldShowActionColumn && (
                   <label
                     className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-2.5 cursor-pointer transition-colors ${
                       isDark ? "hover:bg-gray-800" : "hover:bg-gray-50"

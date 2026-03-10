@@ -3,6 +3,7 @@
 import { DirectionsRenderer, GoogleMap } from "@react-google-maps/api";
 import { Plus, Route, Save, Trash2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React, {
   useCallback,
   useEffect,
@@ -19,7 +20,10 @@ import type {
   RouteMasterFormData,
 } from "@/interfaces/routeMaster.interface";
 import { getAccountHierarchy } from "@/services/accountService";
-import { getGeofenceDropdownByAccount } from "@/services/commonServie";
+import {
+  getFormRightForPath,
+  getGeofenceDropdownByAccount,
+} from "@/services/commonServie";
 import { getGeofenceById } from "@/services/geofenceService";
 import {
   getRouteMasterById,
@@ -32,8 +36,10 @@ const DEFAULT_CENTER = { lat: 28.6139, lng: 77.209 };
 interface SegmentSummary {
   from: string;
   to: string;
-  distanceText: string;
-  durationText: string;
+  startAddress: string;
+  endAddress: string;
+  distanceKm: number;
+  travelTimeMin: number;
 }
 
 interface GeofenceLatLng {
@@ -41,11 +47,23 @@ interface GeofenceLatLng {
   lng: number;
 }
 
+const toKm = (distanceMetres: number | string): number =>
+  Number(distanceMetres || 0) / 1000;
+
+const toMinutes = (durationSeconds: number | string): number =>
+  Number(durationSeconds || 0) / 60;
+
 const getEncodedPathFromDirections = (
   response: google.maps.DirectionsResult,
 ): string => {
   const route = response?.routes?.[0];
-  const fromOverview = String(route?.overview_polyline?.points || "").trim();
+  const overviewPolyline = route?.overview_polyline;
+  const fromOverview =
+    typeof overviewPolyline === "string"
+      ? overviewPolyline.trim()
+      : String(
+          (overviewPolyline as { points?: string } | undefined)?.points || "",
+        ).trim();
   if (fromOverview) return fromOverview;
 
   const canEncode = Boolean(window?.google?.maps?.geometry?.encoding?.encodePath);
@@ -99,9 +117,17 @@ const AddEditRouteMasterPage: React.FC = () => {
   const { isDark } = useTheme();
   const { isLoaded, loadError } = useGoogleMapsSdk();
   const router = useRouter();
+  const t = useTranslations("pages.routeMaster.detail");
   const params = useParams();
   const routeId = params?.id ? Number(params.id) : 0;
   const isEditMode = routeId > 0;
+  const pageRight = getFormRightForPath("/route-master");
+  const canRead = pageRight ? Boolean(pageRight.canRead) : true;
+  const canSaveAction = pageRight
+    ? isEditMode
+      ? Boolean(pageRight.canUpdate)
+      : Boolean(pageRight.canWrite)
+    : true;
 
   const mapRef = useRef<google.maps.Map | null>(null);
 
@@ -125,6 +151,9 @@ const AddEditRouteMasterPage: React.FC = () => {
   const [segmentSummaries, setSegmentSummaries] = useState<SegmentSummary[]>(
     [],
   );
+  const [storedStopDetails, setStoredStopDetails] = useState<
+    { fromGeoId: number; toGeoId: number; distance: string; time: string }[]
+  >([]);
 
   // Stores Google Maps derived data to be sent on save/update
   const [routeMetrics, setRouteMetrics] = useState<{
@@ -166,7 +195,7 @@ const AddEditRouteMasterPage: React.FC = () => {
         response?.data?.route || response?.data?.routeMaster || response?.data;
 
       if (!data) {
-        toast.error("Route master not found");
+        toast.error(t("toast.notFound"));
         router.push("/route-master");
         return;
       }
@@ -215,6 +244,14 @@ const AddEditRouteMasterPage: React.FC = () => {
             durationSeconds: Number(seg?.time || 0),
           }))
         : [];
+      const normalizedStopDetails = Array.isArray(data?.stopDetails)
+        ? data.stopDetails.map((seg: any) => ({
+            fromGeoId: Number(seg?.fromGeoId || 0),
+            toGeoId: Number(seg?.toGeoId || 0),
+            distance: String(seg?.distance || "0"),
+            time: String(seg?.time || "0"),
+          }))
+        : [];
 
       setRouteMetrics({
         routePath: savedRoutePath,
@@ -229,15 +266,16 @@ const AddEditRouteMasterPage: React.FC = () => {
           .filter((item) => item > 0)
           .join("->"),
       });
+      setStoredStopDetails(normalizedStopDetails);
       // ─────────────────────────────────────────────────────────────────────
     } catch (error) {
       console.error("Error fetching route by id:", error);
-      toast.error("Failed to fetch route details");
+      toast.error(t("toast.fetchFailed"));
       router.push("/route-master");
     } finally {
       setFetchingData(false);
     }
-  }, [routeId, router]);
+  }, [routeId, router, t]);
 
   useEffect(() => {
     const { accountId } = getUserData();
@@ -306,9 +344,29 @@ const AddEditRouteMasterPage: React.FC = () => {
       .then((options) => setGeofences(options))
       .catch((error) => {
         console.error("Error fetching geofence dropdown:", error);
-        toast.error("Failed to load geofence dropdown");
+        toast.error(t("toast.geofenceDropdownFailed"));
       });
   }, [formData.accountId]);
+
+  useEffect(() => {
+    if (!storedStopDetails.length || geofences.length === 0) return;
+    const geofenceNameMap = new Map(
+      geofences.map((item) => [Number(item.id), item.value]),
+    );
+    const fromApiSegments = storedStopDetails.map((item) => ({
+      from:
+        geofenceNameMap.get(item.fromGeoId) ||
+        t("fields.geofenceFallback", { id: item.fromGeoId }),
+      to:
+        geofenceNameMap.get(item.toGeoId) ||
+        t("fields.geofenceFallback", { id: item.toGeoId }),
+      startAddress: "-",
+      endAddress: "-",
+      distanceKm: toKm(item.distance),
+      travelTimeMin: toMinutes(item.time),
+    }));
+    setSegmentSummaries(fromApiSegments);
+  }, [storedStopDetails, geofences]);
 
   const hasSelectedAccountInList = useMemo(
     () =>
@@ -408,15 +466,15 @@ const AddEditRouteMasterPage: React.FC = () => {
 
   const buildRoutePreviewData = useCallback(async () => {
     if (!isLoaded || !window.google) {
-      toast.error("Google Maps SDK is not loaded");
+      toast.error(t("toast.mapsNotLoaded"));
       return null;
     }
     if (!formData.startGeofenceId || !formData.endGeofenceId) {
-      toast.error("Please select start and end geofence");
+      toast.error(t("toast.selectStartEndGeofence"));
       return null;
     }
     if (waypointIds.length < 2) {
-      toast.error("Please select at least start and end geofence");
+      toast.error(t("toast.selectAtLeastStartEnd"));
       return null;
     }
 
@@ -428,13 +486,13 @@ const AddEditRouteMasterPage: React.FC = () => {
     );
     const invalidPoint = resolvedPoints.find((item) => !item.point);
     if (invalidPoint) {
-      toast.error(`Unable to resolve geofence coordinates for ID ${invalidPoint.id}`);
+      toast.error(t("toast.resolveGeofenceFailed", { id: invalidPoint.id }));
       return null;
     }
 
     const getGeofenceName = (id: number): string => {
       const found = geofences.find((g) => Number(g.id) === id);
-      return found?.value || `Geofence ${id}`;
+      return found?.value || t("fields.geofenceFallback", { id });
     };
     const geofenceNames = waypointIds.map((id) => getGeofenceName(id));
 
@@ -457,12 +515,14 @@ const AddEditRouteMasterPage: React.FC = () => {
     const nextSegmentSummaries = legs.map((leg, index) => ({
       from: geofenceNames[index] || leg.start_address,
       to: geofenceNames[index + 1] || leg.end_address,
-      distanceText: leg.distance?.text || "-",
-      durationText: leg.duration?.text || "-",
+      startAddress: leg.start_address || "-",
+      endAddress: leg.end_address || "-",
+      distanceKm: toKm(leg.distance?.value || 0),
+      travelTimeMin: toMinutes(leg.duration?.value || 0),
     }));
     const overviewPolyline = getEncodedPathFromDirections(response);
     if (!overviewPolyline) {
-      toast.error("Google encoded route path not available for selected points");
+      toast.error(t("toast.encodedPathUnavailable"));
       return null;
     }
     const totalDistanceMetres = legs.reduce(
@@ -494,6 +554,7 @@ const AddEditRouteMasterPage: React.FC = () => {
     geofences,
     isLoaded,
     resolveGeofenceLatLng,
+    t,
     waypointIds,
     waypointKey,
   ]);
@@ -505,17 +566,20 @@ const AddEditRouteMasterPage: React.FC = () => {
       if (!previewData) {
         setDirectionsResult(null);
         setSegmentSummaries([]);
+        setStoredStopDetails([]);
         setRouteMetrics(null);
         return;
       }
       setDirectionsResult(previewData.response);
       setSegmentSummaries(previewData.segmentSummaries);
+      setStoredStopDetails([]);
       setRouteMetrics(previewData.routeMetrics);
     } catch (error) {
       console.error("Directions error:", error);
-      toast.error("Unable to build route preview for selected points");
+      toast.error(t("toast.previewFailed"));
       setDirectionsResult(null);
       setSegmentSummaries([]);
+      setStoredStopDetails([]);
       setRouteMetrics(null);
     } finally {
       setPreviewLoading(false);
@@ -529,30 +593,39 @@ const AddEditRouteMasterPage: React.FC = () => {
 
   const validateForm = () => {
     if (!formData.accountId) {
-      toast.error("Please select account");
+      toast.error(t("toast.selectAccount"));
       return false;
     }
     if (!formData.routeName.trim()) {
-      toast.error("Please enter route name");
+      toast.error(t("toast.enterRouteName"));
       return false;
     }
     if (!formData.startGeofenceId || !formData.endGeofenceId) {
-      toast.error("Please select start and end geofence");
+      toast.error(t("toast.selectStartEndGeofence"));
       return false;
     }
     if (formData.startGeofenceId === formData.endGeofenceId) {
-      toast.error("Start and end geofence should be different");
+      toast.error(t("toast.startEndMustDiffer"));
       return false;
     }
     const hasInvalidStop = formData.stopGeofenceIds.some((id) => !id);
     if (hasInvalidStop) {
-      toast.error("Please select geofence for each added stop");
+      toast.error(t("toast.selectGeofenceForEachStop"));
       return false;
     }
     return true;
   };
 
   const handleSave = async () => {
+    if (!canSaveAction) {
+      toast.error(
+        isEditMode
+          ? t("toast.noUpdatePermission")
+          : t("toast.noAddPermission"),
+      );
+      return;
+    }
+
     if (!validateForm()) return;
     const { userId } = getUserData();
 
@@ -577,9 +650,7 @@ const AddEditRouteMasterPage: React.FC = () => {
       }
 
       if (!String(latestRouteMetrics?.routePath || "").trim()) {
-        toast.error(
-          "Route create blocked: Google encoded route path is empty. Please click View Route and try again.",
-        );
+        toast.error(t("toast.routePathMissing"));
         setLoading(false);
         return;
       }
@@ -614,16 +685,16 @@ const AddEditRouteMasterPage: React.FC = () => {
         toast.success(
           response?.message ||
             (isEditMode
-              ? "Route updated successfully"
-              : "Route created successfully"),
+              ? t("toast.updated")
+              : t("toast.created")),
         );
         router.push("/route-master");
       } else {
-        toast.error(response?.message || "Failed to save route");
+        toast.error(response?.message || t("toast.saveFailed"));
       }
     } catch (error) {
       console.error("Save route error:", error);
-      toast.error("Error saving route");
+      toast.error(t("toast.saveError"));
     } finally {
       setLoading(false);
     }
@@ -645,7 +716,19 @@ const AddEditRouteMasterPage: React.FC = () => {
     return (
       <div className={`${isDark ? "dark" : ""}`}>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <p className="text-foreground">Loading route details...</p>
+          <p className="text-foreground">{t("loadingDetails")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canRead) {
+    return (
+      <div className={`${isDark ? "dark" : ""}`}>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <p className="text-foreground">
+            {t("noReadPermission")}
+          </p>
         </div>
       </div>
     );
@@ -655,16 +738,20 @@ const AddEditRouteMasterPage: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title={isEditMode ? "Edit Route Master" : "Create Route Master"}
-          subtitle="Define start/end geofence points, optional stops, and preview route timing."
+          title={isEditMode ? t("editTitle") : t("createTitle")}
+          subtitle={t("subtitle")}
           breadcrumbs={[
-            { label: "Fleet" },
-            { label: "Route Master", href: "/route-master" },
-            { label: isEditMode ? "Edit" : "Create" },
+            { label: t("breadcrumbs.fleet") },
+            { label: t("breadcrumbs.master"), href: "/route-master" },
+            { label: isEditMode ? t("breadcrumbs.edit") : t("breadcrumbs.create") },
           ]}
           showButton={true}
           buttonText={
-            loading ? "Saving..." : isEditMode ? "Update Route" : "Create Route"
+            loading
+              ? t("buttons.saving")
+              : isEditMode
+                ? t("buttons.updateRoute")
+                : t("buttons.createRoute")
           }
           buttonIcon={loading ? undefined : <Save className="w-4 h-4" />}
           onButtonClick={handleSave}
@@ -676,7 +763,7 @@ const AddEditRouteMasterPage: React.FC = () => {
         <div className="flex flex-col gap-5">
           <section className={`${cardCls} space-y-4`}>
             <div>
-              <label className={labelCls}>ACCOUNT</label>
+              <label className={labelCls}>{t("fields.account")}</label>
               <select
                 value={formData.accountId}
                 onChange={(e) =>
@@ -691,11 +778,11 @@ const AddEditRouteMasterPage: React.FC = () => {
                 className={inputCls}
                 disabled={loading}
               >
-                <option value={0}>Select account</option>
+                <option value={0}>{t("fields.selectAccount")}</option>
                 {!hasSelectedAccountInList &&
                   Number(formData.accountId) > 0 && (
                     <option value={formData.accountId}>
-                      {`Selected Account (${formData.accountId})`}
+                      {t("fields.selectedAccount", { id: formData.accountId })}
                     </option>
                   )}
                 {accounts.map((option) => (
@@ -707,7 +794,7 @@ const AddEditRouteMasterPage: React.FC = () => {
             </div>
 
             <div>
-              <label className={labelCls}>ROUTE NAME</label>
+              <label className={labelCls}>{t("fields.routeName")}</label>
               <input
                 type="text"
                 value={formData.routeName}
@@ -718,13 +805,13 @@ const AddEditRouteMasterPage: React.FC = () => {
                   }))
                 }
                 className={inputCls}
-                placeholder="Enter route name"
+                placeholder={t("fields.routeNamePlaceholder")}
                 disabled={loading}
               />
             </div>
 
             <div>
-              <label className={labelCls}>GEOFENCE RELATED</label>
+              <label className={labelCls}>{t("fields.geofenceRelated")}</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -742,7 +829,7 @@ const AddEditRouteMasterPage: React.FC = () => {
                         : "border-gray-200 text-gray-700"
                   }`}
                 >
-                  Yes
+                  {t("fields.yes")}
                 </button>
                 <button
                   type="button"
@@ -760,7 +847,7 @@ const AddEditRouteMasterPage: React.FC = () => {
                         : "border-gray-200 text-gray-700"
                   }`}
                 >
-                  No
+                  {t("fields.no")}
                 </button>
               </div>
             </div>
@@ -768,7 +855,7 @@ const AddEditRouteMasterPage: React.FC = () => {
             <div>
               <div className="mb-1.5 flex items-center justify-between gap-2">
                 <label className={`${labelCls} mb-0`}>
-                  START POINT (GEOFENCE)
+                  {t("fields.startPoint")}
                 </label>
                 <button
                   type="button"
@@ -778,7 +865,7 @@ const AddEditRouteMasterPage: React.FC = () => {
                   }`}
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Add Geofence
+                  {t("fields.addGeofence")}
                 </button>
               </div>
               <select
@@ -792,7 +879,7 @@ const AddEditRouteMasterPage: React.FC = () => {
                 className={inputCls}
                 disabled={loading}
               >
-                <option value={0}>Select start geofence</option>
+                <option value={0}>{t("fields.selectStartGeofence")}</option>
                 {geofences.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.value}
@@ -805,7 +892,7 @@ const AddEditRouteMasterPage: React.FC = () => {
               <div key={`stop-${index}`}>
                 <label
                   className={labelCls}
-                >{`STOP ${index + 1} (GEOFENCE)`}</label>
+                >{t("fields.stopLabel", { number: index + 1 })}</label>
                 <div className="flex gap-2">
                   <select
                     value={stopId}
@@ -813,7 +900,7 @@ const AddEditRouteMasterPage: React.FC = () => {
                     className={inputCls}
                     disabled={loading}
                   >
-                    <option value={0}>Select stop geofence</option>
+                    <option value={0}>{t("fields.selectStopGeofence")}</option>
                     {geofences.map((option) => (
                       <option key={option.id} value={option.id}>
                         {option.value}
@@ -845,11 +932,11 @@ const AddEditRouteMasterPage: React.FC = () => {
               }`}
             >
               <Plus className="w-3.5 h-3.5" />
-              Add Stop
+              {t("fields.addStop")}
             </button>
 
             <div>
-              <label className={labelCls}>END POINT (GEOFENCE)</label>
+              <label className={labelCls}>{t("fields.endPoint")}</label>
               <select
                 value={formData.endGeofenceId}
                 onChange={(e) =>
@@ -861,7 +948,7 @@ const AddEditRouteMasterPage: React.FC = () => {
                 className={inputCls}
                 disabled={loading}
               >
-                <option value={0}>Select end geofence</option>
+                <option value={0}>{t("fields.selectEndGeofence")}</option>
                 {geofences.map((option) => (
                   <option key={option.id} value={option.id}>
                     {option.value}
@@ -870,36 +957,42 @@ const AddEditRouteMasterPage: React.FC = () => {
               </select>
             </div>
 
-            {formData.endGeofenceId > 0 && formData.startGeofenceId > 0 && (
-              <button
-                type="button"
-                onClick={calculateRoute}
-                disabled={previewLoading || !isLoaded}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-              >
-                <Route className="w-4 h-4" />
-                {previewLoading ? "Loading Route..." : "View Route"}
-              </button>
-            )}
+            {isEditMode &&
+              formData.endGeofenceId > 0 &&
+              formData.startGeofenceId > 0 && (
+                <button
+                  type="button"
+                  onClick={calculateRoute}
+                  disabled={previewLoading || !isLoaded}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                >
+                  <Route className="w-4 h-4" />
+                  {previewLoading ? t("buttons.loadingRoute") : t("buttons.viewRoute")}
+                </button>
+              )}
 
-            {isEditMode && (
-              <div>
-                <label className={labelCls}>STATUS</label>
-                <select
-                  value={formData.isActive ? "active" : "inactive"}
+            <div>
+              <label className={labelCls}>{t("fields.status")}</label>
+              <label
+                className={`inline-flex items-center gap-2 text-sm font-semibold ${
+                  isDark ? "text-gray-200" : "text-gray-800"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={Boolean(formData.isActive)}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      isActive: e.target.value === "active",
+                      isActive: e.target.checked,
                     }))
                   }
-                  className={inputCls}
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-            )}
+                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                  disabled={loading}
+                />
+                <span>{formData.isActive ? t("fields.active") : t("fields.inactive")}</span>
+              </label>
+            </div>
 
             {/* {formData.endGeofenceId > 0 && formData.startGeofenceId > 0 && (
               <button
@@ -919,16 +1012,16 @@ const AddEditRouteMasterPage: React.FC = () => {
                   <h3
                     className={`text-sm font-bold mb-3 ${isDark ? "text-foreground" : "text-gray-900"}`}
                   >
-                    Route Preview
+                    {t("section.routePreview")}
                   </h3>
                   <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 h-[420px]">
                     {loadError ? (
                       <div className="h-full flex items-center justify-center text-sm text-red-500">
-                        Failed to load Google Maps SDK
+                        {t("section.mapsLoadFailed")}
                       </div>
                     ) : !isLoaded ? (
                       <div className="h-full flex items-center justify-center text-sm text-gray-500">
-                        Loading map...
+                        {t("section.loadingMap")}
                       </div>
                     ) : (
                       <GoogleMap
@@ -961,44 +1054,86 @@ const AddEditRouteMasterPage: React.FC = () => {
                     )}
                   </div>
                 </div>
-
-                <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <div
-                    className={`px-4 py-3 border-b text-xs font-bold tracking-wider ${
-                      isDark
-                        ? "bg-gray-900 border-gray-700 text-gray-300"
-                        : "bg-gray-50 border-gray-200 text-gray-600"
-                    }`}
-                  >
-                    SEGMENT TRAVEL ESTIMATE
-                  </div>
-
-                  {segmentSummaries.length === 0 ? (
-                    <div className="px-4 py-6 text-sm text-gray-500">
-                      No route preview available yet.
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                      {segmentSummaries.map((segment, index) => (
-                        <div
-                          key={`segment-${index}`}
-                          className="px-4 py-3 flex flex-col gap-1 text-sm"
+                {segmentSummaries.length > 0 && (
+                  <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm">
+                        <thead
+                          className={
+                            isDark
+                              ? "bg-gray-900 text-gray-200"
+                              : "bg-gray-100 text-gray-700"
+                          }
                         >
-                          <div className="font-semibold flex items-center gap-2">
-                            <Route className="w-4 h-4 text-indigo-500 shrink-0" />
-                            <span className="truncate">
-                              {segment.from} → {segment.to}
-                            </span>
-                          </div>
-                          <p className="text-xs text-gray-500">
-                            Distance: {segment.distanceText} &nbsp;|&nbsp; ETA:{" "}
-                            {segment.durationText}
-                          </p>
-                        </div>
-                      ))}
+                          <tr>
+                            <th className="px-4 py-3 text-left font-semibold">
+                              {t("table.startGeofence")}
+                            </th>
+                            <th className="px-4 py-3 text-left font-semibold">
+                              {t("table.endGeofence")}
+                            </th>
+                            {/* <th className="px-4 py-3 text-left font-semibold">
+                          Start Address
+                        </th>
+                        <th className="px-4 py-3 text-left font-semibold">
+                          End Address
+                        </th> */}
+                            <th className="px-4 py-3 text-right font-semibold">
+                              {t("table.distance")}
+                            </th>
+                            <th className="px-4 py-3 text-right font-semibold">
+                              {t("table.time")}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody
+                          className={
+                            isDark
+                              ? "divide-y divide-gray-700 text-gray-200"
+                              : "divide-y divide-gray-200 text-gray-700"
+                          }
+                        >
+                          {segmentSummaries.map((segment, index) => (
+                            <tr key={`segment-table-${index}`}>
+                              <td className="px-4 py-3">{segment.from}</td>
+                              <td className="px-4 py-3">{segment.to}</td>
+                              {/* <td className="px-4 py-3">{segment.startAddress}</td>
+                          <td className="px-4 py-3">{segment.endAddress}</td> */}
+                              <td className="px-4 py-3 text-right">
+                                {segment.distanceKm.toFixed(2)}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                {segment.travelTimeMin.toFixed(2)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
-                  )}
-                </div>
+
+                    <div
+                      className={`grid grid-cols-1 sm:grid-cols-2 border-t ${
+                        isDark
+                          ? "border-gray-700 bg-gray-900/40 text-gray-200"
+                          : "border-gray-200 bg-gray-50 text-gray-700"
+                      }`}
+                    >
+                      <div className="px-4 py-3 font-semibold">
+                        {t("table.totalDistance")}{" "}
+                        <span className="font-medium">
+                          {toKm(routeMetrics?.totalDistance || 0).toFixed(2)} Km
+                        </span>
+                      </div>
+                      <div className="px-4 py-3 font-semibold sm:border-l border-gray-200 dark:border-gray-700">
+                        {t("table.totalTime")}{" "}
+                        <span className="font-medium">
+                          {toMinutes(routeMetrics?.totalTime || 0).toFixed(2)}{" "}
+                          Min
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </section>

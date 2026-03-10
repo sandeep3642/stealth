@@ -111,7 +111,11 @@ export const LoginComponent: React.FC<LoginComponentProps> = ({
       localStorage.setItem("whiteLabelTheme", JSON.stringify(whiteLabel));
     }
 
-    await getUserRoleData();
+    if (Array.isArray(userData.formRights)) {
+      localStorage.setItem("permissions", JSON.stringify(userData.formRights));
+    } else {
+      await getUserRoleData();
+    }
     window.dispatchEvent(new Event("permissions-updated"));
 
     toast.success("Login successful!");
