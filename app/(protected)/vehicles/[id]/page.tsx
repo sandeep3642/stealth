@@ -1,39 +1,33 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Card } from "@/components/CommonCard";
-import { useTheme } from "@/context/ThemeContext";
-import { useColor } from "@/context/ColorContext";
+import { Layers, Shield, Truck } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import {
-  Truck,
-  Building2,
-  Shield,
-  Layers,
-  FileText,
-  Wrench,
-} from "lucide-react";
+import { Card } from "@/components/CommonCard";
+import PageHeader from "@/components/PageHeader";
+import { useColor } from "@/context/ColorContext";
+import { useTheme } from "@/context/ThemeContext";
 import {
   Account,
   VehicleBrand,
-  VehicleType,
-  VehicleSummary,
   VehicleFormData,
+  VehicleType,
 } from "@/interfaces/vehicle.interface";
+import { getAllAccounts } from "@/services/commonServie";
 import {
-  getLeasedVendors,
-  getVehicleBrands,
   getVehicleById,
   getVehicleType,
   saveVehicle,
   updateVehicle,
 } from "@/services/vehicleService";
-import { getAllAccounts } from "@/services/commonServie";
 
 const ProvisionVehicle: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
+  const t = useTranslations("pages.vehicles.detail");
+  const tList = useTranslations("pages.vehicles.list");
   const params = useParams();
   const id = params?.id as string;
   const router = useRouter();
@@ -41,6 +35,7 @@ const ProvisionVehicle: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(false);
+  const [storedAccountId, setStoredAccountId] = useState<number>(0);
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [vehicleTypes, setVehicleTypes] = useState<VehicleType[]>([]);
@@ -93,6 +88,13 @@ const ProvisionVehicle: React.FC = () => {
     const init = async () => {
       setPageLoading(true);
       try {
+        const user =
+          typeof window !== "undefined"
+            ? JSON.parse(localStorage.getItem("user") || "{}")
+            : {};
+        const accountIdFromStorage = Number(user?.accountId || 0);
+        setStoredAccountId(accountIdFromStorage);
+
         const [
           accRes,
           typeRes,
@@ -149,40 +151,61 @@ const ProvisionVehicle: React.FC = () => {
               status: d.status?.toLowerCase() === "active",
             });
           } else {
-            toast.error("Vehicle not found");
+            toast.error(t("toast.notFound"));
             router.push("/vehicles");
           }
+        } else if (accRes.statusCode === 200) {
+          const accountList = Array.isArray(accRes.data) ? accRes.data : [];
+          const hasStoredAccount = accountList.some(
+            (account: Account) => Number(account.id) === accountIdFromStorage,
+          );
+
+          setFormData((prev) => ({
+            ...prev,
+            accountId: hasStoredAccount
+              ? accountIdFromStorage
+              : Number(accountList[0]?.id || 0),
+          }));
         }
       } catch (err) {
         console.error(err);
-        toast.error("Failed to load data");
+        toast.error(t("toast.loadFailed"));
       } finally {
         setPageLoading(false);
       }
     };
     init();
-  }, [id]);
+  }, [id, isEditMode, router, t]);
 
   // ── Form change handler ────────────────────────────────────────────────
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const numberFields = [
+      "accountId",
+      "vehicleTypeId",
+      "vehicleBrandId",
+      "leasedVendorId",
+    ];
+    setFormData((prev) => ({
+      ...prev,
+      [name]: numberFields.includes(name) ? Number(value) : value,
+    }));
   };
 
   // ── Submit ─────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!formData.accountId || formData.accountId === 0) {
-      toast.error("Please select an account");
+      toast.error(t("toast.selectAccount"));
       return;
     }
     if (!formData.registrationNumber.trim()) {
-      toast.error("Registration number is required");
+      toast.error(t("toast.registrationRequired"));
       return;
     }
     if (!formData.vehicleTypeId || formData.vehicleTypeId === 0) {
-      toast.error("Please select a vehicle type");
+      toast.error(t("toast.selectVehicleType"));
       return;
     }
 
@@ -195,6 +218,10 @@ const ProvisionVehicle: React.FC = () => {
         vehicleNumber: formData.registrationNumber.trim().toUpperCase(),
         vinOrChassisNumber: formData.vinNumber.trim() || "",
         vehicleTypeId: Number(formData.vehicleTypeId),
+        status: formData.status ? "Active" : "Inactive",
+        ...(isEditMode
+          ? { updatedBy: Number(storedAccountId || formData.accountId || 0) }
+          : { createdBy: Number(storedAccountId || formData.accountId || 0) }),
         // registrationDate: formData.registrationDate
         //   ? new Date(formData.registrationDate).toISOString()
         //   : new Date().toISOString(),
@@ -220,14 +247,14 @@ const ProvisionVehicle: React.FC = () => {
         : await saveVehicle(payload);
 
       if (response.statusCode === 200) {
-        toast.success(response.message || "Vehicle saved successfully!");
+        toast.success(response.message || t("toast.saved"));
         setTimeout(() => router.push("/vehicles"), 1000);
       } else {
-        toast.error(response.message || "Operation failed");
+        toast.error(response.message || t("toast.operationFailed"));
       }
     } catch (err) {
       console.error(err);
-      toast.error("An error occurred");
+      toast.error(t("toast.errorOccurred"));
     } finally {
       setLoading(false);
     }
@@ -283,7 +310,7 @@ const ProvisionVehicle: React.FC = () => {
               style={{ borderColor: selectedColor }}
             ></div>
             <p className={isDark ? "text-gray-400" : "text-gray-600"}>
-              {isEditMode ? "Loading vehicle data..." : "Preparing form..."}
+              {isEditMode ? t("loading.edit") : t("loading.create")}
             </p>
           </div>
         </div>
@@ -296,52 +323,28 @@ const ProvisionVehicle: React.FC = () => {
       <div
         className={`min-h-screen ${isDark ? "bg-background" : ""} p-3 sm:p-4 md:p-6`}
       >
-        {/* Page header */}
         <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h1
-                className={`text-2xl sm:text-3xl font-bold ${
-                  isDark ? "text-foreground" : "text-gray-900"
-                }`}
-              >
-                {isEditMode ? "Edit Vehicle" : "Provision Vehicle"}
-              </h1>
-              <p
-                className={`text-sm mt-1 ${
-                  isDark ? "text-gray-400" : "text-gray-500"
-                }`}
-              >
-                {isEditMode
-                  ? "Update registry entry for this asset."
-                  : "Asset Identification & Registry"}
-              </p>
-            </div>
-            <div className="flex gap-2 sm:gap-3">
-              <button
-                onClick={() => router.push("/vehicles")}
-                className={`flex-1 sm:flex-none px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
-                  isDark
-                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
-                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
-                }`}
-              >
-                Discard
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="flex-1 sm:flex-none px-4 py-2 text-sm rounded-lg font-medium text-white transition-colors disabled:opacity-50"
-                style={{ backgroundColor: selectedColor }}
-              >
-                {loading
-                  ? "Saving..."
-                  : isEditMode
-                    ? "Update Registry Entry"
-                    : "Commit Registry Entry"}
-              </button>
-            </div>
-          </div>
+          <PageHeader
+            title={isEditMode ? t("title.edit") : t("title.create")}
+            subtitle={isEditMode ? t("subtitle.edit") : t("subtitle.create")}
+            breadcrumbs={[
+              { label: tList("breadcrumbs.fleet") },
+              { label: tList("breadcrumbs.current"), href: "/vehicles" },
+              { label: isEditMode ? t("title.edit") : t("title.create") },
+            ]}
+            showButton={true}
+            buttonText={
+              loading
+                ? t("buttons.saving")
+                : isEditMode
+                  ? t("buttons.update")
+                  : t("buttons.create")
+            }
+            onButtonClick={handleSubmit}
+            showExportButton={false}
+            showFilterButton={false}
+            showBulkUpload={false}
+          />
         </div>
 
         {/* Form Card */}
@@ -349,11 +352,15 @@ const ProvisionVehicle: React.FC = () => {
           <div className="p-4 sm:p-6 space-y-8">
             {/* ── VEHICLE IDENTIFICATION ── */}
             <div>
-              <SectionHeader icon={Shield} title="Vehicle Identification" />
+              <SectionHeader
+                icon={Shield}
+                title={t("sections.identification")}
+              />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>
-                    Account <span className="text-red-500">*</span>
+                    {t("fields.account")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="accountId"
@@ -361,7 +368,7 @@ const ProvisionVehicle: React.FC = () => {
                     onChange={handleChange}
                     className={inputClass()}
                   >
-                    <option value="0">Select Account</option>
+                    <option value={0}>{t("fields.selectAccount")}</option>
                     {accounts.map((a) => (
                       <option key={a.id} value={a.id}>
                         {a.value}
@@ -372,27 +379,28 @@ const ProvisionVehicle: React.FC = () => {
 
                 <div>
                   <label className={labelClass}>
-                    Registration Number <span className="text-red-500">*</span>
+                    {t("fields.registration")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     name="registrationNumber"
                     value={formData.registrationNumber}
                     onChange={handleChange}
-                    placeholder="E.G. HR-26-BY-1234"
+                    placeholder={t("fields.registrationPlaceholder")}
                     className={inputClass("uppercase")}
                     style={{ letterSpacing: "0.05em" }}
                   />
                 </div>
 
                 <div>
-                  <label className={labelClass}>VIN / Chassis Number</label>
+                  <label className={labelClass}>{t("fields.vin")}</label>
                   <input
                     type="text"
                     name="vinNumber"
                     value={formData.vinNumber}
                     onChange={handleChange}
-                    placeholder="17-Character VIN"
+                    placeholder={t("fields.vinPlaceholder")}
                     maxLength={17}
                     className={inputClass()}
                   />
@@ -400,8 +408,7 @@ const ProvisionVehicle: React.FC = () => {
                     formData.vinNumber.length > 0 &&
                     formData.vinNumber.length !== 17 && (
                       <p className="text-xs text-amber-500 mt-1">
-                        VIN should be exactly 17 characters (
-                        {formData.vinNumber.length}/17)
+                        {t("fields.vinHint")} ({formData.vinNumber.length}/17)
                       </p>
                     )}
                 </div>
@@ -423,13 +430,14 @@ const ProvisionVehicle: React.FC = () => {
             <div>
               <SectionHeader
                 icon={Layers}
-                title="Classification"
-                subtitle="Map icon & thresholds are inherited from Type."
+                title={t("sections.classification")}
+                subtitle={t("sections.classificationSubtitle")}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>
-                    Vehicle Type <span className="text-red-500">*</span>
+                    {t("fields.vehicleType")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="vehicleTypeId"
@@ -437,7 +445,7 @@ const ProvisionVehicle: React.FC = () => {
                     onChange={handleChange}
                     className={inputClass()}
                   >
-                    <option value="0">Select Type</option>
+                    <option value={0}>{t("fields.selectType")}</option>
                     {vehicleTypes.map((t) => (
                       <option key={t.id} value={t.id}>
                         {t.vehicleTypeName}
@@ -594,9 +602,12 @@ const ProvisionVehicle: React.FC = () => {
               </div>
             </div> */}
 
-            {/* ── OPERATIONAL STATUS (commented out) ── */}
-            {/* <div>
-              <SectionHeader icon={Truck} title="Operational Status" />
+            {/* ── OPERATIONAL STATUS ── */}
+            <div>
+              <SectionHeader
+                icon={Truck}
+                title={t("sections.operationalStatus")}
+              />
               <div
                 className={`flex items-center justify-between p-4 rounded-xl border ${
                   isDark
@@ -610,14 +621,14 @@ const ProvisionVehicle: React.FC = () => {
                       isDark ? "text-foreground" : "text-gray-800"
                     }`}
                   >
-                    Operational lifecycle status
+                    {t("status.title")}
                   </p>
                   <p
                     className={`text-xs mt-0.5 uppercase tracking-wider font-medium ${
                       isDark ? "text-gray-400" : "text-gray-500"
                     }`}
                   >
-                    Determines asset visibility in live tracking hubs.
+                    {t("status.subtitle")}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -625,7 +636,9 @@ const ProvisionVehicle: React.FC = () => {
                     className="text-xs font-bold uppercase tracking-widest"
                     style={{ color: formData.status ? "#16a34a" : "#dc2626" }}
                   >
-                    {formData.status ? "ACTIVE" : "INACTIVE"}
+                    {formData.status
+                      ? t("status.active")
+                      : t("status.inactive")}
                   </span>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -652,7 +665,20 @@ const ProvisionVehicle: React.FC = () => {
                   </label>
                 </div>
               </div>
-            </div> */}
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => router.push("/vehicles")}
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
+                  isDark
+                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
+                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                }`}
+              >
+                {t("buttons.discard")}
+              </button>
+            </div>
           </div>
         </Card>
       </div>

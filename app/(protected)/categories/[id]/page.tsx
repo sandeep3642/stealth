@@ -2,8 +2,10 @@
 
 import { Layers } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import PageHeader from "@/components/PageHeader";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -17,6 +19,8 @@ import {
 const AddEditCategory: React.FC = () => {
   const { selectedColor } = useColor();
   const { isDark } = useTheme();
+  const t = useTranslations("pages.categories.detail");
+  const tList = useTranslations("pages.categories.list");
   const router = useRouter();
   const params = useParams();
 
@@ -51,12 +55,12 @@ const AddEditCategory: React.FC = () => {
         setDescription(category.description || "");
         setIsActive(category.isActive ?? true);
       } else {
-        toast.error("Failed to fetch category data");
+        toast.error(t("toast.fetchFailed"));
         router.back();
       }
     } catch (error) {
       console.error("Error fetching category:", error);
-      toast.error("Error loading category data");
+      toast.error(t("toast.fetchError"));
       router.back();
     } finally {
       setFetchingData(false);
@@ -66,7 +70,7 @@ const AddEditCategory: React.FC = () => {
   const handleSubmit = async () => {
     // Validation
     if (!labelName.trim()) {
-      toast.error("Please enter a label name");
+      toast.error(t("toast.labelRequired"));
       return;
     }
 
@@ -90,17 +94,15 @@ const AddEditCategory: React.FC = () => {
 
       if (response.success) {
         toast.success(
-          isEditMode
-            ? "Category updated successfully!"
-            : "Category created successfully!",
+          isEditMode ? t("toast.updated") : t("toast.created"),
         );
         router.push("/categories");
       } else {
-        toast.error(`Failed: ${response.message}`);
+        toast.error(t("toast.saveFailed", { message: response.message }));
       }
     } catch (error) {
       console.error("Error saving category:", error);
-      toast.error("An error occurred while saving the category");
+      toast.error(t("toast.saveError"));
     } finally {
       setLoading(false);
     }
@@ -114,7 +116,7 @@ const AddEditCategory: React.FC = () => {
     return (
       <div className={`${isDark ? "dark" : ""} `}>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <p className="text-foreground">Loading category data...</p>
+          <p className="text-foreground">{t("loading")}</p>
         </div>
       </div>
     );
@@ -124,12 +126,30 @@ const AddEditCategory: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} `}>
       <div className="min-h-screen bg-background flex justify-center p-2">
         <div className="w-full max-w-4xl">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0  mb-6 px-4 sm:px-0">
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
-              {isEditMode ? "Edit Classification" : "New Classification"}
-            </h1>
-          </div>
+          <PageHeader
+            title={isEditMode ? t("title.edit") : t("title.create")}
+            subtitle={
+              isEditMode
+                ? t("section.subtitleEdit")
+                : t("section.subtitleCreate")
+            }
+            breadcrumbs={[
+              { label: tList("breadcrumbs.accounts") },
+              { label: tList("breadcrumbs.current"), href: "/categories" },
+              { label: isEditMode ? t("title.edit") : t("title.create") },
+            ]}
+            showButton
+            buttonText={
+              loading
+                ? isEditMode
+                  ? t("buttons.updating")
+                  : t("buttons.creating")
+                : isEditMode
+                  ? t("buttons.update")
+                  : t("buttons.create")
+            }
+            onButtonClick={handleSubmit}
+          />
 
           {/* Form Card */}
           <div
@@ -150,12 +170,12 @@ const AddEditCategory: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-foreground mb-1">
-                    Taxonomy Parameters
+                    {t("section.title")}
                   </h2>
                   <p className="text-sm text-foreground opacity-60">
                     {isEditMode
-                      ? "Update the grouping for account management and pricing."
-                      : "Create a new grouping for account management and pricing."}
+                      ? t("section.subtitleEdit")
+                      : t("section.subtitleCreate")}
                   </p>
                 </div>
               </div>
@@ -163,11 +183,11 @@ const AddEditCategory: React.FC = () => {
               {/* Label Name Field */}
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-foreground mb-2">
-                  Label Name <span className="text-red-500">*</span>
+                  {t("fields.labelName")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Platinum Partner"
+                  placeholder={t("fields.labelPlaceholder")}
                   value={labelName}
                   onChange={(e) => setLabelName(e.target.value)}
                   className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
@@ -184,10 +204,10 @@ const AddEditCategory: React.FC = () => {
               {/* Description Field */}
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-foreground mb-2">
-                  Description
+                  {t("fields.description")}
                 </label>
                 <textarea
-                  placeholder="Define the purpose and scope of this account category..."
+                  placeholder={t("fields.descriptionPlaceholder")}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={5}
@@ -207,10 +227,10 @@ const AddEditCategory: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-bold text-foreground mb-1">
-                      Category Status
+                      {t("status.title")}
                     </h3>
                     <p className="text-sm text-foreground opacity-60">
-                      Inactive categories cannot be assigned to new accounts.
+                      {t("status.subtitle")}
                     </p>
                   </div>
                   <button
@@ -233,17 +253,6 @@ const AddEditCategory: React.FC = () => {
               {/* Submit Button */}
               <div className="flex justify-end gap-3">
                 <button
-                  onClick={handleCancel}
-                  disabled={loading}
-                  className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                    isDark
-                      ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                      : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-                  }`}
-                >
-                  Cancel
-                </button>
-                <button
                   onClick={handleSubmit}
                   disabled={loading}
                   className="px-8 py-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
@@ -252,11 +261,22 @@ const AddEditCategory: React.FC = () => {
                   {loading ? (
                     <>
                       <span className="animate-spin">⏳</span>
-                      {isEditMode ? "Updating..." : "Creating..."}
+                      {isEditMode ? t("buttons.updating") : t("buttons.creating")}
                     </>
                   ) : (
-                    <>{isEditMode ? "Update Category" : "Create Category"}</>
+                    <>{isEditMode ? t("buttons.update") : t("buttons.create")}</>
                   )}
+                </button>
+                <button
+                  onClick={handleCancel}
+                  disabled={loading}
+                  className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                    isDark
+                      ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                      : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+                  }`}
+                >
+                  {t("buttons.cancel")}
                 </button>
               </div>
             </div>

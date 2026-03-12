@@ -11,6 +11,7 @@ import {
   Wifi,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { MetricCard } from "@/components/CommonCard";
@@ -54,6 +55,7 @@ const DeviceRegistry: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
   const router = useRouter();
+  const t = useTranslations("pages.devices.list");
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -77,7 +79,7 @@ const DeviceRegistry: React.FC = () => {
       { key: "no", label: "No", visible: true },
       {
         key: "id",
-        label: "Device Identity",
+        label: t("table.deviceIdentity"),
         visible: true,
         render: (value: string, row: Device) => (
           <div>
@@ -93,7 +95,7 @@ const DeviceRegistry: React.FC = () => {
       },
       {
         key: "category",
-        label: "Category",
+        label: t("table.category"),
         visible: true,
         render: (value: string) => (
           <span className={isDark ? "text-gray-300" : "text-gray-700"}>
@@ -102,10 +104,10 @@ const DeviceRegistry: React.FC = () => {
           </span>
         ),
       },
-      { key: "type", label: "Type", visible: true },
+      { key: "type", label: t("table.type"), visible: true },
       {
         key: "status",
-        label: "Status",
+        label: t("table.status"),
         visible: true,
         render: (value: string) => {
           const normalized = String(value || "OUT OF SERVICE").toUpperCase();
@@ -119,15 +121,19 @@ const DeviceRegistry: React.FC = () => {
             <span
               className={`text-xs font-semibold px-2 py-0.5 rounded ${map[normalized] || map["OUT OF SERVICE"]}`}
             >
-              {normalized}
+              {normalized === "ACTIVE"
+                ? t("status.active")
+                : normalized === "IN SERVICE"
+                  ? t("status.inService")
+                  : t("status.outOfService")}
             </span>
           );
         },
       },
-    
-      { key: "lastUpdated", label: "Last Updated", visible: true },
+
+      { key: "lastUpdated", label: t("table.lastUpdated"), visible: true },
     ],
-    [isDark, router, selectedColor],
+    [isDark, router, selectedColor, t],
   );
 
   const getAccountIdFromStorage = () => {
@@ -183,9 +189,10 @@ const DeviceRegistry: React.FC = () => {
       const mappedDevices = items.map((d: any) => ({
         id: String(d?.id || ""),
         serialId: d?.deviceNo || d?.deviceImeiOrSerial || "-",
-        category: d?.deviceTypeName || d?.deviceCategory || "GPS",
-        type: d?.deviceTypeName || d?.displayName || "Tracker",
-        network: d?.manufacturerName || d?.manufacturer || "N/A",
+        category:
+          d?.deviceTypeName || d?.deviceCategory || t("fallback.defaultCategory"),
+        type: d?.deviceTypeName || d?.displayName || t("fallback.defaultType"),
+        network: d?.manufacturerName || d?.manufacturer || t("fallback.notAvailable"),
         networkSub: d?.deviceImeiOrSerial || "",
         status: String(d?.deviceStatus || "OUT OF SERVICE")
           .replace(/_/g, " ")
@@ -210,7 +217,7 @@ const DeviceRegistry: React.FC = () => {
       );
     } catch (error) {
       console.error("Error fetching devices:", error);
-      toast.error("An error occurred while loading devices");
+      toast.error(t("toast.loadError"));
       setDevices([]);
       setTotalRecords(0);
     } finally {
@@ -233,14 +240,14 @@ const DeviceRegistry: React.FC = () => {
     try {
       const response = await deleteDevice(deviceToDelete.id);
       if (response?.success && response?.statusCode === 200) {
-        toast.success("Device removed successfully");
+        toast.success(response?.message || t("toast.removed"));
         fetchDevices();
       } else {
-        toast.error(response?.message || "Failed to delete device.");
+        toast.error(response?.message || t("toast.deleteFailed"));
       }
     } catch (error) {
       console.error("Error deleting device:", error);
-      toast.error("An error occurred while deleting.");
+      toast.error(t("toast.deleteError"));
     } finally {
       setDeviceToDelete(null);
       setIsDeleteDialogOpen(false);
@@ -269,11 +276,11 @@ const DeviceRegistry: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title="Device"
-          subtitle="Full traceability of device identity, connectivity, and provisioning status."
-          breadcrumbs={[{ label: "Fleet" }, { label: "Device" }]}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[{ label: t("breadcrumbs.fleet") }, { label: t("breadcrumbs.current") }]}
           showButton={true}
-          buttonText="Add Device"
+          buttonText={t("addButton")}
           buttonRoute="/devices/0"
           showExportButton={false}
           showFilterButton={false}
@@ -299,7 +306,7 @@ const DeviceRegistry: React.FC = () => {
               }`}
             >
               {accounts.length === 0 && (
-                <option value={selectedAccountId}>Select Account</option>
+                <option value={selectedAccountId}>{t("fields.selectAccount")}</option>
               )}
               {accounts.map((account) => (
                 <option key={account.id} value={account.id}>
@@ -316,7 +323,7 @@ const DeviceRegistry: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <MetricCard
             icon={Monitor}
-            label="Total Devices"
+            label={t("metrics.totalDevices")}
             value={summary.totalDevices}
             iconBgColor="bg-purple-100"
             iconColor="text-purple-600"
@@ -324,7 +331,7 @@ const DeviceRegistry: React.FC = () => {
           />
           <MetricCard
             icon={ShieldCheck}
-            label="In Service"
+            label={t("metrics.inService")}
             value={summary.inService}
             iconBgColor="bg-green-100"
             iconColor="text-green-600"
@@ -332,7 +339,7 @@ const DeviceRegistry: React.FC = () => {
           />
           <MetricCard
             icon={AlertCircle}
-            label="Out of Service"
+            label={t("metrics.outOfService")}
             value={summary.outOfService}
             iconBgColor="bg-orange-100"
             iconColor="text-orange-600"
@@ -342,7 +349,7 @@ const DeviceRegistry: React.FC = () => {
 
         {loading ? (
           <div className="flex items-center justify-center p-8">
-            <p>Loading devices...</p>
+            <p>{t("loading")}</p>
           </div>
         ) : (
           <CommonTable
@@ -351,7 +358,7 @@ const DeviceRegistry: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             showActions={true}
-            searchPlaceholder="Search devices..."
+            searchPlaceholder={t("searchPlaceholder")}
             rowsPerPageOptions={[5, 10, 25, 50, 100]}
             defaultRowsPerPage={10}
             pageNo={pageNo}
@@ -374,10 +381,12 @@ const DeviceRegistry: React.FC = () => {
             setDeviceToDelete(null);
           }}
           onConfirm={confirmDelete}
-          title="Remove Device"
-          message={`Are you sure you want to remove device "${deviceToDelete?.serialId || deviceToDelete?.id}" from the registry? This action cannot be undone.`}
-          confirmText="Remove"
-          cancelText="Cancel"
+          title={t("deleteTitle")}
+          message={t("deleteMessage", {
+            device: deviceToDelete?.serialId || deviceToDelete?.id || "",
+          })}
+          confirmText={t("confirmDelete")}
+          cancelText={t("cancel")}
           type="danger"
           isDark={isDark}
         />

@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import CommonTable from "@/components/CommonTable";
 import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
@@ -16,6 +17,7 @@ import ConfirmationDialog from "@/components/ConfirmationDialog";
 const Roles: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.rolesPermissions.list");
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -36,13 +38,13 @@ const Roles: React.FC = () => {
   const [roleToDelete, setRoleToDelete] = useState<RoleAccount | null>(null);
 
   const columns = [
-    { key: "no", label: "NO", visible: true },
-    { key: "accountName", label: "Account", visible: true },
-    { key: "roleName", label: "Role", type: "link" as const, visible: true },
-    { key: "description", label: "Description", visible: true },
+    { key: "no", label: t("table.no"), visible: true },
+    { key: "accountName", label: t("table.account"), visible: true },
+    { key: "roleName", label: t("table.role"), type: "link" as const, visible: true },
+    { key: "description", label: t("table.description"), visible: true },
     {
       key: "createdOn",
-      label: "Created At",
+      label: t("table.createdAt"),
       visible: true,
       type: "date" as const,
     },
@@ -72,11 +74,11 @@ const Roles: React.FC = () => {
         toast.success(response.message);
         fetchRoles();
       } else {
-        toast.error(response.message || "Failed to delete role");
+        toast.error(response.message || t("toast.deleteFailed"));
       }
     } catch (error) {
       console.error("Error deleting role:", error);
-      toast.error("An error occurred while deleting.");
+      toast.error(t("toast.deleteError"));
     } finally {
       setRoleToDelete(null);
       setIsDeleteDialogOpen(false);
@@ -92,9 +94,9 @@ const Roles: React.FC = () => {
   const handleExport = async () => {
     try {
       await exportRoles();
-      toast.success("Roles exported successfully!");
+      toast.success(t("toast.exportSuccess"));
     } catch {
-      toast.error("Failed to export roles");
+      toast.error(t("toast.exportFailed"));
     }
   };
 
@@ -123,14 +125,14 @@ const Roles: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title="Roles & Permissions"
-          subtitle="Define fine-grained access controls for different user types."
-          breadcrumbs={[{ label: "Users" }, { label: "Roles & Permissions" }]}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[{ label: t("breadcrumbs.users") }, { label: t("breadcrumbs.current") }]}
           showButton={true}
-          buttonText="New Role"
+          buttonText={t("addButton")}
           buttonRoute="/users/roles-permissions/0"
           showExportButton={true}
-          ExportbuttonText="Export"
+          ExportbuttonText={t("export")}
           showWriteButton={true}
           onExportClick={handleExport}
         />
@@ -139,7 +141,7 @@ const Roles: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <MetricCard
             icon={Shield}
-            label="Total Roles"
+            label={t("metrics.totalRoles")}
             value={summary.totalRoles}
             iconBgColor="bg-purple-100"
             iconColor="text-purple-600"
@@ -147,7 +149,7 @@ const Roles: React.FC = () => {
           />
           <MetricCard
             icon={Lock}
-            label="System Roles"
+            label={t("metrics.systemRoles")}
             value={summary.systemRoles}
             iconBgColor="bg-purple-100"
             iconColor="text-purple-600"
@@ -155,7 +157,7 @@ const Roles: React.FC = () => {
           />
           <MetricCard
             icon={UsersIcon}
-            label="Custom Roles"
+            label={t("metrics.customRoles")}
             value={summary.customRoles}
             iconBgColor="bg-pink-100"
             iconColor="text-pink-600"
@@ -170,7 +172,7 @@ const Roles: React.FC = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           showActions={true}
-          searchPlaceholder="Search across all fields..."
+          searchPlaceholder={t("searchPlaceholder")}
           rowsPerPageOptions={[2, 10, 25, 50, 100]}
           defaultRowsPerPage={10}
           pageNo={pageNo}
@@ -191,10 +193,10 @@ const Roles: React.FC = () => {
             setRoleToDelete(null);
           }}
           onConfirm={confirmDelete}
-          title="Delete Role"
-          message={`Are you sure you want to delete role "${roleToDelete?.roleName}"? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
+          title={t("delete.title")}
+          message={t("delete.message", { name: roleToDelete?.roleName || "" })}
+          confirmText={t("delete.confirm")}
+          cancelText={t("delete.cancel")}
           type="danger"
           isDark={isDark}
         />

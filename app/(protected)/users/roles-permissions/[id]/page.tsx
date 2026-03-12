@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Card } from "@/components/CommonCard";
 import { useTheme } from "@/context/ThemeContext";
 import { Shield, Users, Lock } from "lucide-react";
@@ -21,6 +22,7 @@ import {
 const AddRole: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
+  const t = useTranslations("pages.rolesPermissions.detail");
   const router = useRouter();
   const params = useParams();
   const roleId = params?.id;
@@ -221,12 +223,12 @@ const AddRole: React.FC = () => {
 
           setIsEditMode(true);
         } else {
-          toast.error(response?.message || "Failed to fetch role data");
+          toast.error(response?.message || t("toast.fetchRoleFailed"));
         }
       }
     } catch (error) {
       console.error("Error fetching role:", error);
-      toast.error("Failed to load role data");
+      toast.error(t("toast.loadRoleFailed"));
     } finally {
       setLoading(false);
     }
@@ -234,7 +236,7 @@ const AddRole: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!formData.account || !formData.roleName) {
-      toast.error("Please fill in all required fields");
+      toast.error(t("toast.fillRequired"));
       return;
     }
 
@@ -271,15 +273,15 @@ const AddRole: React.FC = () => {
           const rightsResponse = await updateRights(roleId, rightsPayload);
 
           if (rightsResponse.statusCode === 200) {
-            toast.success("Role and permissions updated successfully!");
+            toast.success(t("toast.updatedSuccess"));
             router.push("/users/roles-permissions");
           } else {
             toast.error(
-              rightsResponse?.message || "Failed to update permissions",
+              rightsResponse?.message || t("toast.updatePermissionsFailed"),
             );
           }
         } else {
-          toast.error(response?.message || "Failed to update role");
+          toast.error(response?.message || t("toast.updateRoleFailed"));
         }
       } else {
         // Create new role - include rights in payload
@@ -295,10 +297,10 @@ const AddRole: React.FC = () => {
         response = await createRole(payload);
 
         if (response.statusCode === 200) {
-          toast.success(response?.message || "Role created successfully!");
+          toast.success(response?.message || t("toast.createdSuccess"));
           router.push("/users/roles-permissions");
         } else {
-          toast.error(response?.message || "Role creation failure!");
+          toast.error(response?.message || t("toast.createFailed"));
         }
       }
     } catch (error) {
@@ -306,7 +308,7 @@ const AddRole: React.FC = () => {
         `Error ${isEditMode ? "updating" : "creating"} role:`,
         error,
       );
-      toast.error(`Failed to ${isEditMode ? "update" : "create"} role`);
+      toast.error(t("toast.saveFailed"));
     } finally {
       setLoading(false);
     }
@@ -352,11 +354,11 @@ const AddRole: React.FC = () => {
           await fetchRoleData(roleId as string);
         }
       } else {
-        toast.error("Failed to fetch forms");
+        toast.error(t("toast.fetchFormsFailed"));
       }
     } catch (error) {
       console.error("Error fetching forms:", error);
-      toast.error("Something went wrong while fetching forms");
+      toast.error(t("toast.fetchFormsError"));
     }
   }
 
@@ -377,7 +379,7 @@ const AddRole: React.FC = () => {
               style={{ borderColor: selectedColor }}
             ></div>
             <p className={isDark ? "text-gray-400" : "text-gray-600"}>
-              Loading role data...
+              {t("loading")}
             </p>
           </div>
         </div>
@@ -395,12 +397,12 @@ const AddRole: React.FC = () => {
               <h1
                 className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 ${isDark ? "text-foreground" : "text-gray-900"}`}
               >
-                {isEditMode ? "Update Role" : "Create New Role"}
+                {isEditMode ? t("title.edit") : t("title.create")}
               </h1>
               <p
                 className={`text-xs sm:text-sm md:text-base ${isDark ? "text-gray-400" : "text-gray-600"}`}
               >
-                Define access levels and capabilities for specific accounts.
+                {t("subtitle")}
               </p>
             </div>
             <div className="flex gap-2 sm:gap-3 sm:flex-shrink-0">
@@ -413,7 +415,7 @@ const AddRole: React.FC = () => {
                 onClick={() => router.back()}
                 disabled={loading}
               >
-                Cancel
+                {t("buttons.cancel")}
               </button>
               <button
                 className="flex-1 sm:flex-none text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
@@ -425,12 +427,12 @@ const AddRole: React.FC = () => {
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                     <span className="whitespace-nowrap">
-                      {isEditMode ? "Updating..." : "Saving..."}
+                      {isEditMode ? t("buttons.updating") : t("buttons.saving")}
                     </span>
                   </>
                 ) : (
                   <span className="whitespace-nowrap">
-                    {isEditMode ? "Update Role" : "Save Role"}
+                    {isEditMode ? t("buttons.updateRole") : t("buttons.saveRole")}
                   </span>
                 )}
               </button>
@@ -451,13 +453,13 @@ const AddRole: React.FC = () => {
                 <h2
                   className={`text-xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
                 >
-                  Role Information
+                  {t("sections.roleInformation")}
                 </h2>
               </div>
               <p
                 className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}
               >
-                Basic details about the role and its scope.
+                {t("sections.roleInformationSubtitle")}
               </p>
 
               <div className="grid grid-cols-1 gap-6">
@@ -466,7 +468,7 @@ const AddRole: React.FC = () => {
                   <label
                     className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                   >
-                    Account
+                    {t("fields.account")}
                   </label>
                   <select
                     name="account"
@@ -482,7 +484,7 @@ const AddRole: React.FC = () => {
                       isEditMode ? "opacity-60 cursor-not-allowed" : ""
                     }`}
                   >
-                    <option value="">Select Account</option>
+                    <option value="">{t("fields.selectAccount")}</option>
                     {accounts &&
                       accounts.map((account: { id: number; value: string }) => (
                         <option key={account.id} value={account.id}>
@@ -497,7 +499,7 @@ const AddRole: React.FC = () => {
                   <label
                     className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                   >
-                    Role Name
+                    {t("fields.roleName")}
                   </label>
                   <input
                     type="text"
@@ -505,7 +507,7 @@ const AddRole: React.FC = () => {
                     value={formData.roleName}
                     required
                     onChange={handleInputChange}
-                    placeholder="e.g. Regional Manager"
+                    placeholder={t("fields.roleNamePlaceholder")}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                       isDark
                         ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500 focus:border-purple-500"
@@ -519,13 +521,13 @@ const AddRole: React.FC = () => {
                   <label
                     className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                   >
-                    Description
+                    {t("fields.description")}
                   </label>
                   <textarea
                     name="description"
                     value={formData.description}
                     onChange={handleInputChange}
-                    placeholder="Briefly describe the role's purpose"
+                    placeholder={t("fields.descriptionPlaceholder")}
                     rows={3}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors resize-none ${
                       isDark
@@ -546,13 +548,13 @@ const AddRole: React.FC = () => {
                 <h2
                   className={`text-xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
                 >
-                  Permission Matrix
+                  {t("sections.permissionMatrix")}
                 </h2>
               </div>
               <p
                 className={`text-sm mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}
               >
-                Select the resources and actions this role allows.
+                {t("sections.permissionMatrixSubtitle")}
               </p>
 
               {/* Permission Table */}
@@ -567,7 +569,7 @@ const AddRole: React.FC = () => {
                           isDark ? "text-gray-300" : "text-gray-700"
                         }`}
                       >
-                        RESOURCE
+                        {t("permission.resource")}
                       </th>
                       <th className="text-center py-3 px-4">
                         <div className="flex flex-col items-center gap-1">
@@ -576,7 +578,7 @@ const AddRole: React.FC = () => {
                               isDark ? "text-gray-300" : "text-gray-700"
                             }`}
                           >
-                            READ
+                            {t("permission.read")}
                           </span>
                           <input
                             type="checkbox"
@@ -594,7 +596,7 @@ const AddRole: React.FC = () => {
                               isDark ? "text-gray-300" : "text-gray-700"
                             }`}
                           >
-                            WRITE
+                            {t("permission.write")}
                           </span>
                           <input
                             type="checkbox"
@@ -612,7 +614,7 @@ const AddRole: React.FC = () => {
                               isDark ? "text-gray-300" : "text-gray-700"
                             }`}
                           >
-                            UPDATE
+                            {t("permission.update")}
                           </span>
                           <input
                             type="checkbox"
@@ -630,7 +632,7 @@ const AddRole: React.FC = () => {
                               isDark ? "text-gray-300" : "text-gray-700"
                             }`}
                           >
-                            DELETE
+                            {t("permission.delete")}
                           </span>
                           <input
                             type="checkbox"
@@ -648,7 +650,7 @@ const AddRole: React.FC = () => {
                               isDark ? "text-gray-300" : "text-gray-700"
                             }`}
                           >
-                            EXPORT
+                            {t("permission.export")}
                           </span>
                           <input
                             type="checkbox"
@@ -666,7 +668,7 @@ const AddRole: React.FC = () => {
                               isDark ? "text-gray-300" : "text-gray-700"
                             }`}
                           >
-                            ALL
+                            {t("permission.all")}
                           </span>
                           <input
                             type="checkbox"

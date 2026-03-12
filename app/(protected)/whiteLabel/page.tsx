@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import CommonTable from "@/components/CommonTable";
 import PageHeader from "@/components/PageHeader";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
@@ -13,6 +14,7 @@ import { toast } from "react-toastify";
 const WhiteLabelPage: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.whiteLabel.list");
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -31,18 +33,18 @@ const WhiteLabelPage: React.FC = () => {
   const columns = [
     {
       key: "accountName",
-      label: "ACCOUNT",
+      label: t("table.account"),
       visible: true,
     },
     {
       key: "customEntryFqdn",
-      label: "DOMAIN",
+      label: t("table.domain"),
       type: "link" as const,
       visible: true,
     },
     {
       key: "theme",
-      label: "THEME",
+      label: t("table.theme"),
       visible: true,
       render: (value: any, row: WhiteLabel) => (
         <div className="flex items-center gap-2">
@@ -61,7 +63,7 @@ const WhiteLabelPage: React.FC = () => {
     },
     {
       key: "isActive",
-      label: "STATUS",
+      label: t("table.status"),
       type: "badge" as const,
       visible: true,
     },
@@ -118,14 +120,14 @@ const WhiteLabelPage: React.FC = () => {
     try {
       const response = await deleteWhiteLabel(whiteLabelToDelete.whiteLabelId);
       if (response.success) {
-        toast.success("White label deleted successfully!");
+        toast.success(t("toast.deleted"));
         fetchWhiteLabels();
       } else {
-        toast.error(response.message || "Failed to delete white label");
+        toast.error(response.message || t("toast.deleteFailed"));
       }
     } catch (error) {
       console.error("Error deleting white label:", error);
-      toast.error("An error occurred while deleting.");
+      toast.error(t("toast.deleteError"));
     } finally {
       setWhiteLabelToDelete(null);
       setIsDeleteDialogOpen(false);
@@ -142,11 +144,14 @@ const WhiteLabelPage: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title="White Label"
-          subtitle="Manage identities, taxonomies, and global parameters."
-          breadcrumbs={[{ label: "Accounts" }, { label: "White Label" }]}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[
+            { label: t("breadcrumbs.accounts") },
+            { label: t("breadcrumbs.current") },
+          ]}
           showButton={true}
-          buttonText="Provision Branding"
+          buttonText={t("addButton")}
           buttonRoute="/provisionBranding"
         />
 
@@ -154,7 +159,7 @@ const WhiteLabelPage: React.FC = () => {
         {loading ? (
           <div className="flex items-center justify-center p-8">
             <p className={isDark ? "text-foreground" : "text-gray-900"}>
-              Loading white labels...
+              {t("loading")}
             </p>
           </div>
         ) : (
@@ -164,7 +169,7 @@ const WhiteLabelPage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             showActions={true}
-            searchPlaceholder="Search across all fields..."
+            searchPlaceholder={t("searchPlaceholder")}
             rowsPerPageOptions={[10, 25, 50, 100]}
             defaultRowsPerPage={10}
             variant="simple"
@@ -186,10 +191,12 @@ const WhiteLabelPage: React.FC = () => {
             setWhiteLabelToDelete(null);
           }}
           onConfirm={confirmDelete}
-          title="Delete White Label"
-          message={`Are you sure you want to delete the white label for "${whiteLabelToDelete?.accountName}"? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
+          title={t("delete.title")}
+          message={t("delete.message", {
+            account: whiteLabelToDelete?.accountName || "",
+          })}
+          confirmText={t("delete.confirm")}
+          cancelText={t("delete.cancel")}
           type="danger"
           isDark={isDark}
         />

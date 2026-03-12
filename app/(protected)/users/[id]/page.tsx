@@ -2,6 +2,7 @@
 
 import { Building2, Lock, Shield, Upload, User, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { Card } from "@/components/CommonCard";
@@ -48,6 +49,7 @@ interface AdditionalPermission {
 const CreateUser: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
+  const t = useTranslations("pages.users.detail");
   const params = useParams();
   const id = params?.id;
   const router = useRouter();
@@ -173,7 +175,7 @@ const CreateUser: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching role permissions:", error);
-      toast.error("Failed to load role permissions");
+      toast.error(t("toast.rolePermissionsFailed"));
     } finally {
       setLoadingPermissions(false);
     }
@@ -229,13 +231,13 @@ const CreateUser: React.FC = () => {
         "image/webp",
       ];
       if (!validTypes.includes(file.type)) {
-        toast.error("Please upload a valid image file");
+        toast.error(t("toast.uploadValidImage"));
         return;
       }
 
       const maxSize = 5 * 1024 * 1024;
       if (file.size > maxSize) {
-        toast.error("Image size should be less than 5MB");
+        toast.error(t("toast.uploadSize"));
         return;
       }
 
@@ -245,14 +247,14 @@ const CreateUser: React.FC = () => {
         setAvatarPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-      toast.success("Avatar uploaded successfully!");
+      toast.success(t("toast.avatarUploaded"));
     }
   };
 
   const handleRemoveAvatar = () => {
     setAvatarFile(null);
     setAvatarPreview("");
-    toast.info("Avatar removed");
+    toast.info(t("toast.avatarRemoved"));
   };
 
   const fetchUserData = async (userId: string) => {
@@ -316,11 +318,11 @@ const CreateUser: React.FC = () => {
 
         setIsEditMode(true);
       } else {
-        toast.error(response?.message || "Failed to fetch user data");
+        toast.error(response?.message || t("toast.fetchUserFailed"));
       }
     } catch (error) {
       console.error("Error fetching user:", error);
-      toast.error("Failed to load user data");
+      toast.error(t("toast.loadUserFailed"));
     } finally {
       setLoading(false);
     }
@@ -332,23 +334,23 @@ const CreateUser: React.FC = () => {
       !formData.accountCode ||
       !formData.emailAddress
     ) {
-      toast.error("Please fill all required fields");
+      toast.error(t("toast.fillRequired"));
       return;
     }
 
     if (!formData.accountId || formData.accountId === 0) {
-      toast.error("Please select an account");
+      toast.error(t("toast.selectAccount"));
       return;
     }
 
     if (!formData.roleId || formData.roleId === 0) {
-      toast.error("Please select a role");
+      toast.error(t("toast.selectRole"));
       return;
     }
 
     if (!isEditMode) {
       if (formData.password.length < 6) {
-        toast.error("Password must be minimum 6 characters");
+        toast.error(t("toast.passwordMin"));
         return;
       }
     }
@@ -396,10 +398,10 @@ const CreateUser: React.FC = () => {
 
         // const response = await updateUser(id, submitData);
         if (response.statusCode === 200) {
-          toast.success(response.message || "User updated successfully!");
+          toast.success(response.message || t("toast.updated"));
           setTimeout(() => router.push("/users"), 1000);
         } else {
-          toast.error(response.message || "Failed to update user");
+          toast.error(response.message || t("toast.updateFailed"));
         }
       } else {
         // CREATE USER - Pass plain object instead of FormData
@@ -420,16 +422,16 @@ const CreateUser: React.FC = () => {
 
         const response = await createUser(payload);
         if (response.statusCode === 200) {
-          toast.success(response.message || "User created successfully!");
+          toast.success(response.message || t("toast.created"));
           setTimeout(() => router.push("/users"), 1000);
         } else {
-          toast.error(response.message || "Failed to create user");
+          toast.error(response.message || t("toast.createFailed"));
         }
       }
     } catch (error) {
       console.error("Error saving user:", error);
       toast.error(
-        isEditMode ? "Failed to update user" : "Failed to create user",
+        isEditMode ? t("toast.updateFailed") : t("toast.createFailed"),
       );
     } finally {
       setLoading(false);
@@ -444,7 +446,7 @@ const CreateUser: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching accounts:", error);
-      toast.error("Failed to load accounts");
+      toast.error(t("toast.loadAccountsFailed"));
     }
   }
 
@@ -463,9 +465,9 @@ const CreateUser: React.FC = () => {
   }, [id]);
 
   const tabs = [
-    { id: "profile" as TabType, label: "Profile" },
-    { id: "access" as TabType, label: "Access & Roles" },
-    { id: "security" as TabType, label: "Security" },
+    { id: "profile" as TabType, label: t("tabs.profile") },
+    { id: "access" as TabType, label: t("tabs.access") },
+    { id: "security" as TabType, label: t("tabs.security") },
   ];
 
   if (loading && isEditMode && !formData.emailAddress) {
@@ -480,7 +482,7 @@ const CreateUser: React.FC = () => {
               style={{ borderColor: selectedColor }}
             ></div>
             <p className={isDark ? "text-gray-400" : "text-gray-600"}>
-              Loading user data...
+              {t("loading.userData")}
             </p>
           </div>
         </div>
@@ -499,12 +501,12 @@ const CreateUser: React.FC = () => {
               <h1
                 className={`text-xl sm:text-2xl md:text-3xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
               >
-                {isEditMode ? "Edit User" : "Create User"}
+                {isEditMode ? t("title.edit") : t("title.create")}
               </h1>
               <p
                 className={`text-xs sm:text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}
               >
-                Manage user identity, access scope, and security settings.
+                {t("subtitle")}
               </p>
             </div>
             <div className="flex gap-2 sm:gap-3">
@@ -516,7 +518,7 @@ const CreateUser: React.FC = () => {
                     : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
                 }`}
               >
-                Cancel
+                {t("buttons.cancel")}
               </button>
               <button
                 onClick={handleSubmit}
@@ -525,10 +527,10 @@ const CreateUser: React.FC = () => {
                 style={{ backgroundColor: selectedColor }}
               >
                 {loading
-                  ? "Saving..."
+                  ? t("buttons.saving")
                   : isEditMode
-                    ? "Update User"
-                    : "Create User"}
+                    ? t("buttons.update")
+                    : t("buttons.create")}
               </button>
             </div>
           </div>
@@ -572,20 +574,20 @@ const CreateUser: React.FC = () => {
                   <h2
                     className={`text-lg sm:text-xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
                   >
-                    Personal Information
+                    {t("sections.personalInfo")}
                   </h2>
                 </div>
                 <p
                   className={`text-xs sm:text-sm mb-4 sm:mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}
                 >
-                  Basic identity details used for login and display.
+                  {t("sections.personalInfoSubtitle")}
                 </p>
 
                 <div className="mb-6">
                   <label
                     className={`block text-xs sm:text-sm font-medium mb-3 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                   >
-                    Profile Picture
+                    {t("fields.profilePicture")}
                   </label>
                   <div className="flex items-center gap-4">
                     <div className="relative">
@@ -787,13 +789,13 @@ const CreateUser: React.FC = () => {
                   <h2
                     className={`text-lg sm:text-xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
                   >
-                    Access & Roles
+                    {t("sections.accessRoles")}
                   </h2>
                 </div>
                 <p
                   className={`text-xs sm:text-sm mb-4 sm:mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}
                 >
-                  Define user permissions and account associations.
+                  {t("sections.accessRolesSubtitle")}
                 </p>
 
                 <div className="space-y-4 sm:space-y-6">
@@ -801,7 +803,7 @@ const CreateUser: React.FC = () => {
                     <label
                       className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                     >
-                      Account Association{" "}
+                      {t("fields.accountAssociation")}{" "}
                       <span className="text-red-500">*</span>
                     </label>
                     <select
@@ -814,7 +816,7 @@ const CreateUser: React.FC = () => {
                           : "bg-white border-gray-300 text-gray-900"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
-                      <option value="0">Select Account</option>
+                      <option value="0">{t("fields.selectAccount")}</option>
                       {accounts.map((account) => (
                         <option key={account.id} value={account.id}>
                           {account.value}
@@ -827,7 +829,8 @@ const CreateUser: React.FC = () => {
                     <label
                       className={`block text-xs sm:text-sm font-medium mb-1.5 sm:mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                     >
-                      Role Assignment <span className="text-red-500">*</span>
+                      {t("fields.roleAssignment")}{" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <select
                       name="roleId"
@@ -840,7 +843,7 @@ const CreateUser: React.FC = () => {
                           : "bg-white border-gray-300 text-gray-900"
                       } ${!formData.accountId || formData.accountId === 0 ? "opacity-50 cursor-not-allowed" : ""} focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
-                      <option value="0">Select Role</option>
+                      <option value="0">{t("fields.selectRole")}</option>
                       {roles.map((role) => (
                         <option key={role.id} value={role.id}>
                           {role.value}
@@ -860,12 +863,12 @@ const CreateUser: React.FC = () => {
                         <h3
                           className={`text-base font-semibold ${isDark ? "text-foreground" : "text-gray-900"}`}
                         >
-                          Permission Matrix
+                          {t("permission.title")}
                         </h3>
                         {loadingPermissions && (
                           <div className="flex items-center gap-2 text-xs text-gray-500">
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500"></div>
-                            Loading...
+                            {t("loading.permissions")}
                           </div>
                         )}
                       </div>
@@ -873,8 +876,7 @@ const CreateUser: React.FC = () => {
                       <p
                         className={`text-xs mb-4 ${isDark ? "text-gray-400" : "text-gray-600"}`}
                       >
-                        Role permissions are shown below. You can grant
-                        additional permissions specific to this user.
+                        {t("permission.subtitle")}
                       </p>
 
                       {rolePermissions.length > 0 ? (
@@ -887,32 +889,32 @@ const CreateUser: React.FC = () => {
                                 <th
                                   className={`text-left py-3 px-4 font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
                                 >
-                                  RESOURCE
+                                  {t("permission.resource")}
                                 </th>
                                 <th
                                   className={`text-center py-3 px-4 font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
                                 >
-                                  READ
+                                  {t("permission.read")}
                                 </th>
                                 <th
                                   className={`text-center py-3 px-4 font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
                                 >
-                                  WRITE
+                                  {t("permission.write")}
                                 </th>
                                 <th
                                   className={`text-center py-3 px-4 font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
                                 >
-                                  DELETE
+                                  {t("permission.delete")}
                                 </th>
                                 <th
                                   className={`text-center py-3 px-4 font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
                                 >
-                                  EXPORT
+                                  {t("permission.export")}
                                 </th>
                                 <th
                                   className={`text-center py-3 px-4 font-semibold text-sm ${isDark ? "text-gray-300" : "text-gray-700"}`}
                                 >
-                                  ADDITIONAL
+                                  {t("permission.additional")}
                                 </th>
                               </tr>
                             </thead>
@@ -1006,8 +1008,8 @@ const CreateUser: React.FC = () => {
                             className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
                           >
                             {loadingPermissions
-                              ? "Loading permissions..."
-                              : "No permissions available for this role"}
+                              ? t("loading.permissions")
+                              : t("permission.none")}
                           </p>
                         </div>
                       )}
@@ -1018,11 +1020,7 @@ const CreateUser: React.FC = () => {
                         <p
                           className={`text-xs ${isDark ? "text-gray-400" : "text-gray-700"}`}
                         >
-                          <strong>Note:</strong> Role permissions (Read, Write,
-                          Delete, Export) are inherited from the selected role
-                          and cannot be modified. Use the "Additional" column to
-                          grant extra permissions specific to this user beyond
-                          their role.
+                          <strong>Note:</strong> {t("permission.note")}
                         </p>
                       </div>
                     </div>
@@ -1043,13 +1041,13 @@ const CreateUser: React.FC = () => {
                   <h2
                     className={`text-lg sm:text-xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
                   >
-                    Security Settings
+                    {t("sections.securitySettings")}
                   </h2>
                 </div>
                 <p
                   className={`text-xs sm:text-sm mb-4 sm:mb-6 ${isDark ? "text-gray-400" : "text-gray-600"}`}
                 >
-                  Manage authentication security and account status.
+                  {t("sections.securitySettingsSubtitle")}
                 </p>
 
                 <div className="space-y-4 sm:space-y-6">
@@ -1060,12 +1058,12 @@ const CreateUser: React.FC = () => {
                       <h3
                         className={`text-sm sm:text-base font-medium mb-1 ${isDark ? "text-foreground" : "text-gray-900"}`}
                       >
-                        Account Status
+                        {t("security.accountStatus")}
                       </h3>
                       <p
                         className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
                       >
-                        Disable user access without deleting data.
+                        {t("security.accountStatusSubtitle")}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
@@ -1076,7 +1074,9 @@ const CreateUser: React.FC = () => {
                           color: selectedColor,
                         }}
                       >
-                        {userStatus ? "Active" : "Inactive"}
+                        {userStatus
+                          ? t("security.active")
+                          : t("security.inactive")}
                       </span>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -1106,12 +1106,12 @@ const CreateUser: React.FC = () => {
                       <h3
                         className={`text-sm sm:text-base font-medium mb-1 ${isDark ? "text-foreground" : "text-gray-900"}`}
                       >
-                        Multi-Factor Authentication
+                        {t("security.mfa")}
                       </h3>
                       <p
                         className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
                       >
-                        Require 2FA for login.
+                        {t("security.mfaSubtitle")}
                       </p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -1141,17 +1141,17 @@ const CreateUser: React.FC = () => {
                           <h3
                             className={`text-sm sm:text-base font-medium mb-1 ${isDark ? "text-foreground" : "text-gray-900"}`}
                           >
-                            Password Reset
+                            {t("security.passwordReset")}
                           </h3>
                           <p
                             className={`text-xs sm:text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
                           >
-                            Send a password reset email to the user.
+                            {t("security.passwordResetSubtitle")}
                           </p>
                         </div>
                         <button
                           onClick={() =>
-                            toast.info("Password reset email sent!")
+                            toast.info(t("toast.passwordResetSent"))
                           }
                           className={`w-full sm:w-auto px-3 sm:px-4 py-2 text-sm sm:text-base rounded-lg font-medium transition-colors ${
                             isDark
@@ -1159,7 +1159,7 @@ const CreateUser: React.FC = () => {
                               : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
                           }`}
                         >
-                          Send Link
+                          {t("buttons.sendLink")}
                         </button>
                       </div>
                     </div>

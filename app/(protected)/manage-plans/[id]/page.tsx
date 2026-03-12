@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   CreditCard,
   DollarSign,
@@ -54,6 +55,7 @@ const Card = ({ children, isDark }: CardProps) => (
 const PlansManagement = () => {
   const router = useRouter();
   const params = useParams();
+  const t = useTranslations("pages.managePlans.detail");
   const id = params?.id;
   const isEditMode = id && id !== "0";
   const { isDark } = useTheme();
@@ -259,7 +261,7 @@ const PlansManagement = () => {
       console.error("Error fetching dropdown data:", error);
       setSubmitStatus({
         type: "error",
-        message: "Failed to load dropdown data",
+        message: t("status.dropdownFailed"),
       });
     } finally {
       setLoadingDropdowns(false);
@@ -351,7 +353,7 @@ const PlansManagement = () => {
       console.error("Error fetching plan details:", error);
       setSubmitStatus({
         type: "error",
-        message: "Failed to load plan details",
+        message: t("status.planLoadFailed"),
       });
     } finally {
       setLoading(false);
@@ -425,8 +427,8 @@ const PlansManagement = () => {
         setSubmitStatus({
           type: "success",
           message: isEditMode
-            ? "Plan updated successfully!"
-            : "Plan created successfully!",
+            ? t("status.updated")
+            : t("status.created"),
         });
         setTimeout(() => {
           router.push("/manage-plans/");
@@ -434,14 +436,14 @@ const PlansManagement = () => {
       } else {
         setSubmitStatus({
           type: "error",
-          message: response?.message || "Failed to save plan",
+          message: response?.message || t("status.saveFailed"),
         });
       }
     } catch (error) {
       console.error("Error saving plan:", error);
       setSubmitStatus({
         type: "error",
-        message: "An error occurred while saving the plan",
+        message: t("status.saveError"),
       });
     } finally {
       setLoading(false);
@@ -499,14 +501,14 @@ const PlansManagement = () => {
                     isDark ? "text-white" : "text-gray-900"
                   }`}
                 >
-                  {isEditMode ? "Edit Plan" : "Create New Plan"}
+                  {isEditMode ? t("title.edit") : t("title.create")}
                 </h1>
                 <p
                   className={`mt-2 text-sm ${
                     isDark ? "text-gray-400" : "text-gray-600"
                   }`}
                 >
-                  Configure pricing, features, and subscription details.
+                  {t("subtitle")}
                 </p>
               </div>
               <div className="flex gap-3">
@@ -518,7 +520,7 @@ const PlansManagement = () => {
                       : "border-gray-300 text-gray-700 hover:bg-gray-50"
                   } font-medium transition-colors`}
                 >
-                  Cancel
+                  {t("buttons.cancel")}
                 </button>
                 <button
                   onClick={handleSubmit}
@@ -529,12 +531,12 @@ const PlansManagement = () => {
                   {loading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Saving...
+                      {t("buttons.saving")}
                     </>
                   ) : (
                     <>
                       <CheckCircle className="w-4 h-4" />
-                      {isEditMode ? "Update Plan" : "Create Plan"}
+                      {isEditMode ? t("buttons.update") : t("buttons.create")}
                     </>
                   )}
                 </button>
@@ -578,14 +580,14 @@ const PlansManagement = () => {
                       style={{ color: selectedColor }}
                       className="w-5 h-5"
                     />
-                    Structural Definitions
+                    {t("sections.structuralDefinitions")}
                   </h3>
                   <p
                     className={`text-sm mt-1 ${
                       isDark ? "text-gray-400" : "text-gray-600"
                     }`}
                   >
-                    Fundamental identity and tenant-scope attributes.
+                    {t("sections.structuralDefinitionsSubtitle")}
                   </p>
                 </div>
 
@@ -899,7 +901,7 @@ const PlansManagement = () => {
                           style={{ color: selectedColor }}
                           className="w-5 h-5"
                         />
-                        Recurring Fees (Year 2+)
+                        {t("labels.recurringCharges")}
                       </h3>
                     </div>
 
@@ -1049,7 +1051,7 @@ const PlansManagement = () => {
                           style={{ color: selectedColor }}
                           className="w-5 h-5"
                         />
-                        Recurring Fees (Year 2+)
+                        {t("labels.recurringCharges")}
                       </h3>
                     </div>
 
@@ -1111,7 +1113,7 @@ const PlansManagement = () => {
                     }`}
                   >
                     <Zap style={{ color: selectedColor }} className="w-5 h-5" />
-                    Entitlement Matrix
+                    {t("sections.entitlementModuleMatrix")}
                   </h3>
                 </div>
 
@@ -1297,14 +1299,14 @@ const PlansManagement = () => {
                       style={{ color: selectedColor }}
                       className="w-5 h-5"
                     />
-                    Dedicated Support Line
+                    {t("sections.dedicatedSupport")}
                   </h3>
                   <p
                     className={`text-sm mt-1 ${
                       isDark ? "text-gray-400" : "text-gray-600"
                     }`}
                   >
-                    Define a specific support channel for this plan tier.
+                    {t("sections.dedicatedSupportSubtitle")}
                   </p>
                 </div>
 
@@ -1403,7 +1405,7 @@ const PlansManagement = () => {
                       style={{ color: selectedColor }}
                       className="w-5 h-5"
                     />
-                    Admin Guard Settings
+                    {t("sections.adminGuard")}
                   </h3>
                 </div>
 
@@ -1498,14 +1500,14 @@ const PlansManagement = () => {
                         isDark ? "text-white" : "text-gray-900"
                       }`}
                     >
-                      PLAN BLUEPRINT
+                      {t("sections.blueprint")}
                     </h3>
                     <p
                       className={`text-sm ${
                         isDark ? "text-gray-400" : "text-gray-600"
                       }`}
                     >
-                      Live configuration summary.
+                      {t("sections.blueprintSubtitle")}
                     </p>
                   </div>
                   <div className="px-6 pb-6 space-y-4">
@@ -1515,13 +1517,13 @@ const PlansManagement = () => {
                           isDark ? "text-gray-400" : "text-gray-600"
                         }`}
                       >
-                        Category:
+                        {t("labels.category")}
                       </span>
                       <span
                         className="text-sm font-bold"
                         style={{ color: selectedColor }}
                       >
-                        {formData.tenantCategory || "N/A"}
+                        {formData.tenantCategory || t("labels.na")}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -1530,14 +1532,14 @@ const PlansManagement = () => {
                           isDark ? "text-gray-400" : "text-gray-600"
                         }`}
                       >
-                        Cycle:
+                        {t("labels.cycle")}
                       </span>
                       <span
                         className={`text-sm font-bold ${
                           isDark ? "text-white" : "text-gray-900"
                         }`}
                       >
-                        {formData.billingInterval || "N/A"}
+                        {formData.billingInterval || t("labels.na")}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -1546,13 +1548,13 @@ const PlansManagement = () => {
                           isDark ? "text-gray-400" : "text-gray-600"
                         }`}
                       >
-                        Currency:
+                        {t("labels.currency")}
                       </span>
                       <span
                         className="text-sm font-bold"
                         style={{ color: selectedColor }}
                       >
-                        {formData.settlementCurrency || "N/A"}
+                        {formData.settlementCurrency || t("labels.na")}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -1561,13 +1563,13 @@ const PlansManagement = () => {
                           isDark ? "text-gray-400" : "text-gray-600"
                         }`}
                       >
-                        Users Limit:
+                        {t("labels.usersLimit")}
                       </span>
                       <span
                         className="text-sm font-bold"
                         style={{ color: selectedColor }}
                       >
-                        {formData.userCreationLimit || "Unlimited"}
+                        {formData.userCreationLimit || t("labels.unlimited")}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -1576,7 +1578,7 @@ const PlansManagement = () => {
                           isDark ? "text-gray-400" : "text-gray-600"
                         }`}
                       >
-                        Active Features:
+                        {t("labels.activeFeatures")}
                       </span>
                       <span
                         className="text-sm font-bold"
@@ -1601,7 +1603,7 @@ const PlansManagement = () => {
                             isDark ? "text-gray-400" : "text-gray-600"
                           }`}
                         >
-                          SETUP FEE
+                          {t("labels.setupFee")}
                         </p>
                       </div>
                     </div>
@@ -1621,7 +1623,7 @@ const PlansManagement = () => {
                             className="text-xs font-bold mb-1"
                             style={{ color: selectedColor }}
                           >
-                            CONTRACT TERM
+                            {t("labels.contractTerm")}
                           </p>
                           <p
                             className={`text-sm font-medium ${
@@ -1644,7 +1646,7 @@ const PlansManagement = () => {
                           isDark ? "text-gray-400" : "text-gray-600"
                         }`}
                       >
-                        Recurring Charges (Year 2+)
+                        {t("labels.recurringCharges")}
                       </p>
                       <div className="space-y-2">
                         <div className="flex justify-between">
@@ -1653,7 +1655,7 @@ const PlansManagement = () => {
                               isDark ? "text-gray-300" : "text-gray-700"
                             }`}
                           >
-                            AMC:
+                            {t("labels.amc")}
                           </span>
                           <span
                             className={`text-sm font-bold ${
@@ -1670,7 +1672,7 @@ const PlansManagement = () => {
                               isDark ? "text-gray-300" : "text-gray-700"
                             }`}
                           >
-                            Platform:
+                            {t("labels.platform")}
                           </span>
                           <span
                             className={`text-sm font-bold ${

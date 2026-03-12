@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Link2, MapPin } from "lucide-react";
 import { useTranslations } from "next-intl";
+import PageHeader from "@/components/PageHeader";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter, useParams } from "next/navigation";
@@ -38,6 +39,7 @@ const AddEditVehicleGeofence: React.FC = () => {
   const router = useRouter();
   const params = useParams();
   const t = useTranslations("pages.vehicleGeofence.detail");
+  const tList = useTranslations("pages.vehicleGeofence.list");
 
   const assignmentId = params?.id ? Number(params.id) : 0;
   const isEditMode = assignmentId > 0;
@@ -287,11 +289,30 @@ const AddEditVehicleGeofence: React.FC = () => {
     <div className={`${isDark ? "dark" : ""}`}>
       <div className="min-h-screen bg-background flex justify-center p-2">
         <div className="w-full max-w-4xl">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-6 px-4 sm:px-0">
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
-              {isEditMode ? t("editTitle") : t("createTitle")}
-            </h1>
-          </div>
+          <PageHeader
+            title={isEditMode ? t("editTitle") : t("createTitle")}
+            subtitle={
+              isEditMode
+                ? t("section.editDescription")
+                : t("section.createDescription")
+            }
+            breadcrumbs={[
+              { label: tList("breadcrumbs.fleet") },
+              { label: tList("breadcrumbs.current"), href: "/vehicle-geofence" },
+              { label: isEditMode ? t("editTitle") : t("createTitle") },
+            ]}
+            showButton
+            buttonText={
+              loading
+                ? isEditMode
+                  ? t("buttons.updating")
+                  : t("buttons.creating")
+                : isEditMode
+                  ? t("buttons.update")
+                  : t("buttons.create")
+            }
+            onButtonClick={handleSubmit}
+          />
 
           <div
             className="bg-card rounded-2xl shadow-lg border-t-4 border-border overflow-hidden"
@@ -455,17 +476,6 @@ const AddEditVehicleGeofence: React.FC = () => {
 
               <div className="flex justify-end gap-3">
                 <button
-                  onClick={() => router.push("/vehicle-geofence")}
-                  disabled={loading}
-                  className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                    isDark
-                      ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                      : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-                  }`}
-                >
-                  {t("buttons.cancel")}
-                </button>
-                <button
                   onClick={handleSubmit}
                   disabled={loading || !canSubmit}
                   className="px-8 py-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
@@ -478,6 +488,17 @@ const AddEditVehicleGeofence: React.FC = () => {
                     : isEditMode
                       ? t("buttons.update")
                       : t("buttons.create")}
+                </button>
+                <button
+                  onClick={() => router.push("/vehicle-geofence")}
+                  disabled={loading}
+                  className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                    isDark
+                      ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                      : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+                  }`}
+                >
+                  {t("buttons.cancel")}
                 </button>
               </div>
             </div>

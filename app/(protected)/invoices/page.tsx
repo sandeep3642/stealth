@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "react-toastify";
 import CommonTable from "@/components/CommonTable";
 import PageHeader from "@/components/PageHeader";
@@ -16,6 +17,7 @@ const toLocalDate = (value: string | null | undefined) => {
 
 const Invoices: React.FC = () => {
   const { isDark } = useTheme();
+  const t = useTranslations("pages.invoices.list");
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -26,37 +28,37 @@ const Invoices: React.FC = () => {
   const columns = [
     {
       key: "no",
-      label: "NO",
+      label: t("table.no"),
       visible: true,
     },
     {
       key: "invoiceNumber",
-      label: "INVOICE #",
+      label: t("table.invoiceNumber"),
       visible: true,
     },
     {
       key: "account",
-      label: "ACCOUNT",
+      label: t("table.account"),
       visible: true,
     },
     {
       key: "amount",
-      label: "AMOUNT",
+      label: t("table.amount"),
       visible: true,
     },
     {
       key: "invoiceDate",
-      label: "INVOICE DATE",
+      label: t("table.invoiceDate"),
       visible: true,
     },
     {
       key: "dueDate",
-      label: "DUE DATE",
+      label: t("table.dueDate"),
       visible: true,
     },
     {
       key: "status",
-      label: "STATUS",
+      label: t("table.status"),
       type: "badge" as const,
       visible: true,
     },
@@ -78,14 +80,14 @@ const Invoices: React.FC = () => {
     try {
       const response = await exportInvoices(1, 500);
       if (!response?.success) {
-        toast.error(response?.message || "Export failed");
+        toast.error(response?.message || t("toast.exportFailed"));
         return;
       }
 
       const fileBlob = response?.data?.blob;
-      const fileName = response?.data?.fileName || "invoices-export.xlsx";
+      const fileName = response?.data?.fileName || t("labels.defaultFileName");
       if (!(fileBlob instanceof Blob)) {
-        toast.error("Export file data is invalid");
+        toast.error(t("toast.exportInvalidData"));
         return;
       }
 
@@ -98,9 +100,9 @@ const Invoices: React.FC = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
 
-      toast.success("Invoices exported successfully");
+      toast.success(t("toast.exportSuccess"));
     } catch (error) {
-      toast.error("Failed to export invoices");
+      toast.error(t("toast.exportCatchFailed"));
     } finally {
       setLoadingExport(false);
     }
@@ -127,17 +129,17 @@ const Invoices: React.FC = () => {
             amount: `${currency} ${amount.toLocaleString("en-IN")}`,
             invoiceDate: toLocalDate(item?.invoiceDate),
             dueDate: toLocalDate(item?.dueDate),
-            status: String(item?.status || "Pending"),
+            status: String(item?.status || t("labels.pending")),
           };
         });
 
         setData(mapped);
         setTotalRecords(Number(response?.data?.totalRecords || items.length));
       } else {
-        toast.error(response?.message || "Failed to fetch invoices");
+        toast.error(response?.message || t("toast.fetchFailed"));
       }
     } catch (error) {
-      toast.error("Failed to fetch invoices");
+      toast.error(t("toast.fetchFailed"));
     }
   }
 
@@ -160,14 +162,14 @@ const Invoices: React.FC = () => {
       >
         <div className="mb-4 sm:mb-6">
           <PageHeader
-            title="Invoices"
-            subtitle="Financial ledger and billing cycle automation control."
-            breadcrumbs={[{ label: "Billing" }, { label: "Invoices" }]}
+            title={t("title")}
+            subtitle={t("subtitle")}
+            breadcrumbs={[{ label: t("breadcrumbs.billing") }, { label: t("breadcrumbs.current") }]}
             showButton={true}
-            buttonText="Add Invoice"
+            buttonText={t("addButton")}
             buttonRoute="/invoices/0"
             showExportButton={true}
-            ExportbuttonText={loadingExport ? "Exporting..." : "Export"}
+            ExportbuttonText={loadingExport ? t("exportingButton") : t("exportButton")}
             onExportClick={handleExport}
           />
         </div>
@@ -177,7 +179,7 @@ const Invoices: React.FC = () => {
             columns={columns}
             data={data}
             showActions={false}
-            searchPlaceholder="Search invoices..."
+            searchPlaceholder={t("searchPlaceholder")}
             rowsPerPageOptions={[10, 25, 50, 100]}
             defaultRowsPerPage={10}
             pageNo={pageNo}

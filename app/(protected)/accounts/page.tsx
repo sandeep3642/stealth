@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import CommonTable from "@/components/CommonTable";
 import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
@@ -16,6 +17,7 @@ import { getUserRoleData } from "@/services/commonServie";
 const Accounts: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.accounts.list");
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -39,35 +41,35 @@ const Accounts: React.FC = () => {
   const columns = [
     {
       key: "no",
-      label: "NO",
+      label: t("table.no"),
       visible: true,
     },
     {
       key: "accountCode",
-      label: "CODE",
+      label: t("table.code"),
       type: "link" as const,
       visible: true,
     },
     {
       key: "accountName",
-      label: "INSTANCE",
+      label: t("table.instance"),
       visible: true,
     },
     {
       key: "phone",
-      label: "CONTACT",
+      label: t("table.contact"),
       visible: true,
     },
     {
       key: "address",
-      label: "LOCATION",
+      label: t("table.location"),
       type: "icon-text" as const,
       icon: <MapPin className="w-4 h-4" />,
       visible: true,
     },
     {
       key: "status",
-      label: "STATUS",
+      label: t("table.status"),
       type: "badge" as const,
       visible: true,
     },
@@ -120,7 +122,7 @@ const Accounts: React.FC = () => {
       setTotalRecords(pageData.totalRecords);
       setCardCounts(response.data.cardCounts);
     } else {
-      toast.error(response?.message ?? "Failed to load accounts");
+      toast.error(response?.message ?? t("toast.loadFailed"));
     }
   }
 
@@ -173,11 +175,14 @@ const Accounts: React.FC = () => {
         {/* Page Header */}
         <div className="mb-4 sm:mb-6">
           <PageHeader
-            title="Account List"
-            subtitle="Manage identities, taxonomies, and global parameters."
-            breadcrumbs={[{ label: "Accounts" }, { label: "Account List" }]}
+            title={t("title")}
+            subtitle={t("subtitle")}
+            breadcrumbs={[
+              { label: t("breadcrumbs.accounts") },
+              { label: t("breadcrumbs.current") },
+            ]}
             showButton={true}
-            buttonText="Add Account"
+            buttonText={t("addButton")}
             buttonRoute="/addAccount"
             showWriteButton={accountsRight?.canWrite || false}
           />
@@ -187,7 +192,7 @@ const Accounts: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <MetricCard
             icon={Building2}
-            label="TOTAL"
+            label={t("metrics.total")}
             value={cardCounts.total}
             iconBgColor="bg-purple-100 dark:bg-purple-900/30"
             iconColor="text-purple-600 dark:text-purple-400"
@@ -195,7 +200,7 @@ const Accounts: React.FC = () => {
           />
           <MetricCard
             icon={CheckCircle}
-            label="ACTIVE"
+            label={t("metrics.active")}
             value={cardCounts.active}
             iconBgColor="bg-green-100 dark:bg-green-900/30"
             iconColor="text-green-600 dark:text-green-400"
@@ -203,7 +208,7 @@ const Accounts: React.FC = () => {
           />
           <MetricCard
             icon={Clock}
-            label="PENDING"
+            label={t("metrics.pending")}
             value={cardCounts.pending}
             iconBgColor="bg-orange-100 dark:bg-orange-900/30"
             iconColor="text-orange-600 dark:text-orange-400"
@@ -211,7 +216,7 @@ const Accounts: React.FC = () => {
           />
           <MetricCard
             icon={XCircle}
-            label="INACTIVE"
+            label={t("metrics.inactive")}
             value={cardCounts.inactive}
             iconBgColor="bg-red-100 dark:bg-red-900/30"
             iconColor="text-red-600 dark:text-red-400"
@@ -227,7 +232,7 @@ const Accounts: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             showActions={true}
-            searchPlaceholder="Search..."
+            searchPlaceholder={t("searchPlaceholder")}
             rowsPerPageOptions={[2, 4, 5, 10, 25, 50, 100]}
             defaultRowsPerPage={10}
             pageNo={pageNo}
@@ -248,10 +253,12 @@ const Accounts: React.FC = () => {
             setAccountToDelete(null);
           }}
           onConfirm={confirmDelete}
-          title="Delete Account"
-          message={`Are you sure you want to delete "${accountToDelete?.instance}"? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
+          title={t("delete.title")}
+          message={t("delete.message", {
+            instance: accountToDelete?.instance || "",
+          })}
+          confirmText={t("delete.confirm")}
+          cancelText={t("delete.cancel")}
           type="danger"
           isDark={isDark}
         />

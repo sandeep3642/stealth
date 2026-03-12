@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "react-toastify";
 import { useTheme } from "@/context/ThemeContext";
 import HierarchicalTable from "@/components/HierarchicalTable";
@@ -56,6 +57,7 @@ const toHierarchyNodes = (
 };
 
 const Hierarchy: React.FC = () => {
+  const t = useTranslations("pages.hierarchy");
   const { isDark } = useTheme();
   const [hierarchyData, setHierarchyData] = useState<HierarchyNode[]>([]);
   const [loading, setLoading] = useState(false);
@@ -71,7 +73,7 @@ const Hierarchy: React.FC = () => {
         setHierarchyData(toHierarchyNodes(raw));
       } catch (error) {
         console.error("Error fetching account hierarchy:", error);
-        toast.error("Failed to load hierarchy data");
+        toast.error(t("toast.fetchFailed"));
         setHierarchyData([]);
       } finally {
         setLoading(false);
@@ -90,21 +92,21 @@ const Hierarchy: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title="Hierarchy"
-          subtitle="Manage identities, taxonomies, and global parameters."
-          breadcrumbs={[{ label: "Accounts" }, { label: "Hierarchy" }]}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[{ label: t("breadcrumbs.accounts") }, { label: t("breadcrumbs.current") }]}
           showButton={false}
           showBulkUpload={false}
         />
 
         {loading ? (
           <div className="flex items-center justify-center p-8">
-            <p>Loading hierarchy...</p>
+            <p>{t("loading")}</p>
           </div>
         ) : (
           <HierarchicalTable
-            title="RELATIONAL MAPPING"
-            subtitle="Recursive visualization of distributor-dealer relationships."
+            title={t("table.title")}
+            subtitle={t("table.subtitle")}
             data={hierarchyData}
             onEdit={handleEdit}
             showSearch={true}

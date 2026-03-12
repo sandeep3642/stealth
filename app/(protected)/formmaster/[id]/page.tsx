@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "react-toastify";
 import { FileText } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
 import { useTheme } from "@/context/ThemeContext";
 import { useColor } from "@/context/ColorContext";
 import { createForm, getFormById, updateForm } from "@/services/formService";
@@ -24,6 +26,8 @@ const defaultFormData: FormMasterPayload = {
 const AddEditFormMasterPage: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
+  const t = useTranslations("pages.formmaster.detail");
+  const tList = useTranslations("pages.formmaster.list");
   const router = useRouter();
   const params = useParams();
   const formId = Number(params?.id || 0);
@@ -51,11 +55,11 @@ const AddEditFormMasterPage: React.FC = () => {
           isActive: data.isActive ?? true,
         });
       } else {
-        toast.error(response?.message || "Failed to fetch form");
+        toast.error(response?.message || t("toast.fetchFailed"));
         router.push("/formmaster");
       }
     } catch (error) {
-      toast.error("Failed to fetch form details");
+      toast.error(t("toast.fetchDetailsFailed"));
       router.push("/formmaster");
     } finally {
       setFetchingData(false);
@@ -66,7 +70,7 @@ const AddEditFormMasterPage: React.FC = () => {
     if (isEditMode) {
       fetchFormById();
     }
-  }, [formId]);
+  }, [formId, isEditMode, t]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -90,19 +94,19 @@ const AddEditFormMasterPage: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!formData.formCode.trim()) {
-      toast.error("Form code is required");
+      toast.error(t("toast.formCodeRequired"));
       return;
     }
     if (!formData.formName.trim()) {
-      toast.error("Form name is required");
+      toast.error(t("toast.formNameRequired"));
       return;
     }
     if (!formData.moduleName.trim()) {
-      toast.error("Module name is required");
+      toast.error(t("toast.moduleNameRequired"));
       return;
     }
     if (!formData.pageUrl.trim()) {
-      toast.error("Page URL is required");
+      toast.error(t("toast.pageUrlRequired"));
       return;
     }
 
@@ -126,15 +130,15 @@ const AddEditFormMasterPage: React.FC = () => {
         toast.success(
           response?.message ||
             (isEditMode
-              ? "Form updated successfully"
-              : "Form created successfully"),
+              ? t("toast.updated")
+              : t("toast.created")),
         );
         router.push("/formmaster");
       } else {
-        toast.error(response?.message || "Failed to save form");
+        toast.error(response?.message || t("toast.saveFailed"));
       }
     } catch (error) {
-      toast.error("Failed to save form");
+      toast.error(t("toast.saveFailed"));
     } finally {
       setLoading(false);
     }
@@ -144,7 +148,7 @@ const AddEditFormMasterPage: React.FC = () => {
     return (
       <div className={`${isDark ? "dark" : ""}`}>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <p className="text-foreground">Loading form details...</p>
+          <p className="text-foreground">{t("loading")}</p>
         </div>
       </div>
     );
@@ -154,11 +158,26 @@ const AddEditFormMasterPage: React.FC = () => {
     <div className={`${isDark ? "dark" : ""}`}>
       <div className="min-h-screen bg-background p-2">
         <div className="w-full max-w-4xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
-            <h1 className="text-3xl sm:text-4xl font-bold text-foreground">
-              {isEditMode ? "Edit Form" : "Create New Form"}
-            </h1>
-          </div>
+          <PageHeader
+            title={isEditMode ? t("title.edit") : t("title.create")}
+            subtitle={t("section.subtitle")}
+            breadcrumbs={[
+              { label: tList("breadcrumbs.configurations") },
+              { label: tList("breadcrumbs.current"), href: "/formmaster" },
+              { label: isEditMode ? t("title.edit") : t("title.create") },
+            ]}
+            showButton
+            buttonText={
+              loading
+                ? isEditMode
+                  ? t("buttons.updating")
+                  : t("buttons.creating")
+                : isEditMode
+                  ? t("buttons.update")
+                  : t("buttons.create")
+            }
+            onButtonClick={handleSubmit}
+          />
 
           <div
             className="bg-card rounded-2xl shadow-lg border-t-4 border-border overflow-hidden"
@@ -177,10 +196,10 @@ const AddEditFormMasterPage: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-foreground mb-1">
-                    Form Information
+                    {t("section.title")}
                   </h2>
                   <p className="text-sm text-foreground opacity-60">
-                    Configure form code, route, module, and visibility options.
+                    {t("section.subtitle")}
                   </p>
                 </div>
               </div>
@@ -188,14 +207,14 @@ const AddEditFormMasterPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    Form Code <span className="text-red-500">*</span>
+                    {t("fields.formCode")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     name="formCode"
                     value={formData.formCode}
                     onChange={handleInputChange}
-                    placeholder="e.g. USER-001"
+                    placeholder={t("fields.formCodePlaceholder")}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                       isDark
                         ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
@@ -207,14 +226,14 @@ const AddEditFormMasterPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    Form Name <span className="text-red-500">*</span>
+                    {t("fields.formName")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     name="formName"
                     value={formData.formName}
                     onChange={handleInputChange}
-                    placeholder="e.g. Roles & Permissions"
+                    placeholder={t("fields.formNamePlaceholder")}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                       isDark
                         ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
@@ -226,14 +245,14 @@ const AddEditFormMasterPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    Module Name <span className="text-red-500">*</span>
+                    {t("fields.moduleName")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     name="moduleName"
                     value={formData.moduleName}
                     onChange={handleInputChange}
-                    placeholder="e.g. User-Management"
+                    placeholder={t("fields.moduleNamePlaceholder")}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                       isDark
                         ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
@@ -245,14 +264,14 @@ const AddEditFormMasterPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    Page URL <span className="text-red-500">*</span>
+                    {t("fields.pageUrl")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     name="pageUrl"
                     value={formData.pageUrl}
                     onChange={handleInputChange}
-                    placeholder="e.g. /users/roles-permissions"
+                    placeholder={t("fields.pageUrlPlaceholder")}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                       isDark
                         ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
@@ -264,14 +283,14 @@ const AddEditFormMasterPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    Icon Name
+                    {t("fields.iconName")}
                   </label>
                   <input
                     type="text"
                     name="iconName"
                     value={formData.iconName}
                     onChange={handleInputChange}
-                    placeholder="e.g. Shield"
+                    placeholder={t("fields.iconNamePlaceholder")}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                       isDark
                         ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
@@ -283,14 +302,14 @@ const AddEditFormMasterPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    Sort Order
+                    {t("fields.sortOrder")}
                   </label>
                   <input
                     type="number"
                     name="sortOrder"
                     value={formData.sortOrder}
                     onChange={handleInputChange}
-                    placeholder="0"
+                    placeholder={t("fields.sortOrderPlaceholder")}
                     className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                       isDark
                         ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
@@ -305,10 +324,10 @@ const AddEditFormMasterPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-bold text-foreground mb-1">
-                      Is Menu
+                      {t("toggles.isMenu.title")}
                     </h3>
                     <p className="text-sm text-foreground opacity-60">
-                      Enable to include this form in menu.
+                      {t("toggles.isMenu.description")}
                     </p>
                   </div>
                   <input
@@ -325,10 +344,10 @@ const AddEditFormMasterPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-bold text-foreground mb-1">
-                      Is Visible
+                      {t("toggles.isVisible.title")}
                     </h3>
                     <p className="text-sm text-foreground opacity-60">
-                      Toggle form visibility in UI layers.
+                      {t("toggles.isVisible.description")}
                     </p>
                   </div>
                   <input
@@ -345,10 +364,10 @@ const AddEditFormMasterPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-base font-bold text-foreground mb-1">
-                      Is Active
+                      {t("toggles.isActive.title")}
                     </h3>
                     <p className="text-sm text-foreground opacity-60">
-                      Inactive form will be treated as disabled.
+                      {t("toggles.isActive.description")}
                     </p>
                   </div>
                   <input
@@ -365,6 +384,20 @@ const AddEditFormMasterPage: React.FC = () => {
 
               <div className="flex justify-end gap-3">
                 <button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="px-8 py-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
+                  style={{ backgroundColor: selectedColor }}
+                >
+                  {loading
+                    ? isEditMode
+                      ? t("buttons.updating")
+                      : t("buttons.creating")
+                    : isEditMode
+                      ? t("buttons.update")
+                      : t("buttons.create")}
+                </button>
+                <button
                   onClick={() => router.push("/formmaster")}
                   disabled={loading}
                   className={`px-6 py-3 rounded-lg font-medium transition-colors ${
@@ -373,21 +406,7 @@ const AddEditFormMasterPage: React.FC = () => {
                       : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
                   }`}
                 >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className="px-8 py-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50"
-                  style={{ backgroundColor: selectedColor }}
-                >
-                  {loading
-                    ? isEditMode
-                      ? "Updating..."
-                      : "Creating..."
-                    : isEditMode
-                      ? "Update Form"
-                      : "Create Form"}
+                  {t("buttons.cancel")}
                 </button>
               </div>
             </div>

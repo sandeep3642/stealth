@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "react-toastify";
 import CommonTable from "@/components/CommonTable";
 import PageHeader from "@/components/PageHeader";
@@ -13,6 +14,7 @@ import { FormMasterItem } from "@/interfaces/form.interface";
 const FormMasterPage: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.formmaster.list");
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -26,22 +28,23 @@ const FormMasterPage: React.FC = () => {
   const [formToDelete, setFormToDelete] = useState<FormMasterItem | null>(null);
 
   const columns = [
-    { key: "no", label: "NO", visible: true },
+    { key: "no", label: t("table.no"), visible: true },
     {
       key: "formCode",
-      label: "FORM CODE",
+      label: t("table.formCode"),
       type: "link" as const,
       visible: true,
     },
-    { key: "formName", label: "FORM NAME", visible: true },
-    { key: "moduleName", label: "MODULE", visible: true },
-    { key: "pageUrl", label: "PAGE URL", visible: true },
+    { key: "formName", label: t("table.formName"), visible: true },
+    { key: "moduleName", label: t("table.module"), visible: true },
+    { key: "pageUrl", label: t("table.pageUrl"), visible: true },
     {
       key: "isActive",
-      label: "STATUS",
+      label: t("table.status"),
       type: "badge" as const,
       visible: true,
-      render: (value: boolean) => (value ? "Active" : "Inactive"),
+      render: (value: boolean) =>
+        value ? t("status.active") : t("status.inactive"),
     },
   ];
 
@@ -53,10 +56,10 @@ const FormMasterPage: React.FC = () => {
         setForms(response.data?.items || []);
         setTotalRecords(response.data?.totalRecords || 0);
       } else {
-        toast.error(response?.message || "Failed to fetch forms");
+        toast.error(response?.message || t("toast.fetchFailed"));
       }
     } catch (error) {
-      toast.error("Failed to fetch forms");
+      toast.error(t("toast.fetchFailed"));
     } finally {
       setLoading(false);
     }
@@ -77,13 +80,13 @@ const FormMasterPage: React.FC = () => {
     try {
       const response = await deleteForm(formToDelete.formId);
       if (response?.success || response?.statusCode === 200) {
-        toast.success(response?.message || "Form deleted successfully");
+        toast.success(response?.message || t("toast.deleted"));
         fetchForms();
       } else {
-        toast.error(response?.message || "Failed to delete form");
+        toast.error(response?.message || t("toast.deleteFailed"));
       }
     } catch (error) {
-      toast.error("Failed to delete form");
+      toast.error(t("toast.deleteFailed"));
     } finally {
       setFormToDelete(null);
     }
@@ -106,18 +109,21 @@ const FormMasterPage: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title="Form Master"
-          subtitle="Manage application forms, modules, routes, and visibility."
-          breadcrumbs={[{ label: "Configurations" }, { label: "Form Master" }]}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[
+            { label: t("breadcrumbs.configurations") },
+            { label: t("breadcrumbs.current") },
+          ]}
           showButton={true}
-          buttonText="Add Form"
+          buttonText={t("addButton")}
           buttonRoute="/formmaster/0"
         />
 
         {loading ? (
           <div className="flex items-center justify-center p-8">
             <p className={isDark ? "text-gray-300" : "text-gray-700"}>
-              Loading forms...
+              {t("loading")}
             </p>
           </div>
         ) : (
@@ -127,7 +133,7 @@ const FormMasterPage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDeleteClick}
             showActions={true}
-            searchPlaceholder="Search forms by name, code, or module..."
+            searchPlaceholder={t("searchPlaceholder")}
             rowsPerPageOptions={[10, 25, 50, 100]}
             defaultRowsPerPage={10}
             pageNo={pageNo}
@@ -151,10 +157,10 @@ const FormMasterPage: React.FC = () => {
             setFormToDelete(null);
           }}
           onConfirm={handleDeleteConfirm}
-          title="Delete Form"
-          message={`Are you sure you want to delete "${formToDelete?.formName}"? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
+          title={t("delete.title")}
+          message={t("delete.message", { name: formToDelete?.formName || "" })}
+          confirmText={t("delete.confirm")}
+          cancelText={t("delete.cancel")}
           type="danger"
           isDark={isDark}
         />

@@ -2,6 +2,7 @@
 
 import { Building2, ChevronDown, GitBranch, MapPin, Route } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { MetricCard } from "@/components/CommonCard";
@@ -41,6 +42,7 @@ const RouteMasterPage: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
   const router = useRouter();
+  const t = useTranslations("pages.routeMaster.list");
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -62,15 +64,15 @@ const RouteMasterPage: React.FC = () => {
 
   const columns = useMemo(
     () => [
-      { key: "no", label: "NO", visible: true },
-      { key: "routeName", label: "ROUTE NAME", visible: true },
-      { key: "accountName", label: "ACCOUNT", visible: true },
-      { key: "startPoint", label: "START POINT", visible: true },
-      { key: "endPoint", label: "END POINT", visible: true },
-      { key: "stopsCount", label: "STOPS", visible: true },
+      { key: "no", label: t("table.no"), visible: true },
+      { key: "routeName", label: t("table.routeName"), visible: true },
+      { key: "accountName", label: t("table.account"), visible: true },
+      { key: "startPoint", label: t("table.startPoint"), visible: true },
+      { key: "endPoint", label: t("table.endPoint"), visible: true },
+      { key: "stopsCount", label: t("table.stops"), visible: true },
       {
         key: "isGeofenceRelated",
-        label: "GEOFENCE",
+        label: t("table.geofence"),
         visible: true,
         render: (value: boolean) => (
           <span
@@ -80,20 +82,20 @@ const RouteMasterPage: React.FC = () => {
                 : "bg-gray-100 text-gray-700"
             }`}
           >
-            {value ? "Yes" : "No"}
+            {value ? t("labels.yes") : t("labels.no")}
           </span>
         ),
       },
-      { key: "status", label: "STATUS", type: "badge" as const, visible: true },
+      { key: "status", label: t("table.status"), type: "badge" as const, visible: true },
       {
         key: "createdAt",
-        label: "CREATED ON",
+        label: t("table.createdOn"),
         visible: true,
         render: (value: string) =>
           value ? new Date(value).toLocaleString("en-IN") : "-",
       },
     ],
-    [],
+    [t],
   );
 
   const mapRow = (item: any): RouteMasterRow => ({
@@ -106,7 +108,7 @@ const RouteMasterPage: React.FC = () => {
     isGeofenceRelated: Boolean(
       item?.isGeofenceRelated ?? item?.geofenceRelated ?? true,
     ),
-    status: item?.isActive ? "Active" : "Inactive",
+    status: item?.isActive ? t("labels.active") : t("labels.inactive"),
     createdAt: String(item?.createdAt || ""),
   });
 
@@ -163,7 +165,7 @@ const RouteMasterPage: React.FC = () => {
       });
     } catch (error) {
       console.error("Error fetching route masters:", error);
-      toast.error("Failed to fetch route master list");
+      toast.error(t("toast.fetchFailed"));
     } finally {
       setLoading(false);
     }
@@ -201,14 +203,14 @@ const RouteMasterPage: React.FC = () => {
     try {
       const response = await deleteRouteMaster(selectedRoute.id);
       if (response?.success || response?.statusCode === 200) {
-        toast.success(response?.message || "Route deleted successfully");
+        toast.success(response?.message || t("toast.deleted"));
         fetchRouteMasters();
       } else {
-        toast.error(response?.message || "Failed to delete route");
+        toast.error(response?.message || t("toast.deleteFailed"));
       }
     } catch (error) {
       console.error("Delete route error:", error);
-      toast.error("Error deleting route");
+      toast.error(t("toast.deleteError"));
     } finally {
       setIsDeleteDialogOpen(false);
       setSelectedRoute(null);
@@ -221,11 +223,11 @@ const RouteMasterPage: React.FC = () => {
         className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
       >
         <PageHeader
-          title="Route Master"
-          subtitle="Configure reusable route templates using geofence points and stops."
-          breadcrumbs={[{ label: "Fleet" }, { label: "Route Master" }]}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[{ label: t("breadcrumbs.fleet") }, { label: t("breadcrumbs.current") }]}
           showButton={true}
-          buttonText="Add Route"
+          buttonText={t("addButton")}
           buttonRoute="/route-master/0"
           showExportButton={false}
           showFilterButton={false}
@@ -249,10 +251,10 @@ const RouteMasterPage: React.FC = () => {
                   : "bg-white border-gray-200 text-gray-900"
               }`}
             >
-              <option value={0}>Select Account</option>
+              <option value={0}>{t("filters.selectAccount")}</option>
               {!hasSelectedAccountInList && selectedAccountId > 0 && (
                 <option value={selectedAccountId}>
-                  {`Selected Account (${selectedAccountId})`}
+                  {t("filters.selectedAccount", { id: selectedAccountId })}
                 </option>
               )}
               {accounts.map((account) => (
@@ -270,7 +272,7 @@ const RouteMasterPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <MetricCard
             icon={Route}
-            label="TOTAL ROUTES"
+            label={t("metrics.totalRoutes")}
             value={summary.totalRoutes}
             iconBgColor="bg-indigo-100 dark:bg-indigo-900/30"
             iconColor="text-indigo-600 dark:text-indigo-400"
@@ -278,7 +280,7 @@ const RouteMasterPage: React.FC = () => {
           />
           <MetricCard
             icon={MapPin}
-            label="ACTIVE ROUTES"
+            label={t("metrics.activeRoutes")}
             value={summary.totalActiveRoutes}
             iconBgColor="bg-emerald-100 dark:bg-emerald-900/30"
             iconColor="text-emerald-600 dark:text-emerald-400"
@@ -286,7 +288,7 @@ const RouteMasterPage: React.FC = () => {
           />
           <MetricCard
             icon={GitBranch}
-            label="INACTIVE ROUTES"
+            label={t("metrics.inactiveRoutes")}
             value={summary.totalInactiveRoutes}
             iconBgColor="bg-orange-100 dark:bg-orange-900/30"
             iconColor="text-orange-600 dark:text-orange-400"
@@ -296,7 +298,7 @@ const RouteMasterPage: React.FC = () => {
 
         {loading ? (
           <div className="flex items-center justify-center p-8">
-            <p>Loading route masters...</p>
+            <p>{t("loading")}</p>
           </div>
         ) : (
           <CommonTable
@@ -305,7 +307,7 @@ const RouteMasterPage: React.FC = () => {
             onEdit={(row) => router.push(`/route-master/${row.id}`)}
             onDelete={handleDelete}
             showActions={true}
-            searchPlaceholder="Search routes..."
+            searchPlaceholder={t("searchPlaceholder")}
             rowsPerPageOptions={[10, 25, 50, 100]}
             pageNo={pageNo}
             pageSize={pageSize}
@@ -328,10 +330,10 @@ const RouteMasterPage: React.FC = () => {
             setSelectedRoute(null);
           }}
           onConfirm={confirmDelete}
-          title="Delete Route"
-          message={`Are you sure you want to delete "${selectedRoute?.routeName}"?`}
-          confirmText="Delete"
-          cancelText="Cancel"
+          title={t("deleteDialog.title")}
+          message={t("deleteDialog.message", { name: selectedRoute?.routeName })}
+          confirmText={t("deleteDialog.confirm")}
+          cancelText={t("deleteDialog.cancel")}
           type="danger"
           isDark={isDark}
         />

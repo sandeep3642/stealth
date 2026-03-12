@@ -2,6 +2,7 @@
 
 import { CalendarClock, Route, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React, { useMemo, useState } from "react";
 import { MetricCard } from "@/components/CommonCard";
 import CommonTable from "@/components/CommonTable";
@@ -65,6 +66,7 @@ const STATIC_TRIPS: TripListRow[] = [
 const TripMasterPage: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.tripMaster.list");
 
   const [rows, setRows] = useState<TripListRow[]>(STATIC_TRIPS);
   const [pageNo, setPageNo] = useState(1);
@@ -82,14 +84,14 @@ const TripMasterPage: React.FC = () => {
 
   const columns = useMemo(
     () => [
-      { key: "no", label: "NO", visible: true },
-      { key: "tripName", label: "TRIP NAME", visible: true },
-      { key: "routeName", label: "ROUTE", visible: true },
-      { key: "vehicleNo", label: "VEHICLE", visible: true },
-      { key: "driverName", label: "DRIVER", visible: true },
+      { key: "no", label: t("table.no"), visible: true },
+      { key: "tripName", label: t("table.tripName"), visible: true },
+      { key: "routeName", label: t("table.route"), visible: true },
+      { key: "vehicleNo", label: t("table.vehicle"), visible: true },
+      { key: "driverName", label: t("table.driver"), visible: true },
       {
         key: "cycle",
-        label: "CYCLE",
+        label: t("table.cycle"),
         visible: true,
         render: (value: TripListRow["cycle"]) => (
           <span
@@ -101,13 +103,17 @@ const TripMasterPage: React.FC = () => {
                   : "bg-gray-100 text-gray-700"
             }`}
           >
-            {value}
+            {value === "Weekly"
+              ? t("labels.cycle.weekly")
+              : value === "Monthly"
+                ? t("labels.cycle.monthly")
+                : t("labels.cycle.oneOff")}
           </span>
         ),
       },
       {
         key: "status",
-        label: "STATUS",
+        label: t("table.status"),
         visible: true,
         render: (value: TripListRow["status"]) => (
           <span
@@ -121,19 +127,25 @@ const TripMasterPage: React.FC = () => {
                     : "bg-gray-100 text-gray-700"
             }`}
           >
-            {value}
+            {value === "Active"
+              ? t("labels.status.active")
+              : value === "In Transit"
+                ? t("labels.status.inTransit")
+                : value === "Pending"
+                  ? t("labels.status.pending")
+                  : t("labels.status.completed")}
           </span>
         ),
       },
       {
         key: "startTime",
-        label: "START TIME",
+        label: t("table.startTime"),
         visible: true,
         render: (value: string) =>
           value ? new Date(value).toLocaleString("en-IN") : "-",
       },
     ],
-    [],
+    [t],
   );
 
   return (
@@ -142,11 +154,11 @@ const TripMasterPage: React.FC = () => {
         className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
       >
         <PageHeader
-          title="Trip Master"
-          subtitle="Manage trip schedules and routing templates."
-          breadcrumbs={[{ label: "Fleet" }, { label: "Trip Master" }]}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[{ label: t("breadcrumbs.fleet") }, { label: t("breadcrumbs.current") }]}
           showButton={true}
-          buttonText="Add Trip"
+          buttonText={t("addButton")}
           buttonRoute="/trip-master/0"
           showExportButton={false}
           showFilterButton={false}
@@ -156,7 +168,7 @@ const TripMasterPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <MetricCard
             icon={Route}
-            label="TOTAL TRIPS"
+            label={t("metrics.totalTrips")}
             value={summary.totalTrips}
             iconBgColor="bg-indigo-100 dark:bg-indigo-900/30"
             iconColor="text-indigo-600 dark:text-indigo-400"
@@ -164,7 +176,7 @@ const TripMasterPage: React.FC = () => {
           />
           <MetricCard
             icon={Truck}
-            label="ACTIVE TRIPS"
+            label={t("metrics.activeTrips")}
             value={summary.activeTrips}
             iconBgColor="bg-emerald-100 dark:bg-emerald-900/30"
             iconColor="text-emerald-600 dark:text-emerald-400"
@@ -172,7 +184,7 @@ const TripMasterPage: React.FC = () => {
           />
           <MetricCard
             icon={CalendarClock}
-            label="IN TRANSIT"
+            label={t("metrics.inTransit")}
             value={summary.inTransitTrips}
             iconBgColor="bg-yellow-100 dark:bg-yellow-900/30"
             iconColor="text-yellow-600 dark:text-yellow-400"
@@ -188,7 +200,7 @@ const TripMasterPage: React.FC = () => {
             setRows((prev) => prev.filter((item) => item.id !== row.id))
           }
           showActions={true}
-          searchPlaceholder="Search trips..."
+          searchPlaceholder={t("searchPlaceholder")}
           rowsPerPageOptions={[10, 25, 50, 100]}
           pageNo={pageNo}
           pageSize={pageSize}

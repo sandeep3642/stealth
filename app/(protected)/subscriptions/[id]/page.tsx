@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "react-toastify";
 import PageHeader from "@/components/PageHeader";
 import { useTheme } from "@/context/ThemeContext";
@@ -21,6 +22,7 @@ const formatDateTimeLocal = (date: Date) => {
 const AddSubscriptionPage = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.subscriptions.detail");
   const params = useParams();
   const id = String(params?.id || "0");
   const isAddMode = id === "0";
@@ -94,7 +96,7 @@ const AddSubscriptionPage = () => {
         planId: prev.planId || Number(plans?.[0]?.id || 0),
       }));
     } catch (error) {
-      toast.error("Failed to load account/plan dropdowns");
+      toast.error(t("toast.dropdownFailed"));
     } finally {
       setLoadingDropdowns(false);
     }
@@ -102,28 +104,28 @@ const AddSubscriptionPage = () => {
 
   const handleSubmit = async () => {
     if (!isAddMode) {
-      toast.info("Edit subscription is not enabled yet.");
+      toast.info(t("toast.editNotEnabled"));
       return;
     }
 
     if (!formData.accountId || !formData.planId) {
-      toast.error("Please select Account and Plan");
+      toast.error(t("toast.selectAccountPlan"));
       return;
     }
 
     if (Number(formData.units || 0) <= 0) {
-      toast.error("Units must be greater than 0");
+      toast.error(t("toast.unitsGreaterThanZero"));
       return;
     }
 
     const start = new Date(formData.startDate);
     const end = new Date(formData.endDate);
     if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-      toast.error("Please provide valid start and end dates");
+      toast.error(t("toast.validDates"));
       return;
     }
     if (end <= start) {
-      toast.error("End date must be after start date");
+      toast.error(t("toast.endAfterStart"));
       return;
     }
 
@@ -145,13 +147,13 @@ const AddSubscriptionPage = () => {
 
       const response = await mapPlanToSubscription(payload);
       if (response?.success || response?.statusCode === 200) {
-        toast.success(response?.message || "Subscription mapped successfully");
+        toast.success(response?.message || t("toast.mappedSuccess"));
         router.push("/subscriptions");
       } else {
-        toast.error(response?.message || "Failed to map subscription");
+        toast.error(response?.message || t("toast.mapFailed"));
       }
     } catch (error) {
-      toast.error("Failed to map subscription");
+      toast.error(t("toast.mapFailed"));
     } finally {
       setLoading(false);
     }
@@ -168,9 +170,9 @@ const AddSubscriptionPage = () => {
       >
         <div className="mb-4 sm:mb-6">
           <PageHeader
-            title={isAddMode ? "Add Subscription" : "Subscription"}
-            subtitle="Map a billing plan to an account."
-            breadcrumbs={[{ label: "Billing" }, { label: "Subscriptions" }]}
+            title={isAddMode ? t("title.add") : t("title.edit")}
+            subtitle={t("subtitle")}
+            breadcrumbs={[{ label: t("breadcrumbs.billing") }, { label: t("breadcrumbs.current") }]}
             showButton={false}
           />
         </div>
@@ -187,7 +189,7 @@ const AddSubscriptionPage = () => {
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                Account
+                {t("fields.account")}
               </label>
               <select
                 name="accountId"
@@ -214,7 +216,7 @@ const AddSubscriptionPage = () => {
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                Plan
+                {t("fields.plan")}
               </label>
               <select
                 name="planId"
@@ -241,7 +243,7 @@ const AddSubscriptionPage = () => {
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                Units
+                {t("fields.units")}
               </label>
               <input
                 type="number"
@@ -263,7 +265,7 @@ const AddSubscriptionPage = () => {
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                Status
+                {t("fields.status")}
               </label>
               <select
                 name="status"
@@ -287,7 +289,7 @@ const AddSubscriptionPage = () => {
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                Start Date
+                {t("fields.startDate")}
               </label>
               <input
                 type="datetime-local"
@@ -308,7 +310,7 @@ const AddSubscriptionPage = () => {
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                End Date
+                {t("fields.endDate")}
               </label>
               <input
                 type="datetime-local"
@@ -333,14 +335,14 @@ const AddSubscriptionPage = () => {
                   : "border-gray-300 text-gray-700"
               }`}
             >
-              Cancel
+              {t("buttons.cancel")}
             </button>
             <button
               onClick={handleSubmit}
               disabled={loading || loadingDropdowns}
               className="px-5 py-2.5 rounded-lg bg-purple-600 text-white disabled:opacity-50"
             >
-              {loading ? "Saving..." : "Map Subscription"}
+              {loading ? t("buttons.saving") : t("buttons.submit")}
             </button>
           </div>
         </div>

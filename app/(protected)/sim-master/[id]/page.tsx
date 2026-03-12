@@ -1,28 +1,32 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { Card } from "@/components/CommonCard";
-import { useTheme } from "@/context/ThemeContext";
-import { useColor } from "@/context/ColorContext";
+import { ShieldCheck, Smartphone, Wifi } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { Smartphone, Wifi, ShieldCheck } from "lucide-react";
+import { Card } from "@/components/CommonCard";
+import PageHeader from "@/components/PageHeader";
+import { useColor } from "@/context/ColorContext";
+import { useTheme } from "@/context/ThemeContext";
 import {
-  SimFormData,
-  SimCarrier,
   SimAccount,
+  SimCarrier,
+  SimFormData,
 } from "@/interfaces/sim.interface";
+import { getAllAccounts } from "@/services/commonServie";
 import {
   getSimById,
+  getSimCarriers,
   saveSim,
   updateSim,
-  getSimCarriers,
 } from "@/services/simservice";
-import { getAllAccounts } from "@/services/commonServie";
 
 const ProvisionSim: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
+  const t = useTranslations("pages.simMaster.detail");
+  const tList = useTranslations("pages.simMaster.list");
   const params = useParams();
   const id = params?.id as string;
   const router = useRouter();
@@ -118,19 +122,19 @@ const ProvisionSim: React.FC = () => {
               statusKey: d.statusKey || "active", // ✅ statusKey not status
             });
           } else {
-            toast.error("SIM not found");
+            toast.error(t("toast.notFound"));
             router.push("/sim-master");
           }
         }
       } catch (err) {
         console.error(err);
-        toast.error("Failed to load data");
+        toast.error(t("toast.loadFailed"));
       } finally {
         setPageLoading(false);
       }
     };
     init();
-  }, [id]);
+  }, [id, isEditMode, router, t]);
 
   // ── Form change handler ────────────────────────────────────────────────
   const handleChange = (
@@ -143,19 +147,19 @@ const ProvisionSim: React.FC = () => {
   // ── Submit ─────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!formData.accountId || formData.accountId === 0) {
-      toast.error("Please select an account");
+      toast.error(t("toast.selectAccount"));
       return;
     }
     if (!formData.iccid.trim()) {
-      toast.error("ICCID is required");
+      toast.error(t("toast.iccidRequired"));
       return;
     }
     if (formData.iccid.length < 18 || formData.iccid.length > 22) {
-      toast.error("ICCID must be between 18 and 22 digits");
+      toast.error(t("toast.iccidRange"));
       return;
     }
     if (!formData.networkProviderId || formData.networkProviderId === 0) {
-      toast.error("Please select a network provider");
+      toast.error(t("toast.selectProvider"));
       return;
     }
 
@@ -184,14 +188,14 @@ const ProvisionSim: React.FC = () => {
         : await saveSim(payload);
 
       if (response.statusCode === 200) {
-        toast.success(response.message || "SIM saved successfully!");
+        toast.success(response.message || t("toast.saved"));
         setTimeout(() => router.push("/sim-master"), 1000);
       } else {
-        toast.error(response.message || "Operation failed");
+        toast.error(response.message || t("toast.operationFailed"));
       }
     } catch (err) {
       console.error(err);
-      toast.error("An error occurred");
+      toast.error(t("toast.errorOccurred"));
     } finally {
       setLoading(false);
     }
@@ -253,7 +257,7 @@ const ProvisionSim: React.FC = () => {
               style={{ borderColor: selectedColor }}
             ></div>
             <p className={isDark ? "text-gray-400" : "text-gray-600"}>
-              {isEditMode ? "Loading SIM data..." : "Preparing form..."}
+              {isEditMode ? t("loading.edit") : t("loading.create")}
             </p>
           </div>
         </div>
@@ -268,52 +272,25 @@ const ProvisionSim: React.FC = () => {
           isDark ? "bg-background" : ""
         } p-3 sm:p-4 md:p-6`}
       >
-        {/* Page header */}
         <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h1
-                className={`text-2xl sm:text-3xl font-bold ${
-                  isDark ? "text-foreground" : "text-gray-900"
-                }`}
-              >
-                {isEditMode ? "Edit SIM Card" : "Register SIM Card"}
-              </h1>
-              <p
-                className={`text-sm mt-1 ${
-                  isDark ? "text-gray-400" : "text-gray-500"
-                }`}
-              >
-                {isEditMode
-                  ? "Update SIM registry entry."
-                  : "Subscriber Identity Module"}
-              </p>
-            </div>
-            <div className="flex gap-2 sm:gap-3">
-              <button
-                onClick={() => router.push("/sim-master")}
-                className={`flex-1 sm:flex-none px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
-                  isDark
-                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
-                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
-                }`}
-              >
-                Discard
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="flex-1 sm:flex-none px-4 py-2 text-sm rounded-lg font-medium text-white transition-colors disabled:opacity-50"
-                style={{ backgroundColor: selectedColor }}
-              >
-                {loading
-                  ? "Saving..."
-                  : isEditMode
-                    ? "Update SIM File"
-                    : "Commit SIM File"}
-              </button>
-            </div>
-          </div>
+          <PageHeader
+            title={isEditMode ? t("title.edit") : t("title.create")}
+            subtitle={isEditMode ? t("subtitle.edit") : t("subtitle.create")}
+            breadcrumbs={[
+              { label: tList("breadcrumbs.fleet") },
+              { label: tList("breadcrumbs.current"), href: "/sim-master" },
+              { label: isEditMode ? t("title.edit") : t("title.create") },
+            ]}
+            showButton
+            buttonText={
+              loading
+                ? t("buttons.saving")
+                : isEditMode
+                  ? t("buttons.update")
+                  : t("buttons.create")
+            }
+            onButtonClick={handleSubmit}
+          />
         </div>
 
         {/* Form Card */}
@@ -321,12 +298,16 @@ const ProvisionSim: React.FC = () => {
           <div className="p-4 sm:p-6 space-y-8">
             {/* ── HARDWARE IDENTITY ── */}
             <div>
-              <SectionHeader icon={ShieldCheck} title="Hardware Identity" />
+              <SectionHeader
+                icon={ShieldCheck}
+                title={t("sections.hardwareIdentity")}
+              />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* accountId ← accounts[].id, display accounts[].value */}
                 <div>
                   <label className={labelClass}>
-                    Account Context <span className="text-red-500">*</span>
+                    {t("fields.accountContext")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="accountId"
@@ -334,7 +315,7 @@ const ProvisionSim: React.FC = () => {
                     onChange={handleChange}
                     className={inputClass()}
                   >
-                    <option value="0">Select Account</option>
+                    <option value="0">{t("fields.selectAccount")}</option>
                     {accounts.map((a) => (
                       <option key={a.id} value={a.id}>
                         {a.value} {/* e.g. "IOTEdge (Acc-001)" */}
@@ -346,14 +327,14 @@ const ProvisionSim: React.FC = () => {
                 {/* iccid */}
                 <div>
                   <label className={labelClass}>
-                    ICCID Identification <span className="text-red-500">*</span>
+                    {t("fields.iccid")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     name="iccid"
                     value={formData.iccid}
                     onChange={handleChange}
-                    placeholder="89..."
+                    placeholder={t("fields.iccidPlaceholder")}
                     maxLength={22}
                     className={inputClass()}
                   />
@@ -361,34 +342,35 @@ const ProvisionSim: React.FC = () => {
                     (formData.iccid.length < 18 ||
                       formData.iccid.length > 22) && (
                       <p className="text-xs text-amber-500 mt-1">
-                        ICCID must be 18–22 digits ({formData.iccid.length}{" "}
-                        entered)
+                        {t("validation.iccidRange", {
+                          count: formData.iccid.length,
+                        })}
                       </p>
                     )}
                 </div>
 
                 {/* msisdn */}
                 <div>
-                  <label className={labelClass}>MSISDN Number</label>
+                  <label className={labelClass}>{t("fields.msisdn")}</label>
                   <input
                     type="text"
                     name="msisdn"
                     value={formData.msisdn}
                     onChange={handleChange}
-                    placeholder="+00 ..."
+                    placeholder={t("fields.msisdnPlaceholder")}
                     className={inputClass()}
                   />
                 </div>
 
                 {/* imsi — API uses "imsi", not "imsiCode" */}
                 <div>
-                  <label className={labelClass}>IMSI Code</label>
+                  <label className={labelClass}>{t("fields.imsi")}</label>
                   <input
                     type="text"
                     name="imsi"
                     value={formData.imsi}
                     onChange={handleChange}
-                    placeholder="Numeric ID"
+                    placeholder={t("fields.imsiPlaceholder")}
                     maxLength={15}
                     className={inputClass()}
                   />
@@ -396,8 +378,9 @@ const ProvisionSim: React.FC = () => {
                     formData.imsi.length > 0 &&
                     formData.imsi.length !== 15 && (
                       <p className="text-xs text-amber-500 mt-1">
-                        IMSI should be exactly 15 digits ({formData.imsi.length}
-                        /15)
+                        {t("validation.imsiLength", {
+                          count: formData.imsi.length,
+                        })}
                       </p>
                     )}
                 </div>
@@ -408,14 +391,15 @@ const ProvisionSim: React.FC = () => {
             <div>
               <SectionHeader
                 icon={Wifi}
-                title="Carrier Details"
-                subtitle="Network provider and contract information."
+                title={t("sections.carrierDetails")}
+                subtitle={t("sections.carrierDetailsSubtitle")}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* networkProviderId — API field name */}
                 <div>
                   <label className={labelClass}>
-                    Network Provider <span className="text-red-500">*</span>
+                    {t("fields.networkProvider")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="networkProviderId"
@@ -423,7 +407,7 @@ const ProvisionSim: React.FC = () => {
                     onChange={handleChange}
                     className={inputClass()}
                   >
-                    <option value="0">Select Carrier</option>
+                    <option value="0">{t("fields.selectCarrier")}</option>
                     {carriers.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name}
@@ -437,7 +421,9 @@ const ProvisionSim: React.FC = () => {
 
                 {/* activatedAt — API field name */}
                 <div>
-                  <label className={labelClass}>Activated On</label>
+                  <label className={labelClass}>
+                    {t("fields.activatedOn")}
+                  </label>
                   <input
                     type="date"
                     name="activatedAt"
@@ -449,7 +435,9 @@ const ProvisionSim: React.FC = () => {
 
                 {/* expiryAt — API field name */}
                 <div>
-                  <label className={labelClass}>Contract Expiry</label>
+                  <label className={labelClass}>
+                    {t("fields.contractExpiry")}
+                  </label>
                   <input
                     type="date"
                     name="expiryAt"
@@ -463,7 +451,10 @@ const ProvisionSim: React.FC = () => {
 
             {/* ── PROVISIONING STATUS ── */}
             <div>
-              <SectionHeader icon={Smartphone} title="Provisioning Status" />
+              <SectionHeader
+                icon={Smartphone}
+                title={t("sections.provisioningStatus")}
+              />
               <div
                 className={`flex items-center justify-between p-4 rounded-xl border ${
                   isDark
@@ -477,14 +468,14 @@ const ProvisionSim: React.FC = () => {
                       isDark ? "text-foreground" : "text-gray-800"
                     }`}
                   >
-                    Connectivity provisioning status
+                    {t("status.title")}
                   </p>
                   <p
                     className={`text-xs mt-0.5 uppercase tracking-wider font-medium ${
                       isDark ? "text-gray-400" : "text-gray-500"
                     }`}
                   >
-                    Only enabled SIMs can be assigned to hardware.
+                    {t("status.subtitle")}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -496,7 +487,9 @@ const ProvisionSim: React.FC = () => {
                         formData.statusKey === "active" ? "#16a34a" : "#dc2626",
                     }}
                   >
-                    {formData.statusKey === "active" ? "ENABLED" : "DISABLED"}
+                    {formData.statusKey === "active"
+                      ? t("status.enabled")
+                      : t("status.disabled")}
                   </span>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -527,6 +520,19 @@ const ProvisionSim: React.FC = () => {
             </div>
           </div>
         </Card>
+
+        <div className="flex justify-end mt-6">
+          <button
+            onClick={() => router.push("/sim-master")}
+            className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
+              isDark
+                ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
+                : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+            }`}
+          >
+            {t("buttons.discard")}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { toast } from "react-toastify";
 import PageHeader from "@/components/PageHeader";
 import { useTheme } from "@/context/ThemeContext";
@@ -22,6 +23,7 @@ const formatDateTimeLocal = (date: Date) => {
 const AddInvoicePage = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.invoices.detail");
   const params = useParams();
   const id = String(params?.id || "0");
   const isAddMode = id === "0";
@@ -109,7 +111,7 @@ const AddInvoicePage = () => {
         currency: prev.currency || String(currencies?.[0]?.value || ""),
       }));
     } catch (error) {
-      toast.error("Failed to load dropdown data");
+      toast.error(t("toast.dropdownFailed"));
     } finally {
       setLoadingDropdowns(false);
     }
@@ -117,30 +119,30 @@ const AddInvoicePage = () => {
 
   const handleSubmit = async () => {
     if (!isAddMode) {
-      toast.info("Edit invoice is not enabled yet.");
+      toast.info(t("toast.editNotEnabled"));
       return;
     }
 
     if (!formData.accountId || !formData.subscriptionId) {
-      toast.error("Please select Account and Subscription");
+      toast.error(t("toast.selectAccountSubscription"));
       return;
     }
 
     if (!formData.currency) {
-      toast.error("Please select currency");
+      toast.error(t("toast.selectCurrency"));
       return;
     }
 
     const amountNum = Number(formData.amount || 0);
     if (amountNum <= 0) {
-      toast.error("Amount must be greater than 0");
+      toast.error(t("toast.amountGreaterThanZero"));
       return;
     }
 
     const invoiceDate = new Date(formData.invoiceDate);
     const dueDate = new Date(formData.dueDate);
     if (Number.isNaN(invoiceDate.getTime()) || Number.isNaN(dueDate.getTime())) {
-      toast.error("Please provide valid invoice and due dates");
+      toast.error(t("toast.validDates"));
       return;
     }
 
@@ -162,13 +164,13 @@ const AddInvoicePage = () => {
 
       const response = await createManualInvoice(payload);
       if (response?.success || response?.statusCode === 200) {
-        toast.success(response?.message || "Invoice created successfully");
+        toast.success(response?.message || t("toast.createdSuccess"));
         router.push("/invoices");
       } else {
-        toast.error(response?.message || "Failed to create invoice");
+        toast.error(response?.message || t("toast.createFailed"));
       }
     } catch (error) {
-      toast.error("Failed to create invoice");
+      toast.error(t("toast.createFailed"));
     } finally {
       setLoading(false);
     }
@@ -185,9 +187,9 @@ const AddInvoicePage = () => {
       >
         <div className="mb-4 sm:mb-6">
           <PageHeader
-            title={isAddMode ? "Add Invoice" : "Invoice"}
-            subtitle="Create manual billing invoice."
-            breadcrumbs={[{ label: "Billing" }, { label: "Invoices" }]}
+            title={isAddMode ? t("title.add") : t("title.edit")}
+            subtitle={t("subtitle")}
+            breadcrumbs={[{ label: t("breadcrumbs.billing") }, { label: t("breadcrumbs.current") }]}
             showButton={false}
           />
         </div>
@@ -204,7 +206,7 @@ const AddInvoicePage = () => {
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                Account
+                {t("fields.account")}
               </label>
               <select
                 name="accountId"
@@ -231,7 +233,7 @@ const AddInvoicePage = () => {
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                Subscription
+                {t("fields.subscription")}
               </label>
               <select
                 name="subscriptionId"
@@ -258,7 +260,7 @@ const AddInvoicePage = () => {
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                Amount
+                {t("fields.amount")}
               </label>
               <input
                 type="number"
@@ -281,7 +283,7 @@ const AddInvoicePage = () => {
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                Currency
+                {t("fields.currency")}
               </label>
               <select
                 name="currency"
@@ -308,7 +310,7 @@ const AddInvoicePage = () => {
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                Invoice Date
+                {t("fields.invoiceDate")}
               </label>
               <input
                 type="datetime-local"
@@ -329,7 +331,7 @@ const AddInvoicePage = () => {
                   isDark ? "text-gray-400" : "text-gray-600"
                 }`}
               >
-                Due Date
+                {t("fields.dueDate")}
               </label>
               <input
                 type="datetime-local"
@@ -354,14 +356,14 @@ const AddInvoicePage = () => {
                   : "border-gray-300 text-gray-700"
               }`}
             >
-              Cancel
+              {t("buttons.cancel")}
             </button>
             <button
               onClick={handleSubmit}
               disabled={loading || loadingDropdowns}
               className="px-5 py-2.5 rounded-lg bg-purple-600 text-white disabled:opacity-50"
             >
-              {loading ? "Saving..." : "Create Invoice"}
+              {loading ? t("buttons.saving") : t("buttons.submit")}
             </button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import CommonTable from "@/components/CommonTable";
 import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
@@ -16,6 +17,7 @@ import { useRouter } from "next/navigation";
 const Users: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.users.list");
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -54,20 +56,21 @@ const Users: React.FC = () => {
   });
 
   const columns = [
-    { key: "fullName", label: "Full Name", visible: true },
-    { key: "email", label: "Email", visible: true },
-    { key: "roleName", label: "Role", visible: true },
-    { key: "accountName", label: "Account", visible: true },
-    { key: "status", label: "Status", type: "badge" as const, visible: true },
+    { key: "fullName", label: t("table.fullName"), visible: true },
+    { key: "email", label: t("table.email"), visible: true },
+    { key: "roleName", label: t("table.role"), visible: true },
+    { key: "accountName", label: t("table.account"), visible: true },
+    { key: "status", label: t("table.status"), type: "badge" as const, visible: true },
     {
       key: "twoFactorEnabled",
-      label: "2FA",
+      label: t("table.twoFa"),
       visible: true,
-      render: (value: boolean) => (value ? "Enabled" : "Disabled"),
+      render: (value: boolean) =>
+        value ? t("twoFa.enabled") : t("twoFa.disabled"),
     },
     {
       key: "lastLoginAt",
-      label: "Last Login",
+      label: t("table.lastLogin"),
       visible: true,
       type: "date" as const,
     },
@@ -91,14 +94,14 @@ const Users: React.FC = () => {
       const response = await deleteUser(userToDelete.userId);
 
       if (response && response.statusCode === 200) {
-        toast.success("User deleted successfully!");
+        toast.success(t("toast.deleted"));
         fetchUsers();
       } else {
-        toast.error(response.message || "Failed to delete user");
+        toast.error(response.message || t("toast.deleteFailed"));
       }
     } catch (error) {
       console.error("Error deleting user:", error);
-      toast.error("An error occurred while deleting.");
+      toast.error(t("toast.deleteError"));
     } finally {
       setUserToDelete(null);
       setIsDeleteDialogOpen(false);
@@ -113,7 +116,7 @@ const Users: React.FC = () => {
         setTotalRecords(response.data.users.totalRecords || 0);
         setData(response.data.users.items || []);
       } else {
-        toast.error("Failed to fetch users");
+        toast.error(t("toast.fetchFailed"));
       }
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -139,7 +142,7 @@ const Users: React.FC = () => {
   };
 
   const handleExport = () => {
-    toast.info("Export functionality coming soon!");
+    toast.info(t("toast.exportSoon"));
   };
 
   const handleFilter = () => {
@@ -148,24 +151,24 @@ const Users: React.FC = () => {
 
   const handleResetFilters = () => {
     setAppliedFilters({ roles: [], statuses: [] });
-    toast.info("Filters reset");
+    toast.info(t("toast.filtersReset"));
   };
 
   return (
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title="User List"
-          subtitle="Manage system access, identities, and security policies."
-          breadcrumbs={[{ label: "Users" }, { label: "User List" }]}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[{ label: t("breadcrumbs.users") }, { label: t("breadcrumbs.current") }]}
           showButton={true}
-          buttonText="New User"
+          buttonText={t("addButton")}
           buttonRoute="/users/0"
           showExportButton={true}
-          ExportbuttonText="Export"
+          ExportbuttonText={t("export")}
           onExportClick={handleExport}
           showFilterButton={false}
-          FilterbuttonText="Filters"
+          FilterbuttonText={t("filter")}
           onFilterClick={handleFilter}
           showWriteButton={true}
         />
@@ -174,19 +177,19 @@ const Users: React.FC = () => {
         {isFilterOpen && (
           <div className="mb-6 rounded-xl bg-card p-5 shadow-sm">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-semibold">Advanced Filters</h3>
+              <h3 className="text-base font-semibold">{t("filters.title")}</h3>
               <div className="flex items-center gap-4">
                 <button
                   onClick={handleResetFilters}
                   className="text-sm text-muted-foreground hover:text-primary flex items-center gap-1"
                 >
-                  Reset all ✕
+                  {t("filters.resetAll")}
                 </button>
                 <button
                   onClick={() => setIsFilterOpen(false)}
                   className="text-sm font-medium text-primary hover:underline"
                 >
-                  Close
+                  {t("filters.close")}
                 </button>
               </div>
             </div>
@@ -199,8 +202,8 @@ const Users: React.FC = () => {
                   onChange={(roles) =>
                     setAppliedFilters((prev) => ({ ...prev, roles }))
                   }
-                  placeholder="Roles"
-                  searchPlaceholder="Search roles"
+                  placeholder={t("filters.roles")}
+                  searchPlaceholder={t("filters.searchRoles")}
                 />
               </div>
               <div className="min-w-[260px]">
@@ -210,8 +213,8 @@ const Users: React.FC = () => {
                   onChange={(statuses) =>
                     setAppliedFilters((prev) => ({ ...prev, statuses }))
                   }
-                  placeholder="Status"
-                  searchPlaceholder="Search status"
+                  placeholder={t("filters.status")}
+                  searchPlaceholder={t("filters.searchStatus")}
                 />
               </div>
             </div>
@@ -222,7 +225,7 @@ const Users: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <MetricCard
             icon={UsersIcon}
-            label="Total Users"
+            label={t("metrics.totalUsers")}
             value={summaryData.totalUsers}
             iconBgColor="bg-purple-100"
             iconColor="text-purple-600"
@@ -230,7 +233,7 @@ const Users: React.FC = () => {
           />
           <MetricCard
             icon={CheckCircle}
-            label="Active"
+            label={t("metrics.active")}
             value={summaryData.active}
             iconBgColor="bg-green-100"
             iconColor="text-green-600"
@@ -238,7 +241,7 @@ const Users: React.FC = () => {
           />
           <MetricCard
             icon={Lock}
-            label="Suspended/Locked"
+            label={t("metrics.suspendedLocked")}
             value={summaryData.suspendedOrLocked}
             iconBgColor="bg-orange-100"
             iconColor="text-orange-600"
@@ -246,7 +249,7 @@ const Users: React.FC = () => {
           />
           <MetricCard
             icon={Shield}
-            label="2FA Enabled"
+            label={t("metrics.twoFactorEnabled")}
             value={summaryData.twoFactorEnabled}
             iconBgColor="bg-blue-100"
             iconColor="text-blue-600"
@@ -261,7 +264,7 @@ const Users: React.FC = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           showActions={true}
-          searchPlaceholder="Search across all fields..."
+          searchPlaceholder={t("searchPlaceholder")}
           rowsPerPageOptions={[10, 25, 50, 100]}
           defaultRowsPerPage={10}
           pageNo={pageNo}
@@ -281,10 +284,10 @@ const Users: React.FC = () => {
             setUserToDelete(null);
           }}
           onConfirm={confirmDelete}
-          title="Delete User"
-          message={`Are you sure you want to delete user "${userToDelete?.fullName}"? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
+          title={t("delete.title")}
+          message={t("delete.message", { name: userToDelete?.fullName || "" })}
+          confirmText={t("delete.confirm")}
+          cancelText={t("delete.cancel")}
           type="danger"
           isDark={isDark}
         />

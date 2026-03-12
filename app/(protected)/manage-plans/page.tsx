@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import CommonTable from "@/components/CommonTable";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
@@ -21,6 +22,7 @@ import { deletePlan, getPlans } from "@/services/planService";
 const ManagePlans: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.managePlans.list");
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -29,23 +31,23 @@ const ManagePlans: React.FC = () => {
   const columns = [
     {
       key: "no",
-      label: "NO",
+      label: t("table.no"),
       visible: true,
     },
     {
       key: "planName",
-      label: "PLAN NAME",
+      label: t("table.planName"),
       type: "link" as const,
       visible: true,
     },
     {
       key: "tenantCategory",
-      label: "CATEGORY",
+      label: t("table.category"),
       visible: true,
     },
     {
       key: "initialBasePrice",
-      label: "PRICING",
+      label: t("table.pricing"),
       icon: <DollarSign className="w-4 h-4" />,
       visible: true,
     },
@@ -56,7 +58,7 @@ const ManagePlans: React.FC = () => {
     // },
     {
       key: "isActive",
-      label: "STATUS",
+      label: t("table.status"),
       type: "badge" as const,
       visible: true,
     },
@@ -76,10 +78,10 @@ const ManagePlans: React.FC = () => {
         toast.success(response.message);
         getPlansList();
       } else {
-        toast.error(response.message || "Something went wrong.");
+        toast.error(response.message || t("toast.genericError"));
       }
     } catch (error) {
-      toast.error("Failed to delete plan");
+      toast.error(t("toast.deleteFailed"));
     }
   };
 
@@ -112,7 +114,7 @@ const ManagePlans: React.FC = () => {
 
       // Mock data for now
     } catch (error) {
-      toast.error("Failed to fetch plans");
+      toast.error(t("toast.fetchFailed"));
     }
   }
 
@@ -136,11 +138,11 @@ const ManagePlans: React.FC = () => {
         {/* Page Header - Mobile Optimized */}
         <div className="mb-4 sm:mb-6">
           <PageHeader
-            title="Manage Plans"
-            subtitle="Design global pricing blueprints for multi-tenant account categories."
-            breadcrumbs={[{ label: "Billing" }, { label: "Manage Plans" }]}
+            title={t("title")}
+            subtitle={t("subtitle")}
+            breadcrumbs={[{ label: t("breadcrumbs.billing") }, { label: t("breadcrumbs.current") }]}
             showButton={true}
-            buttonText="Create Plan"
+            buttonText={t("addButton")}
             buttonRoute="/manage-plans/0"
           />
         </div>
@@ -189,7 +191,7 @@ const ManagePlans: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             showActions={true}
-            searchPlaceholder="Search across all fields..."
+            searchPlaceholder={t("searchPlaceholder")}
             rowsPerPageOptions={[10, 25, 50, 100]}
             defaultRowsPerPage={10}
             pageNo={pageNo}

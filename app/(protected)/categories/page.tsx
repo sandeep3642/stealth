@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import CommonTable from "@/components/CommonTable";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import PageHeader from "@/components/PageHeader";
@@ -15,6 +16,7 @@ import { toast } from "react-toastify";
 const Categories: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.categories.list");
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
@@ -34,29 +36,30 @@ const Categories: React.FC = () => {
   const columns = [
     {
       key: "categoryId",
-      label: "ID",
+      label: t("table.id"),
       visible: true,
     },
     {
       key: "labelName",
-      label: "LABEL",
+      label: t("table.label"),
       visible: true,
     },
     {
       key: "description",
-      label: "DESCRIPTION",
+      label: t("table.description"),
       visible: true,
     },
     {
       key: "isActive",
-      label: "STATUS",
+      label: t("table.status"),
       type: "badge" as const,
       visible: true,
-      render: (value: boolean) => (value ? "Active" : "Inactive"),
+      render: (value: boolean) =>
+        value ? t("status.active") : t("status.inactive"),
     },
     {
       key: "createdAt",
-      label: "CREATED AT",
+      label: t("table.createdAt"),
       visible: true,
       render: (value: string) => new Date(value).toLocaleDateString(),
     },
@@ -106,13 +109,13 @@ const Categories: React.FC = () => {
     try {
       const response = await deleteCategory(categoryToDelete.categoryId);
       if (response.success) {
-        toast.success("Category deleted successfully!");
+        toast.success(t("toast.deleted"));
         fetchCategories(); // Refresh list
       } else {
-        toast.error(`Failed to delete: ${response.message}`);
+        toast.error(t("toast.deleteFailed", { message: response.message }));
       }
     } catch (error) {
-      toast.error("Error deleting category");
+      toast.error(t("toast.deleteError"));
       console.error("Error deleting category:", error);
     } finally {
       setCategoryToDelete(null);
@@ -173,11 +176,14 @@ const Categories: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title="Categories"
-          subtitle="Manage identities, taxonomies, and global parameters."
-          breadcrumbs={[{ label: "Accounts" }, { label: "Categories" }]}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[
+            { label: t("breadcrumbs.accounts") },
+            { label: t("breadcrumbs.current") },
+          ]}
           showButton={true}
-          buttonText="Add Category"
+          buttonText={t("addButton")}
           buttonRoute="/categories/0"
           showWriteButton={categoryRights?.canWrite || false}
         />
@@ -185,7 +191,7 @@ const Categories: React.FC = () => {
         {/* Table */}
         {loading ? (
           <div className="flex items-center justify-center p-8">
-            <p>Loading categories...</p>
+            <p>{t("loading")}</p>
           </div>
         ) : (
           <CommonTable
@@ -194,7 +200,7 @@ const Categories: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             showActions={true}
-            searchPlaceholder="Search categories..."
+            searchPlaceholder={t("searchPlaceholder")}
             rowsPerPageOptions={[10, 25, 50, 100]}
             defaultRowsPerPage={10}
             pageNo={pageNo}
@@ -216,10 +222,12 @@ const Categories: React.FC = () => {
             setCategoryToDelete(null);
           }}
           onConfirm={confirmDelete}
-          title="Delete Category"
-          message={`Are you sure you want to delete the category "${categoryToDelete?.labelName}"? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
+          title={t("delete.title")}
+          message={t("delete.message", {
+            label: categoryToDelete?.labelName || "",
+          })}
+          confirmText={t("delete.confirm")}
+          cancelText={t("delete.cancel")}
           type="danger"
           isDark={isDark}
         />

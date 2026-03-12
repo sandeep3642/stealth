@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import CommonTable from "@/components/CommonTable";
 import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
@@ -16,6 +17,7 @@ import { getSims, deleteSim } from "@/services/simservice";
 const SimMaster: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.simMaster.list");
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -36,7 +38,7 @@ const SimMaster: React.FC = () => {
   const columns = [
     {
       key: "iccid",
-      label: "ICCID Identification",
+      label: t("table.iccid"),
       visible: true,
       render: (value: string, row: SimItem) => (
         <div>
@@ -51,24 +53,24 @@ const SimMaster: React.FC = () => {
     },
     {
       key: "msisdn",
-      label: "Line Number (MSISDN)",
+      label: t("table.msisdn"),
       visible: true,
     },
     {
       key: "status",
-      label: "Connectivity Status",
+      label: t("table.status"),
       visible: true,
       type: "badge" as const,
     },
     {
       key: "contractExpiry",
-      label: "Contract Expiry",
+      label: t("table.contractExpiry"),
       visible: true,
       type: "date" as const,
     },
     {
       key: "updatedAt",
-      label: "Last Updated",
+      label: t("table.lastUpdated"),
       visible: true,
       type: "date" as const,
     },
@@ -109,7 +111,7 @@ const SimMaster: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching SIMs:", error);
-      toast.error("An error occurred while loading SIMs");
+      toast.error(t("toast.loadError"));
     }
   };
 
@@ -139,14 +141,14 @@ const SimMaster: React.FC = () => {
     try {
       const response = await deleteSim(simToDelete.simId);
       if (response && response.statusCode === 200) {
-        toast.success("SIM removed from registry!");
+        toast.success(response.message || t("toast.removed"));
         fetchSims();
       } else {
-        toast.error(response.message || "Failed to delete SIM");
+        toast.error(response.message || t("toast.deleteFailed"));
       }
     } catch (error) {
       console.error("Error deleting SIM:", error);
-      toast.error("An error occurred while deleting.");
+      toast.error(t("toast.deleteError"));
     } finally {
       setSimToDelete(null);
       setIsDeleteDialogOpen(false);
@@ -157,18 +159,15 @@ const SimMaster: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title="SIM Master"
-          subtitle="Manage global SIM inventory, carrier contracts, and MSISDN mappings."
-          breadcrumbs={[
-            { label: "Fleet" },
-            { label: "SIM Master" },
-          ]}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[{ label: t("breadcrumbs.fleet") }, { label: t("breadcrumbs.current") }]}
           showButton={true}
-          buttonText="Add SIM"
+          buttonText={t("addButton")}
           buttonRoute="/sim-master/0"
           showExportButton={true}
-          ExportbuttonText="Export"
-          onExportClick={() => toast.info("Export coming soon!")}
+          ExportbuttonText={t("export")}
+          onExportClick={() => toast.info(t("toast.exportSoon"))}
           showFilterButton={false}
         />
 
@@ -176,7 +175,7 @@ const SimMaster: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <MetricCard
             icon={Smartphone}
-            label="Total SIMs"
+            label={t("metrics.totalSims")}
             value={summaryData.totalSims}
             iconBgColor="bg-purple-100"
             iconColor="text-purple-600"
@@ -184,7 +183,7 @@ const SimMaster: React.FC = () => {
           />
           <MetricCard
             icon={ShieldCheck}
-            label="Enabled"
+            label={t("metrics.enabled")}
             value={summaryData.enabled}
             iconBgColor="bg-green-100"
             iconColor="text-green-600"
@@ -192,7 +191,7 @@ const SimMaster: React.FC = () => {
           />
           <MetricCard
             icon={AlertCircle}
-            label="Disabled"
+            label={t("metrics.disabled")}
             value={summaryData.disabled}
             iconBgColor="bg-orange-100"
             iconColor="text-orange-600"
@@ -200,7 +199,7 @@ const SimMaster: React.FC = () => {
           />
           <MetricCard
             icon={Wifi}
-            label="Active Carriers"
+            label={t("metrics.activeCarriers")}
             value={summaryData.activeCarriers}
             iconBgColor="bg-blue-100"
             iconColor="text-blue-600"
@@ -215,7 +214,7 @@ const SimMaster: React.FC = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           showActions={true}
-          searchPlaceholder="Search by ICCID or MSISDN..."
+          searchPlaceholder={t("searchPlaceholder")}
           rowsPerPageOptions={[5, 10, 25, 50, 100]}
           defaultRowsPerPage={10}
           pageNo={pageNo}
@@ -238,10 +237,10 @@ const SimMaster: React.FC = () => {
             setSimToDelete(null);
           }}
           onConfirm={confirmDelete}
-          title="Remove SIM"
-          message={`Are you sure you want to remove SIM "${simToDelete?.iccid}" from the registry? This action cannot be undone.`}
-          confirmText="Remove"
-          cancelText="Cancel"
+          title={t("delete.title")}
+          message={t("delete.message", { iccid: simToDelete?.iccid || "" })}
+          confirmText={t("delete.confirm")}
+          cancelText={t("delete.cancel")}
           type="danger"
           isDark={isDark}
         />

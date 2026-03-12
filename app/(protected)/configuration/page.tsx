@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import CommonTable from "@/components/CommonTable";
@@ -16,6 +17,7 @@ import {
 const ConfigurationPage: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.configuration.list");
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -33,14 +35,14 @@ const ConfigurationPage: React.FC = () => {
   );
 
   const columns = [
-    { key: "accountConfigurationId", label: "ID", visible: true },
-    { key: "accountName", label: "ACCOUNT", visible: true },
-    { key: "mapProvider", label: "MAP PROVIDER", visible: true },
-    { key: "dateFormat", label: "DATE FORMAT", visible: true },
-    { key: "defaultLanguage", label: "LANGUAGE", visible: true },
+    { key: "accountConfigurationId", label: t("table.id"), visible: true },
+    { key: "accountName", label: t("table.account"), visible: true },
+    { key: "mapProvider", label: t("table.mapProvider"), visible: true },
+    { key: "dateFormat", label: t("table.dateFormat"), visible: true },
+    { key: "defaultLanguage", label: t("table.language"), visible: true },
     {
       key: "updatedOn",
-      label: "LAST UPDATED",
+      label: t("table.lastUpdated"),
       visible: true,
       type: "date" as const,
     },
@@ -83,13 +85,13 @@ const ConfigurationPage: React.FC = () => {
         configToDelete.accountConfigurationId,
       );
       if (response.success) {
-        toast.success("Configuration deleted successfully!");
+        toast.success(t("toast.deleted"));
         fetchConfigurations();
       } else {
-        toast.error(`Failed to delete: ${response.message}`);
+        toast.error(t("toast.deleteFailed", { message: response.message }));
       }
     } catch (error) {
-      toast.error("Error deleting configuration");
+      toast.error(t("toast.deleteError"));
       console.error("Error deleting configuration:", error);
     } finally {
       setConfigToDelete(null);
@@ -119,18 +121,21 @@ const ConfigurationPage: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title="Configuration"
-          subtitle="Global settings for account management."
-          breadcrumbs={[{ label: "Accounts" }, { label: "Configuration" }]}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[
+            { label: t("breadcrumbs.accounts") },
+            { label: t("breadcrumbs.current") },
+          ]}
           showButton={true}
-          buttonText="New Configuration"
+          buttonText={t("addButton")}
           buttonRoute="/configuration/0"
         />
 
         {loading ? (
           <div className="flex items-center justify-center p-8">
             <p className={isDark ? "text-foreground" : "text-gray-900"}>
-              Loading configurations...
+              {t("loading")}
             </p>
           </div>
         ) : (
@@ -140,7 +145,7 @@ const ConfigurationPage: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             showActions={true}
-            searchPlaceholder="Search across all fields..."
+            searchPlaceholder={t("searchPlaceholder")}
             rowsPerPageOptions={[10, 25, 50, 100]}
             defaultRowsPerPage={10}
             pageNo={pageNo}
@@ -161,10 +166,12 @@ const ConfigurationPage: React.FC = () => {
             setConfigToDelete(null);
           }}
           onConfirm={confirmDelete}
-          title="Delete Configuration"
-          message={`Are you sure you want to delete configuration for "${configToDelete?.accountName}"? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
+          title={t("delete.title")}
+          message={t("delete.message", {
+            account: configToDelete?.accountName || "",
+          })}
+          confirmText={t("delete.confirm")}
+          cancelText={t("delete.cancel")}
           type="danger"
           isDark={isDark}
         />

@@ -1,10 +1,7 @@
 "use client";
 
-import { Building2, Layers, Smartphone } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
-import { toast } from "react-toastify";
 import { Card } from "@/components/CommonCard";
+import PageHeader from "@/components/PageHeader";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
 import { SimAccount } from "@/interfaces/sim.interface";
@@ -18,6 +15,11 @@ import {
   saveDevice,
   updateDevice,
 } from "@/services/deviceService";
+import { Building2, Layers, Smartphone } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useParams, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 interface DeviceFormData {
   accountId: number;
@@ -44,6 +46,8 @@ interface DeviceTypeOption {
 const ProvisionDevice: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
+  const t = useTranslations("pages.devices.detail");
+  const tList = useTranslations("pages.devices.list");
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
@@ -156,14 +160,14 @@ const ProvisionDevice: React.FC = () => {
         }
       } catch (error) {
         console.error(error);
-        toast.error("Failed to load device data");
+        toast.error(t("toast.loadFailed"));
       } finally {
         setPageLoading(false);
       }
     };
 
     init();
-  }, [id, isEditMode]);
+  }, [id, isEditMode, t]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -179,19 +183,19 @@ const ProvisionDevice: React.FC = () => {
 
   const handleSubmit = async () => {
     if (!formData.accountId) {
-      toast.error("Please select an account");
+      toast.error(t("toast.selectAccount"));
       return;
     }
     if (!formData.manufacturerId) {
-      toast.error("Please select a manufacturer");
+      toast.error(t("toast.selectManufacturer"));
       return;
     }
     if (!formData.deviceTypeId) {
-      toast.error("Please select a device type");
+      toast.error(t("toast.selectDeviceType"));
       return;
     }
     if (!formData.deviceImeiOrSerial.trim()) {
-      toast.error("IMEI / Serial number is required");
+      toast.error(t("toast.serialRequired"));
       return;
     }
 
@@ -227,14 +231,14 @@ const ProvisionDevice: React.FC = () => {
         : await saveDevice(payload);
 
       if (response?.statusCode === 200) {
-        toast.success(response?.message || "Device saved successfully");
+        toast.success(response?.message || t("toast.saved"));
         setTimeout(() => router.push("/devices"), 800);
       } else {
-        toast.error(response?.message || "Operation failed");
+        toast.error(response?.message || t("toast.operationFailed"));
       }
     } catch (error) {
       console.error(error);
-      toast.error("An error occurred");
+      toast.error(t("toast.errorOccurred"));
     } finally {
       setLoading(false);
     }
@@ -291,7 +295,7 @@ const ProvisionDevice: React.FC = () => {
               style={{ borderColor: selectedColor }}
             />
             <p className={isDark ? "text-gray-400" : "text-gray-600"}>
-              {isEditMode ? "Loading device data..." : "Preparing form..."}
+              {isEditMode ? t("loading.edit") : t("loading.create")}
             </p>
           </div>
         </div>
@@ -305,48 +309,27 @@ const ProvisionDevice: React.FC = () => {
         className={`min-h-screen ${isDark ? "bg-background" : ""} p-3 sm:p-4 md:p-6`}
       >
         <div className="mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <h1
-                className={`text-2xl sm:text-3xl font-bold ${
-                  isDark ? "text-foreground" : "text-gray-900"
-                }`}
-              >
-                {isEditMode ? "Edit Device" : "Provision Device"}
-              </h1>
-              <p
-                className={`text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}
-              >
-                {isEditMode
-                  ? "Update registry entry for this device."
-                  : "Global Asset Correlation & Device Registry"}
-              </p>
-            </div>
-            <div className="flex gap-2 sm:gap-3">
-              <button
-                onClick={() => router.push("/devices")}
-                className={`flex-1 sm:flex-none px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
-                  isDark
-                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
-                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
-                }`}
-              >
-                Discard
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="flex-1 sm:flex-none px-4 py-2 text-sm rounded-lg font-medium text-white transition-colors disabled:opacity-50 hover:opacity-90"
-                style={{ backgroundColor: selectedColor }}
-              >
-                {loading
-                  ? "Saving..."
-                  : isEditMode
-                    ? "Update Registry Entry"
-                    : "Commit Registry Entry"}
-              </button>
-            </div>
-          </div>
+          <PageHeader
+            title={isEditMode ? t("title.edit") : t("title.create")}
+            subtitle={isEditMode ? t("subtitle.edit") : t("subtitle.create")}
+            breadcrumbs={[
+              { label: tList("breadcrumbs.fleet") },
+              { label: tList("breadcrumbs.current"), href: "/devices" },
+              { label: isEditMode ? t("title.edit") : t("title.create") },
+            ]}
+            showButton={true}
+            buttonText={
+              loading
+                ? t("buttons.saving")
+                : isEditMode
+                  ? t("buttons.update")
+                  : t("buttons.create")
+            }
+            onButtonClick={handleSubmit}
+            showExportButton={false}
+            showFilterButton={false}
+            showBulkUpload={false}
+          />
         </div>
 
         <Card isDark={isDark}>
@@ -354,13 +337,14 @@ const ProvisionDevice: React.FC = () => {
             <div>
               <SectionHeader
                 icon={Building2}
-                title="Account Context"
-                subtitle="Select the account this device belongs to."
+                title={t("sections.accountContext")}
+                subtitle={t("sections.accountContextSubtitle")}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="sm:col-span-2">
                   <label className={labelClass}>
-                    Account <span className="text-red-500">*</span>
+                    {t("fields.account")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="accountId"
@@ -369,7 +353,7 @@ const ProvisionDevice: React.FC = () => {
                     className={inputClass()}
                     disabled={isEditMode}
                   >
-                    <option value={0}>Select Account</option>
+                    <option value={0}>{t("fields.selectAccount")}</option>
                     {accounts.map((account) => (
                       <option key={account.id} value={account.id}>
                         {account.value}
@@ -383,13 +367,14 @@ const ProvisionDevice: React.FC = () => {
             <div>
               <SectionHeader
                 icon={Layers}
-                title="Identity & Lifecycle"
-                subtitle="Hardware identification and classification details."
+                title={t("sections.identityLifecycle")}
+                subtitle={t("sections.identityLifecycleSubtitle")}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelClass}>
-                    Manufacturer <span className="text-red-500">*</span>
+                    {t("fields.manufacturer")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="manufacturerId"
@@ -397,7 +382,7 @@ const ProvisionDevice: React.FC = () => {
                     onChange={handleChange}
                     className={inputClass()}
                   >
-                    <option value={0}>Select Manufacturer</option>
+                    <option value={0}>{t("fields.selectManufacturer")}</option>
                     {manufacturers.map((manufacturer) => (
                       <option key={manufacturer.id} value={manufacturer.id}>
                         {manufacturer.value}
@@ -408,7 +393,8 @@ const ProvisionDevice: React.FC = () => {
 
                 <div>
                   <label className={labelClass}>
-                    Device Type <span className="text-red-500">*</span>
+                    {t("fields.deviceType")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="deviceTypeId"
@@ -416,7 +402,7 @@ const ProvisionDevice: React.FC = () => {
                     onChange={handleChange}
                     className={inputClass()}
                   >
-                    <option value={0}>Select Device Type</option>
+                    <option value={0}>{t("fields.selectDeviceType")}</option>
                     {deviceTypes.map((type) => (
                       <option key={type.id} value={type.id}>
                         {type.displayName}
@@ -426,27 +412,27 @@ const ProvisionDevice: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className={labelClass}>Device No.</label>
+                  <label className={labelClass}>{t("fields.deviceNo")}</label>
                   <input
                     type="text"
                     name="deviceNo"
                     value={formData.deviceNo}
                     onChange={handleChange}
-                    placeholder="e.g. DEV-001"
+                    placeholder={t("fields.deviceNoPlaceholder")}
                     className={inputClass()}
                   />
                 </div>
 
                 <div>
                   <label className={labelClass}>
-                    IMEI / Serial <span className="text-red-500">*</span>
+                    {t("fields.serial")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     name="deviceImeiOrSerial"
                     value={formData.deviceImeiOrSerial}
                     onChange={handleChange}
-                    placeholder="Hardware Identity Code"
+                    placeholder={t("fields.serialPlaceholder")}
                     className={inputClass("uppercase")}
                     style={{ letterSpacing: "0.05em" }}
                   />
@@ -458,28 +444,31 @@ const ProvisionDevice: React.FC = () => {
               <div>
                 <SectionHeader
                   icon={Smartphone}
-                  title="Device Identity Preview"
-                  subtitle="Auto-generated from the fields above."
+                  title={t("sections.preview")}
+                  subtitle={t("sections.previewSubtitle")}
                 />
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
                     {
-                      label: "Device Type",
+                      label: t("preview.deviceType"),
                       value:
                         deviceTypes.find(
                           (item) => item.id === Number(formData.deviceTypeId),
-                        )?.displayName || "—",
+                        )?.displayName || t("preview.empty"),
                     },
                     {
-                      label: "Manufacturer",
+                      label: t("preview.manufacturer"),
                       value:
                         manufacturers.find(
                           (item) => item.id === Number(formData.manufacturerId),
-                        )?.value || "—",
+                        )?.value || t("preview.empty"),
                     },
-                    { label: "Device No.", value: formData.deviceNo || "—" },
                     {
-                      label: "IMEI / Serial",
+                      label: t("preview.deviceNo"),
+                      value: formData.deviceNo || t("preview.empty"),
+                    },
+                    {
+                      label: t("preview.serial"),
                       value: formData.deviceImeiOrSerial,
                     },
                   ].map(({ label, value }) => (
@@ -510,6 +499,19 @@ const ProvisionDevice: React.FC = () => {
                 </div>
               </div>
             )}
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => router.push("/devices")}
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
+                  isDark
+                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
+                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                }`}
+              >
+                {t("buttons.discard")}
+              </button>
+            </div>
           </div>
         </Card>
       </div>

@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { Globe, Palette } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useRouter } from "next/navigation";
+import PageHeader from "@/components/PageHeader";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { HexColorPicker } from "react-colorful";
 import {
@@ -54,6 +56,8 @@ const hexToRgb = (hex: string) => {
 const ProvisionBranding: React.FC = () => {
   const { selectedColor } = useColor();
   const { isDark } = useTheme();
+  const t = useTranslations("pages.whiteLabel.detail");
+  const tList = useTranslations("pages.whiteLabel.list");
   const router = useRouter();
 
   const [whiteLabelId, setWhiteLabelId] = useState<string | null>(null);
@@ -167,7 +171,7 @@ const ProvisionBranding: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching white label:", error);
-      toast.error("Failed to load white label data");
+      toast.error(t("toast.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -214,12 +218,12 @@ const ProvisionBranding: React.FC = () => {
 
   const handleActivate = async () => {
     if (!formData.accountId) {
-      toast.error("Please select a target account");
+      toast.error(t("toast.selectAccount"));
       return;
     }
 
     if (!formData.customEntryFqdn) {
-      toast.error("Please enter custom FQDN");
+      toast.error(t("toast.enterFqdn"));
       return;
     }
 
@@ -240,7 +244,7 @@ const ProvisionBranding: React.FC = () => {
         });
 
         if (!uploadRes?.success) {
-          toast.error(uploadRes?.message || "Logo upload failed");
+          toast.error(uploadRes?.message || t("toast.logoUploadFailed"));
           setLoading(false);
           return;
         }
@@ -357,15 +361,17 @@ const ProvisionBranding: React.FC = () => {
 
       if (response.success) {
         toast.success(
-          `White label ${isEditMode ? "updated" : "created"} successfully!`,
+          t("toast.saved", {
+            mode: isEditMode ? t("modes.updated") : t("modes.created"),
+          }),
         );
         router.push("/whiteLabel");
       } else {
-        toast.error(`Failed: ${response.message}`);
+        toast.error(t("toast.saveFailed", { message: response.message }));
       }
     } catch (error) {
       console.error("Error saving white label:", error);
-      toast.error("An error occurred while saving");
+      toast.error(t("toast.saveError"));
     } finally {
       setLoading(false);
     }
@@ -431,7 +437,7 @@ const ProvisionBranding: React.FC = () => {
     return (
       <div className={`${isDark ? "dark" : ""} mt-10`}>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <p className="text-foreground text-lg">Loading...</p>
+          <p className="text-foreground text-lg">{t("loading")}</p>
         </div>
       </div>
     );
@@ -441,19 +447,23 @@ const ProvisionBranding: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className="min-h-screen bg-background flex items-start justify-center p-6">
         <div className="w-full max-w-7xl">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6 px-3 sm:px-0">
-            <h1 className="text-2xl sm:text-4xl font-bold text-foreground">
-              {isEditMode ? "Edit" : "Provision"} Branding
-            </h1>
-
-            <button
-              onClick={handleCancel}
-              className="text-sm sm:text-base text-foreground hover:text-foreground/70 font-medium transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
+          <PageHeader
+            title={isEditMode ? t("title.edit") : t("title.create")}
+            breadcrumbs={[
+              { label: tList("breadcrumbs.accounts") },
+              { label: tList("breadcrumbs.current"), href: "/whiteLabel" },
+              { label: isEditMode ? t("title.edit") : t("title.create") },
+            ]}
+            showButton
+            buttonText={
+              loading
+                ? t("buttons.saving")
+                : isEditMode
+                  ? t("buttons.update")
+                  : t("buttons.activate")
+            }
+            onButtonClick={handleActivate}
+          />
 
           {/* Main Content */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -464,7 +474,7 @@ const ProvisionBranding: React.FC = () => {
                 <div className="flex items-center gap-2 mb-6">
                   <Globe className="w-5 h-5" style={{ color: selectedColor }} />
                   <h2 className="text-xl font-bold text-foreground">
-                    Core Instance Mapping
+                    {t("sections.coreInstanceMapping")}
                   </h2>
                 </div>
 
@@ -473,7 +483,7 @@ const ProvisionBranding: React.FC = () => {
                     <label
                       className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                     >
-                      Account
+                      {t("labels.account")}
                     </label>
                     <select
                       name="accountId"
@@ -486,7 +496,7 @@ const ProvisionBranding: React.FC = () => {
                           : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
-                      <option value="">Select Account</option>
+                      <option value="">{t("labels.selectAccount")}</option>
                       {accounts &&
                         accounts.map(
                           (account: { id: number; value: string }) => (
@@ -500,7 +510,7 @@ const ProvisionBranding: React.FC = () => {
 
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-2">
-                      Custom Entry FQDN
+                      {t("labels.customEntryFqdn")}
                     </label>
                     <div className="relative">
                       <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground opacity-50 text-sm">
@@ -511,7 +521,7 @@ const ProvisionBranding: React.FC = () => {
                         name="customEntryFqdn"
                         value={formData.customEntryFqdn}
                         onChange={handleInputChange}
-                        placeholder="portal.partner.com"
+                        placeholder={t("labels.customEntryFqdnPlaceholder")}
                         className={`w-full pl-20 pr-4 py-2.5 rounded-lg border transition-colors ${
                           isDark
                             ? "bg-gray-800 border-gray-700 text-foreground"
@@ -523,14 +533,14 @@ const ProvisionBranding: React.FC = () => {
 
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-2">
-                      Brand Name
+                      {t("labels.brandName")}
                     </label>
                     <input
                       type="text"
                       name="brandName"
                       value={formData.brandName}
                       onChange={handleInputChange}
-                      placeholder="Enter brand name"
+                      placeholder={t("labels.brandNamePlaceholder")}
                       className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                         isDark
                           ? "bg-gray-800 border-gray-700 text-foreground"
@@ -549,7 +559,7 @@ const ProvisionBranding: React.FC = () => {
                     style={{ color: selectedColor }}
                   />
                   <h2 className="text-xl font-bold text-foreground">
-                    Visual Identity Systems
+                    {t("sections.visualIdentitySystems")}
                   </h2>
                 </div>
 
@@ -557,14 +567,14 @@ const ProvisionBranding: React.FC = () => {
                   {/* Brand Mark / Logo URL */}
                   <div>
                     <label className="block text-sm font-semibold text-foreground mb-2 uppercase tracking-wide">
-                      Logo URL
+                      {t("labels.logoUrl")}
                     </label>
                     <input
                       type="text"
                       name="logoUrl"
                       value={formData.logoUrl}
                       onChange={handleInputChange}
-                      placeholder="https://cdn.example.com/logo.png"
+                      placeholder={t("labels.logoUrlPlaceholder")}
                       className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                         isDark
                           ? "bg-gray-800 border-gray-700 text-foreground"
@@ -575,12 +585,24 @@ const ProvisionBranding: React.FC = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
-                      { key: "primaryLogo", label: "Primary Logo", urlKey: "primaryLogoUrl" },
-                      { key: "appLogo", label: "App Logo", urlKey: "appLogoUrl" },
-                      { key: "mobileLogo", label: "Mobile Logo", urlKey: "mobileLogoUrl" },
-                      { key: "favicon", label: "Favicon", urlKey: "faviconUrl" },
-                      { key: "logoDark", label: "Logo Dark", urlKey: "logoDarkUrl" },
-                      { key: "logoLight", label: "Logo Light", urlKey: "logoLightUrl" },
+                      {
+                        key: "primaryLogo",
+                        label: t("labels.primaryLogo"),
+                        urlKey: "primaryLogoUrl",
+                      },
+                      { key: "appLogo", label: t("labels.appLogo"), urlKey: "appLogoUrl" },
+                      {
+                        key: "mobileLogo",
+                        label: t("labels.mobileLogo"),
+                        urlKey: "mobileLogoUrl",
+                      },
+                      { key: "favicon", label: t("labels.favicon"), urlKey: "faviconUrl" },
+                      { key: "logoDark", label: t("labels.logoDark"), urlKey: "logoDarkUrl" },
+                      {
+                        key: "logoLight",
+                        label: t("labels.logoLight"),
+                        urlKey: "logoLightUrl",
+                      },
                     ].map((item) => (
                       <div key={item.key}>
                         <label className="block text-sm font-semibold text-foreground mb-2 uppercase tracking-wide">
@@ -611,7 +633,7 @@ const ProvisionBranding: React.FC = () => {
                           type="text"
                           value={String((formData as any)[item.urlKey] || "")}
                           readOnly
-                          placeholder="Uploaded URL will appear here"
+                          placeholder={t("labels.uploadedUrlPlaceholder")}
                           className={`w-full mt-2 px-3 py-2 rounded-lg border text-xs transition-colors ${
                             isDark
                               ? "bg-gray-900 border-gray-700 text-gray-300"
@@ -648,7 +670,7 @@ const ProvisionBranding: React.FC = () => {
                                     isDark ? "text-gray-400" : "text-gray-500"
                                   }`}
                                 >
-                                  No image preview
+                                  {t("labels.noImagePreview")}
                                 </span>
                               )}
                             </div>
@@ -663,7 +685,7 @@ const ProvisionBranding: React.FC = () => {
                     {/* Primary Palette */}
                     <div>
                       <label className="block text-sm font-semibold text-foreground mb-2 uppercase tracking-wide">
-                        Primary Color
+                        {t("labels.primaryColor")}
                       </label>
                       <div className="bg-background rounded-xl border border-border p-4">
                         <div className="flex items-center gap-4 mb-4">
@@ -739,7 +761,7 @@ const ProvisionBranding: React.FC = () => {
                     {/* Secondary Palette */}
                     <div>
                       <label className="block text-sm font-semibold text-foreground mb-2 uppercase tracking-wide">
-                        Secondary Color
+                        {t("labels.secondaryColor")}
                       </label>
                       <div className="bg-background rounded-xl border border-border p-4">
                         <div className="flex items-center gap-4 mb-4">
@@ -831,7 +853,7 @@ const ProvisionBranding: React.FC = () => {
                       htmlFor="isActive"
                       className="text-sm font-semibold text-foreground cursor-pointer"
                     >
-                      Active Status
+                      {t("labels.activeStatus")}
                     </label>
                   </div>
                 </div>
@@ -849,29 +871,29 @@ const ProvisionBranding: React.FC = () => {
                     className="text-sm font-bold uppercase tracking-wide mb-1"
                     style={{ color: selectedColor }}
                   >
-                    IDENTITY BLUEPRINT
+                    {t("sections.identityBlueprint")}
                   </h3>
                   <p className="text-sm text-foreground opacity-60">
-                    Visual summary of the rebranded portal.
+                    {t("summary.subtitle")}
                   </p>
                 </div>
 
                 <div className="px-6 py-4 space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-semibold text-foreground opacity-70">
-                      FQDN:
+                      {t("labels.fqdn")}
                     </span>
                     <span
                       className="text-sm font-bold break-all"
                       style={{ color: selectedColor }}
                     >
-                      {formData.customEntryFqdn || "Not set"}
+                      {formData.customEntryFqdn || t("summary.notSet")}
                     </span>
                   </div>
 
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-semibold text-foreground opacity-70">
-                      ACCOUNT:
+                      {t("labels.accountCaps")}
                     </span>
                     <span className="text-sm font-bold text-foreground">
                       {accounts?.length > 0 &&
@@ -884,7 +906,7 @@ const ProvisionBranding: React.FC = () => {
 
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-semibold text-foreground opacity-70">
-                      STATUS:
+                      {t("labels.statusCaps")}
                     </span>
                     <span
                       className={`text-xs font-bold px-3 py-1 rounded ${
@@ -893,13 +915,15 @@ const ProvisionBranding: React.FC = () => {
                           : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300"
                       }`}
                     >
-                      {formData.isActive ? "ACTIVE" : "INACTIVE"}
+                      {formData.isActive
+                        ? t("summary.active")
+                        : t("summary.inactive")}
                     </span>
                   </div>
 
                   <div className="pt-4 border-t border-border">
                     <p className="text-xs font-semibold text-foreground opacity-70 mb-2">
-                      COLOR PREVIEW
+                      {t("labels.colorPreview")}
                     </p>
                     <div className="flex gap-2">
                       <div
@@ -923,16 +947,14 @@ const ProvisionBranding: React.FC = () => {
 
                 <div className="px-6 pb-6 space-y-3">
                   <button
-                    onClick={handleActivate}
-                    disabled={loading}
-                    className="w-full py-3 rounded-lg font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: selectedColor }}
+                    onClick={handleCancel}
+                    className={`w-full py-3 rounded-lg font-semibold transition-colors ${
+                      isDark
+                        ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
+                        : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+                    }`}
                   >
-                    {loading
-                      ? "Saving..."
-                      : isEditMode
-                        ? "Update Whitelabel"
-                        : "Activate Whitelabel"}
+                    {t("buttons.cancel")}
                   </button>
                 </div>
               </div>

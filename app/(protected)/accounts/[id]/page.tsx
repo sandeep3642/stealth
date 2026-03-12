@@ -2,8 +2,10 @@
 
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "react-toastify";
 import { Card } from "@/components/CommonCard";
+import PageHeader from "@/components/PageHeader";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -77,6 +79,8 @@ interface City {
 const EditAccount: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
+  const t = useTranslations("pages.accounts.detail");
+  const tList = useTranslations("pages.accounts.list");
   const router = useRouter();
   const params = useParams();
   const id = params?.id;
@@ -189,47 +193,47 @@ const EditAccount: React.FC = () => {
     try {
       // Validate required fields
       if (!formData.accountName) {
-        toast.error("Account Name is required!");
+        toast.error(t("toast.accountNameRequired"));
         return;
       }
 
       if (!formData.categoryId) {
-        toast.error("Category is required!");
+        toast.error(t("toast.categoryRequired"));
         return;
       }
 
       if (!formData.primaryDomain) {
-        toast.error("Primary Domain is required!");
+        toast.error(t("toast.primaryDomainRequired"));
         return;
       }
 
       if (!formData.businessEmail) {
-        toast.error("Business Email is required!");
+        toast.error(t("toast.businessEmailRequired"));
         return;
       }
 
       if (!formData.businessAddress) {
-        toast.error("Business Address is required!");
+        toast.error(t("toast.businessAddressRequired"));
         return;
       }
 
       if (!formData.businessTimeZone) {
-        toast.error("Business Time Zone is required!");
+        toast.error(t("toast.businessTimeZoneRequired"));
         return;
       }
 
       if (!formData.countryId) {
-        toast.error("Country is required!");
+        toast.error(t("toast.countryRequired"));
         return;
       }
 
       if (!formData.stateId) {
-        toast.error("State is required!");
+        toast.error(t("toast.stateRequired"));
         return;
       }
 
       if (!formData.cityId) {
-        toast.error("City is required!");
+        toast.error(t("toast.cityRequired"));
         return;
       }
 
@@ -272,16 +276,16 @@ const EditAccount: React.FC = () => {
       const response = await updateAccount(payload, id);
 
       if (response && response.statusCode === 200) {
-        toast.success(response.message || "Account updated successfully!");
+        toast.success(response.message || t("toast.updatedSuccess"));
         router.push("/accounts");
       } else if (response && response.statusCode === 409) {
-        toast.error(response.message || "Account already exists!");
+        toast.error(response.message || t("toast.alreadyExists"));
       } else {
-        toast.error(response.message || "Something went wrong!");
+        toast.error(response.message || t("toast.genericError"));
       }
     } catch (error) {
       console.error("Error while saving account:", error);
-      toast.error("An error occurred while submitting the form.");
+      toast.error(t("toast.submitError"));
     }
   };
 
@@ -377,12 +381,12 @@ const EditAccount: React.FC = () => {
 
         setLoading(false);
       } else {
-        toast.error("Failed to fetch account details!");
+        toast.error(t("toast.fetchAccountFailed"));
         setLoading(false);
       }
     } catch (error) {
       console.error("Error fetching account:", error);
-      toast.error("An error occurred while fetching account details.");
+      toast.error(t("toast.fetchAccountError"));
       setLoading(false);
     }
   };
@@ -421,7 +425,7 @@ const EditAccount: React.FC = () => {
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
             <p className={isDark ? "text-gray-400" : "text-gray-600"}>
-              Loading account details...
+              {t("loading")}
             </p>
           </div>
         </div>
@@ -432,17 +436,18 @@ const EditAccount: React.FC = () => {
   return (
     <div className={`${isDark ? "dark" : ""} `}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-6`}>
-        {/* Header */}
         <div className="max-w-7xl mx-auto mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1
-                className={`text-3xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
-              >
-                Edit Account
-              </h1>
-            </div>
-          </div>
+          <PageHeader
+            title={t("title.edit")}
+            breadcrumbs={[
+              { label: tList("breadcrumbs.accounts") },
+              { label: tList("breadcrumbs.current"), href: "/accounts" },
+              { label: t("title.edit") },
+            ]}
+            showButton
+            buttonText={t("buttons.submit")}
+            onButtonClick={handleSubmit}
+          />
         </div>
 
         {/* Main Content */}
@@ -453,7 +458,7 @@ const EditAccount: React.FC = () => {
               <h2
                 className={`text-lg font-bold mb-6 ${isDark ? "text-foreground" : "text-gray-900"}`}
               >
-                Account Details
+                {t("sections.accountDetails")}
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -606,7 +611,7 @@ const EditAccount: React.FC = () => {
               <h2
                 className={`text-lg font-bold mb-6 ${isDark ? "text-foreground" : "text-gray-900"}`}
               >
-                Address Details
+                {t("sections.addressDetails")}
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -741,7 +746,7 @@ const EditAccount: React.FC = () => {
               <h2
                 className={`text-lg font-bold mb-6 ${isDark ? "text-foreground" : "text-gray-900"}`}
               >
-                Business Profile Details
+                {t("sections.businessProfile")}
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -885,7 +890,7 @@ const EditAccount: React.FC = () => {
               <h2
                 className={`text-lg font-bold mb-6 ${isDark ? "text-foreground" : "text-gray-900"}`}
               >
-                User Permission & Access Details
+                {t("sections.userPermission")}
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -1067,6 +1072,13 @@ const EditAccount: React.FC = () => {
           {/* Action Buttons */}
           <div className="flex justify-end gap-4">
             <button
+              className="text-white px-8 py-3 rounded-lg font-medium transition-colors"
+              style={{ background: selectedColor }}
+              onClick={handleSubmit}
+            >
+              {t("buttons.submit")}
+            </button>
+            <button
               className={`px-6 py-3 rounded-lg font-medium transition-colors ${
                 isDark
                   ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
@@ -1074,14 +1086,7 @@ const EditAccount: React.FC = () => {
               }`}
               onClick={() => router.back()}
             >
-              Cancel
-            </button>
-            <button
-              className="text-white px-8 py-3 rounded-lg font-medium transition-colors"
-              style={{ background: selectedColor }}
-              onClick={handleSubmit}
-            >
-              Submit
+              {t("buttons.cancel")}
             </button>
           </div>
         </div>

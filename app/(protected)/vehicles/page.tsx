@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import CommonTable from "@/components/CommonTable";
 import PageHeader from "@/components/PageHeader";
 import { MetricCard } from "@/components/CommonCard";
@@ -26,6 +27,7 @@ import {
 const Vehicles: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.vehicles.list");
 
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -49,7 +51,7 @@ const Vehicles: React.FC = () => {
   const columns = [
     {
       key: "registrationNumber",
-      label: "Registration",
+      label: t("table.registration"),
       visible: true,
       render: (value: string) => (
         <span className="font-semibold text-purple-600 dark:text-purple-400">
@@ -59,7 +61,7 @@ const Vehicles: React.FC = () => {
     },
     {
       key: "vinNumber",
-      label: "VIN / Chassis",
+      label: t("table.vin"),
       visible: true,
     },
     // {
@@ -95,13 +97,13 @@ const Vehicles: React.FC = () => {
     // },
     {
       key: "status",
-      label: "Status",
+      label: t("table.status"),
       visible: true,
       type: "badge" as const,
     },
     {
       key: "updatedAt",
-      label: "Last Updated",
+      label: t("table.lastUpdated"),
       visible: true,
       type: "date" as const,
     },
@@ -114,7 +116,7 @@ const Vehicles: React.FC = () => {
       3: "Maruti",
       4: "Ashok Leyland",
     };
-    return brands[brandId] || "Unknown";
+    return brands[brandId] || t("fallback.unknown");
   };
 
   const getVehicleTypes = (typeId: number) => {
@@ -125,7 +127,7 @@ const Vehicles: React.FC = () => {
       4: "Hatchback",
       5: "Mini Truck",
     };
-    return types[typeId] || "Unknown";
+    return types[typeId] || t("fallback.unknown");
   };
 
   useEffect(() => {
@@ -155,7 +157,9 @@ const Vehicles: React.FC = () => {
           vehicleType: getVehicleTypes(v.vehicleTypeId),
           vehicleBrand: getVehicleBrand(v.vehicleTypeId), // adjust if brandId exists later
           ownershipBasis: v.ownershipType?.toUpperCase() || "UNKNOWN",
-          lessorName: v.leasedVendorId ? `Vendor #${v.leasedVendorId}` : null,
+          lessorName: v.leasedVendorId
+            ? t("fallback.vendor", { id: v.leasedVendorId })
+            : null,
           status: v.status,
           updatedAt: v.updatedAt || v.createdAt || null,
         }));
@@ -174,7 +178,7 @@ const Vehicles: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching vehicles:", error);
-      toast.error("An error occurred while loading vehicles");
+      toast.error(t("toast.loadError"));
     }
   };
 
@@ -204,18 +208,18 @@ const Vehicles: React.FC = () => {
     try {
       const response = await deleteVehicle(vehicleToDelete.vehicleId);
       if (response && response.statusCode === 200) {
-        toast.success(response.message || "Vehicle removed successfully");
+        toast.success(response.message || t("toast.removed"));
         if (pageNo > 1 && data.length === 1) {
           setPageNo((prev) => prev - 1);
         } else {
           fetchVehicles();
         }
       } else {
-        toast.error(response.message || "Failed to delete vehicle");
+        toast.error(response.message || t("toast.deleteFailed"));
       }
     } catch (error) {
       console.error("Error deleting vehicle:", error);
-      toast.error("An error occurred while deleting.");
+      toast.error(t("toast.deleteError"));
     } finally {
       setVehicleToDelete(null);
       setIsDeleteDialogOpen(false);
@@ -226,15 +230,15 @@ const Vehicles: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title="Vehicle"
-          subtitle="Provision and manage organizational vehicles and asset identities."
-          breadcrumbs={[{ label: "Fleet" }, { label: "Vehicle" }]}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[{ label: t("breadcrumbs.fleet") }, { label: t("breadcrumbs.current") }]}
           showButton={true}
-          buttonText="Add Vehicle"
+          buttonText={t("addButton")}
           buttonRoute="/vehicles/0"
           showExportButton={true}
-          ExportbuttonText="Export"
-          onExportClick={() => toast.info("Export coming soon!")}
+          ExportbuttonText={t("export")}
+          onExportClick={() => toast.info(t("toast.exportSoon"))}
           showFilterButton={false}
         />
 
@@ -242,7 +246,7 @@ const Vehicles: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <MetricCard
             icon={Truck}
-            label="Total Fleet Size"
+            label={t("metrics.totalFleetSize")}
             value={summaryData.totalFleetSize}
             iconBgColor="bg-purple-100"
             iconColor="text-purple-600"
@@ -250,7 +254,7 @@ const Vehicles: React.FC = () => {
           />
           <MetricCard
             icon={ShieldCheck}
-            label="In Service"
+            label={t("metrics.inService")}
             value={summaryData.inService}
             iconBgColor="bg-green-100"
             iconColor="text-green-600"
@@ -258,7 +262,7 @@ const Vehicles: React.FC = () => {
           />
           <MetricCard
             icon={AlertCircle}
-            label="Off-Road / Out of Service"
+            label={t("metrics.offRoadOutOfService")}
             value={summaryData.offRoadOrOutOfService}
             iconBgColor="bg-orange-100"
             iconColor="text-orange-600"
@@ -266,7 +270,7 @@ const Vehicles: React.FC = () => {
           />
           <MetricCard
             icon={Activity}
-            label="Active Accounts"
+            label={t("metrics.activeAccounts")}
             value={summaryData.activeAccounts}
             iconBgColor="bg-blue-100"
             iconColor="text-blue-600"
@@ -281,7 +285,7 @@ const Vehicles: React.FC = () => {
           onEdit={handleEdit}
           onDelete={handleDelete}
           showActions={true}
-          searchPlaceholder="Search vehicles..."
+          searchPlaceholder={t("searchPlaceholder")}
           rowsPerPageOptions={[5, 10, 25, 50, 100]}
           defaultRowsPerPage={10}
           pageNo={pageNo}
@@ -304,10 +308,12 @@ const Vehicles: React.FC = () => {
             setVehicleToDelete(null);
           }}
           onConfirm={confirmDelete}
-          title="Remove Vehicle"
-          message={`Are you sure you want to remove "${vehicleToDelete?.registrationNumber}" from the registry? This action cannot be undone.`}
-          confirmText="Remove"
-          cancelText="Cancel"
+          title={t("deleteTitle")}
+          message={t("deleteMessage", {
+            registration: vehicleToDelete?.registrationNumber || "",
+          })}
+          confirmText={t("confirmDelete")}
+          cancelText={t("cancel")}
           type="danger"
           isDark={isDark}
         />

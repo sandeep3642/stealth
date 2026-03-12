@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   GoogleMap,
   useJsApiLoader,
@@ -138,6 +138,9 @@ export default function MapLocationPicker({
 
   const [markerPos, setMarkerPos] =
     useState<google.maps.LatLngLiteral>(initialLocation);
+  const [searchInput, setSearchInput] = useState("");
+  const [latInput, setLatInput] = useState(String(initialLocation.lat));
+  const [lngInput, setLngInput] = useState(String(initialLocation.lng));
   const [address, setAddress] = useState("");
   const [revLoading, setRevLoading] = useState(false);
   const [mapInst, setMapInst] = useState<google.maps.Map | null>(null);
@@ -159,15 +162,30 @@ export default function MapLocationPicker({
     );
   }, []);
 
+  const setMarkerAndFocus = useCallback(
+    (lat: number, lng: number, nextAddress?: string) => {
+      setMarkerPos({ lat, lng });
+      setLatInput(String(lat));
+      setLngInput(String(lng));
+      if (typeof nextAddress === "string" && nextAddress.trim()) {
+        setAddress(nextAddress);
+      } else {
+        reverseGeocode(lat, lng);
+      }
+      mapInst?.panTo({ lat, lng });
+      mapInst?.setZoom(16);
+    },
+    [mapInst, reverseGeocode],
+  );
+
   const handleMapClick = useCallback(
     (e: google.maps.MapMouseEvent) => {
       if (!e.latLng) return;
       const lat = e.latLng.lat(),
         lng = e.latLng.lng();
-      setMarkerPos({ lat, lng });
-      reverseGeocode(lat, lng);
+      setMarkerAndFocus(lat, lng);
     },
-    [reverseGeocode],
+    [setMarkerAndFocus],
   );
 
   const handleDragEnd = useCallback(
@@ -175,10 +193,9 @@ export default function MapLocationPicker({
       if (!e.latLng) return;
       const lat = e.latLng.lat(),
         lng = e.latLng.lng();
-      setMarkerPos({ lat, lng });
-      reverseGeocode(lat, lng);
+      setMarkerAndFocus(lat, lng);
     },
-    [reverseGeocode],
+    [setMarkerAndFocus],
   );
 
   const handlePlaceChanged = useCallback(() => {
@@ -186,11 +203,66 @@ export default function MapLocationPicker({
     if (!place?.geometry?.location) return;
     const lat = place.geometry.location.lat();
     const lng = place.geometry.location.lng();
+    const formatted = place.formatted_address ?? place.name ?? "";
+    setSearchInput(formatted);
+    setMarkerAndFocus(lat, lng, formatted);
+  }, [setMarkerAndFocus]);
+
+  const parseLatLngInput = (input: string): { lat: number; lng: number } | null => {
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+    const normalized = trimmed.replace(/\s+/g, " ");
+    const parts =
+      normalized.includes(",")
+        ? normalized.split(",")
+        : normalized.split(" ");
+    if (parts.length < 2) return null;
+    const lat = Number(parts[0]?.trim());
+    const lng = Number(parts[1]?.trim());
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    return { lat, lng };
+  };
+
+  const handleSearchSubmit = useCallback(() => {
+    const text = searchInput.trim();
+    if (!text || !window.google) return;
+
+    const parsed = parseLatLngInput(text);
+    if (parsed) {
+      setMarkerAndFocus(parsed.lat, parsed.lng);
+      return;
+    }
+
+    new window.google.maps.Geocoder().geocode({ address: text }, (res, st) => {
+      if (st === "OK" && res?.[0]?.geometry?.location) {
+        const lat = res[0].geometry.location.lat();
+        const lng = res[0].geometry.location.lng();
+        setMarkerAndFocus(lat, lng, res[0].formatted_address || text);
+      }
+    });
+  }, [searchInput, setMarkerAndFocus]);
+
+  const handleLatLngLocate = useCallback(() => {
+    const lat = Number(latInput);
+    const lng = Number(lngInput);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+    setMarkerAndFocus(lat, lng);
+  }, [latInput, lngInput, setMarkerAndFocus]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const lat = Number(initialLocation.lat || DEFAULT_CENTER.lat);
+    const lng = Number(initialLocation.lng || DEFAULT_CENTER.lng);
     setMarkerPos({ lat, lng });
-    setAddress(place.formatted_address ?? place.name ?? "");
-    mapInst?.panTo({ lat, lng });
-    mapInst?.setZoom(16);
-  }, [mapInst]);
+    setLatInput(String(lat));
+    setLngInput(String(lng));
+    setSearchInput("");
+    if (isLoaded) {
+      reverseGeocode(lat, lng);
+    }
+  }, [isOpen, initialLocation, isLoaded, reverseGeocode]);
 
   const handleConfirm = () => {
     onSelect({ ...markerPos, address });
@@ -340,10 +412,18 @@ export default function MapLocationPicker({
                 <input
                   type="text"
                   placeholder="Search address, city, landmark…"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSearchSubmit();
+                    }
+                  }}
                   style={{
                     width: "100%",
                     paddingLeft: 32,
-                    paddingRight: 14,
+                    paddingRight: 96,
                     paddingTop: 9,
                     paddingBottom: 9,
                     background: inBg,
@@ -364,6 +444,27 @@ export default function MapLocationPicker({
                     e.currentTarget.style.boxShadow = "none";
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={handleSearchSubmit}
+                  style={{
+                    position: "absolute",
+                    right: 6,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    border: "none",
+                    borderRadius: 8,
+                    padding: "6px 10px",
+                    background: `linear-gradient(135deg,${acc},#818cf8)`,
+                    color: "#fff",
+                    cursor: "pointer",
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.06em",
+                  }}
+                >
+                  SEARCH
+                </button>
               </div>
             </Autocomplete>
           ) : (
@@ -384,6 +485,68 @@ export default function MapLocationPicker({
               Loading Places API…
             </div>
           )}
+          <div
+            style={{
+              marginTop: 8,
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr auto",
+              gap: 8,
+            }}
+          >
+            <input
+              type="number"
+              step="0.000001"
+              value={latInput}
+              onChange={(e) => setLatInput(e.target.value)}
+              placeholder="Latitude"
+              style={{
+                width: "100%",
+                padding: "9px 10px",
+                background: inBg,
+                border: `1.5px solid ${bd}`,
+                borderRadius: 10,
+                color: tx,
+                fontSize: 13,
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+            <input
+              type="number"
+              step="0.000001"
+              value={lngInput}
+              onChange={(e) => setLngInput(e.target.value)}
+              placeholder="Longitude"
+              style={{
+                width: "100%",
+                padding: "9px 10px",
+                background: inBg,
+                border: `1.5px solid ${bd}`,
+                borderRadius: 10,
+                color: tx,
+                fontSize: 13,
+                outline: "none",
+                boxSizing: "border-box",
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleLatLngLocate}
+              style={{
+                padding: "9px 12px",
+                background: "transparent",
+                border: `1.5px solid ${bd}`,
+                borderRadius: 10,
+                color: tx,
+                fontSize: 11,
+                fontWeight: 700,
+                cursor: "pointer",
+                letterSpacing: "0.06em",
+              }}
+            >
+              LOCATE
+            </button>
+          </div>
         </div>
 
         {/* ── Map ── */}
@@ -592,7 +755,7 @@ export default function MapLocationPicker({
               boxShadow: `0 4px 16px ${acc}40`,
             }}
           >
-            <Check size={13} strokeWidth={3} /> CONFIRM STOP
+            <Check size={13} strokeWidth={3} /> CONFIRM LOCATION
           </button>
         </div>
       </div>

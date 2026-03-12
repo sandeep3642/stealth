@@ -813,7 +813,18 @@ export default function GeofenceDetailPage() {
         <MapLocationPicker
           isOpen={isLocationPickerOpen}
           onClose={() => setIsLocationPickerOpen(false)}
-          onSelect={(loc) => setCenter({ lat: loc.lat, lng: loc.lng })}
+          onSelect={(loc) => {
+            const nextCenter = { lat: loc.lat, lng: loc.lng };
+            setCenter(nextCenter);
+            map?.panTo(nextCenter);
+            map?.setZoom(16);
+
+            // Picking a point should immediately reflect on map in circle mode.
+            if (geometry === "circle") {
+              setShapeDrawn(true);
+              setIsRedrawing(false);
+            }
+          }}
           initialLocation={center || DEFAULT_CENTER}
           isDark={isDark}
           googleMapsApiKey={getGoogleMapsApiKey()}

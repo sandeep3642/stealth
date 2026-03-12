@@ -2,8 +2,10 @@
 
 import { Globe, Languages, Map, Plus, X } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import PageHeader from "@/components/PageHeader";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -31,6 +33,8 @@ const Card = ({
 const NewConfiguration: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
+  const t = useTranslations("pages.configuration.detail");
+  const tList = useTranslations("pages.configuration.list");
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
@@ -80,7 +84,7 @@ const NewConfiguration: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching configuration:", error);
-      alert("Failed to load configuration");
+      alert(t("toast.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -113,7 +117,7 @@ const NewConfiguration: React.FC = () => {
   const handleSubmit = async () => {
     // Validation
     if (!formData.accountId || formData.accountId === 0) {
-      toast.error("Please enter a valid Account ID");
+      toast.error(t("toast.accountRequired"));
       return;
     }
 
@@ -152,16 +156,16 @@ const NewConfiguration: React.FC = () => {
       if (response.success) {
         alert(
           isEditMode
-            ? "Configuration updated successfully!"
-            : "Configuration created successfully!",
+            ? t("toast.updated")
+            : t("toast.created"),
         );
         router.push("/configuration");
       } else {
-        alert(`Failed to save: ${response.message}`);
+        alert(t("toast.saveFailed", { message: response.message }));
       }
     } catch (error) {
       console.error("Error saving configuration:", error);
-      alert("An error occurred while saving");
+      alert(t("toast.saveError"));
     } finally {
       setLoading(false);
     }
@@ -180,39 +184,34 @@ const NewConfiguration: React.FC = () => {
       fetchConfiguration();
     }
     fetchAllAcounts();
-  }, [id]);
+  }, [id, isEditMode, t]);
 
   return (
     <div className={`${isDark ? "dark" : ""} `}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
-        {/* Header */}
         <div className="max-w-6xl mx-auto mb-8 px-4">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <h1
-              className={`text-2xl sm:text-3xl font-bold ${
-                isDark ? "text-foreground" : "text-gray-900"
-              }`}
-            >
-              {isEditMode ? "Edit Configuration" : "New Configuration"}
-            </h1>
-
-            <button
-              className={`w-full sm:w-auto px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors ${
-                isDark
-                  ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-              }`}
-              onClick={() => router.back()}
-              disabled={loading}
-            >
-              Cancel
-            </button>
-          </div>
+          <PageHeader
+            title={isEditMode ? t("title.edit") : t("title.create")}
+            breadcrumbs={[
+              { label: tList("breadcrumbs.accounts") },
+              { label: tList("breadcrumbs.current"), href: "/configuration" },
+              { label: isEditMode ? t("title.edit") : t("title.create") },
+            ]}
+            showButton
+            buttonText={
+              loading
+                ? t("buttons.saving")
+                : isEditMode
+                  ? t("buttons.update")
+                  : t("buttons.create")
+            }
+            onButtonClick={handleSubmit}
+          />
         </div>
 
         {loading && isEditMode ? (
           <div className="flex items-center justify-center p-8">
-            <p>Loading configuration...</p>
+            <p>{t("loading.edit")}</p>
           </div>
         ) : (
           <div className="max-w-6xl mx-auto space-y-6">
@@ -222,7 +221,7 @@ const NewConfiguration: React.FC = () => {
                 <label
                   className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                 >
-                  Account ID <span className="text-red-500">*</span>
+                  {t("fields.accountId")} <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="accountId"
@@ -235,7 +234,7 @@ const NewConfiguration: React.FC = () => {
                       : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
                   } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                 >
-                  <option value="">Select Account</option>
+                  <option value="">{t("fields.selectAccount")}</option>
                   {accounts &&
                     accounts.map((account: { id: number; value: string }) => (
                       <option key={account.id} value={account.id}>
@@ -254,7 +253,7 @@ const NewConfiguration: React.FC = () => {
                   <h2
                     className={`text-lg font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
                   >
-                    Map Configuration
+                    {t("sections.mapConfiguration")}
                   </h2>
                 </div>
 
@@ -264,7 +263,7 @@ const NewConfiguration: React.FC = () => {
                     <label
                       className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                     >
-                      Map Provider
+                      {t("fields.mapProvider")}
                     </label>
                     <div className="relative">
                       <select
@@ -277,9 +276,15 @@ const NewConfiguration: React.FC = () => {
                             : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
                         } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                       >
-                        <option value="GoogleMaps">Google Maps</option>
-                        <option value="HereMaps">Here Maps</option>
-                        <option value="OpenStreetMap">OpenStreetMap</option>
+                        <option value="GoogleMaps">
+                          {t("options.mapProvider.googleMaps")}
+                        </option>
+                        <option value="HereMaps">
+                          {t("options.mapProvider.hereMaps")}
+                        </option>
+                        <option value="OpenStreetMap">
+                          {t("options.mapProvider.openStreetMap")}
+                        </option>
                       </select>
                     </div>
                   </div>
@@ -289,14 +294,14 @@ const NewConfiguration: React.FC = () => {
                     <label
                       className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                     >
-                      License Key
+                      {t("fields.licenseKey")}
                     </label>
                     <input
                       type="text"
                       name="licenseKey"
                       value={formData.licenseKey}
                       onChange={handleInputChange}
-                      placeholder="Enter License Key"
+                      placeholder={t("fields.licenseKeyPlaceholder")}
                       className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                         isDark
                           ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500 focus:border-purple-500"
@@ -310,14 +315,14 @@ const NewConfiguration: React.FC = () => {
                     <label
                       className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                     >
-                      Address Key
+                      {t("fields.addressKey")}
                     </label>
                     <input
                       type="text"
                       name="addressKey"
                       value={formData.addressKey}
                       onChange={handleInputChange}
-                      placeholder="Enter Address Key"
+                      placeholder={t("fields.addressKeyPlaceholder")}
                       className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                         isDark
                           ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500 focus:border-purple-500"
@@ -337,7 +342,7 @@ const NewConfiguration: React.FC = () => {
                   <h2
                     className={`text-lg font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
                   >
-                    Internationalization & Unit Configuration
+                    {t("sections.internationalization")}
                   </h2>
                 </div>
 
@@ -347,7 +352,7 @@ const NewConfiguration: React.FC = () => {
                     <label
                       className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                     >
-                      Date Format
+                      {t("fields.dateFormat")}
                     </label>
                     <select
                       name="dateFormat"
@@ -370,7 +375,7 @@ const NewConfiguration: React.FC = () => {
                     <label
                       className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                     >
-                      Time Format
+                      {t("fields.timeFormat")}
                     </label>
                     <select
                       name="timeFormat"
@@ -382,8 +387,8 @@ const NewConfiguration: React.FC = () => {
                           : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
-                      <option value="12H">12 Hour (AM/PM)</option>
-                      <option value="24H">24 Hour</option>
+                      <option value="12H">{t("options.timeFormat.h12")}</option>
+                      <option value="24H">{t("options.timeFormat.h24")}</option>
                     </select>
                   </div>
 
@@ -392,7 +397,7 @@ const NewConfiguration: React.FC = () => {
                     <label
                       className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                     >
-                      Distance Unit
+                      {t("fields.distanceUnit")}
                     </label>
                     <select
                       name="distanceUnit"
@@ -404,8 +409,10 @@ const NewConfiguration: React.FC = () => {
                           : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
-                      <option value="KM">Kilometers</option>
-                      <option value="MILE">Miles</option>
+                      <option value="KM">{t("options.distanceUnit.km")}</option>
+                      <option value="MILE">
+                        {t("options.distanceUnit.mile")}
+                      </option>
                     </select>
                   </div>
 
@@ -414,7 +421,7 @@ const NewConfiguration: React.FC = () => {
                     <label
                       className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                     >
-                      Speed Unit
+                      {t("fields.speedUnit")}
                     </label>
                     <select
                       name="speedUnit"
@@ -426,8 +433,8 @@ const NewConfiguration: React.FC = () => {
                           : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
-                      <option value="KMH">Km/h</option>
-                      <option value="MPH">Mph</option>
+                      <option value="KMH">{t("options.speedUnit.kmh")}</option>
+                      <option value="MPH">{t("options.speedUnit.mph")}</option>
                     </select>
                   </div>
 
@@ -436,7 +443,7 @@ const NewConfiguration: React.FC = () => {
                     <label
                       className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                     >
-                      Fuel Unit
+                      {t("fields.fuelUnit")}
                     </label>
                     <select
                       name="fuelUnit"
@@ -448,8 +455,12 @@ const NewConfiguration: React.FC = () => {
                           : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
-                      <option value="LITRE">Litre</option>
-                      <option value="GALLON">Gallon</option>
+                      <option value="LITRE">
+                        {t("options.fuelUnit.litre")}
+                      </option>
+                      <option value="GALLON">
+                        {t("options.fuelUnit.gallon")}
+                      </option>
                     </select>
                   </div>
 
@@ -458,7 +469,7 @@ const NewConfiguration: React.FC = () => {
                     <label
                       className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                     >
-                      Temperature
+                      {t("fields.temperature")}
                     </label>
                     <select
                       name="temperatureUnit"
@@ -470,8 +481,12 @@ const NewConfiguration: React.FC = () => {
                           : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
-                      <option value="CELSIUS">Celsius</option>
-                      <option value="FAHRENHEIT">Fahrenheit</option>
+                      <option value="CELSIUS">
+                        {t("options.temperature.celsius")}
+                      </option>
+                      <option value="FAHRENHEIT">
+                        {t("options.temperature.fahrenheit")}
+                      </option>
                     </select>
                   </div>
 
@@ -480,7 +495,7 @@ const NewConfiguration: React.FC = () => {
                     <label
                       className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                     >
-                      Address Display
+                      {t("fields.addressDisplay")}
                     </label>
                     <select
                       name="addressDisplay"
@@ -492,8 +507,8 @@ const NewConfiguration: React.FC = () => {
                           : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
-                      <option value="SHOW">Show Address</option>
-                      <option value="HIDE">Hide Address</option>
+                      <option value="SHOW">{t("options.addressDisplay.show")}</option>
+                      <option value="HIDE">{t("options.addressDisplay.hide")}</option>
                     </select>
                   </div>
                 </div>
@@ -511,7 +526,7 @@ const NewConfiguration: React.FC = () => {
                   <h2
                     className={`text-lg font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
                   >
-                    Language Configuration
+                    {t("sections.languageConfiguration")}
                   </h2>
                 </div>
 
@@ -521,7 +536,7 @@ const NewConfiguration: React.FC = () => {
                       <label
                         className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                       >
-                        Default Language
+                        {t("fields.defaultLanguage")}
                       </label>
                       <select
                         name="defaultLanguage"
@@ -533,11 +548,11 @@ const NewConfiguration: React.FC = () => {
                             : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
                         } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                       >
-                        <option value="en">English</option>
-                        <option value="es">Spanish</option>
-                        <option value="fr">French</option>
-                        <option value="de">German</option>
-                        <option value="hi">Hindi</option>
+                        <option value="en">{t("options.language.en")}</option>
+                        <option value="es">{t("options.language.es")}</option>
+                        <option value="fr">{t("options.language.fr")}</option>
+                        <option value="de">{t("options.language.de")}</option>
+                        <option value="hi">{t("options.language.hi")}</option>
                       </select>
                     </div>
 
@@ -551,7 +566,7 @@ const NewConfiguration: React.FC = () => {
                       }`}
                     >
                       <Plus className="w-4 h-4" />
-                      Add More Languages
+                      {t("buttons.addMoreLanguages")}
                     </button>
                   </div>
 
@@ -562,7 +577,9 @@ const NewConfiguration: React.FC = () => {
                         <label
                           className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                         >
-                          Additional Language {index + 1}
+                          {t("fields.additionalLanguage", {
+                            index: index + 1,
+                          })}
                         </label>
                         <select
                           value={lang}
@@ -575,12 +592,12 @@ const NewConfiguration: React.FC = () => {
                               : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
                           } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                         >
-                          <option value="">Select Language</option>
-                          <option value="en">English</option>
-                          <option value="es">Spanish</option>
-                          <option value="fr">French</option>
-                          <option value="de">German</option>
-                          <option value="hi">Hindi</option>
+                          <option value="">{t("fields.selectLanguage")}</option>
+                          <option value="en">{t("options.language.en")}</option>
+                          <option value="es">{t("options.language.es")}</option>
+                          <option value="fr">{t("options.language.fr")}</option>
+                          <option value="de">{t("options.language.de")}</option>
+                          <option value="hi">{t("options.language.hi")}</option>
                         </select>
                       </div>
                       <button
@@ -609,10 +626,21 @@ const NewConfiguration: React.FC = () => {
                 style={{ background: selectedColor }}
               >
                 {loading
-                  ? "Saving..."
+                  ? t("buttons.saving")
                   : isEditMode
-                    ? "Update Configuration"
-                    : "Save Configuration"}
+                    ? t("buttons.update")
+                    : t("buttons.create")}
+              </button>
+              <button
+                className={`px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors ${
+                  isDark
+                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+                }`}
+                onClick={() => router.back()}
+                disabled={loading}
+              >
+                {t("buttons.cancel")}
               </button>
             </div>
           </div>

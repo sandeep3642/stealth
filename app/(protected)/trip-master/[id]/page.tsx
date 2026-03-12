@@ -1,7 +1,8 @@
 "use client";
 
 import { ArrowLeft, Plus, Save, Trash2, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import React, { useMemo, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import type {
@@ -29,10 +30,10 @@ const MASTER_ROUTES = [
 ];
 
 const SCHEDULING_OPTIONS = [
-  { id: "master-route", label: "Master Route", sub: "Fixed Path" },
-  { id: "weekly", label: "Weekly", sub: "Repeating Cycle" },
-  { id: "custom-route", label: "Custom Route", sub: "On Demand" },
-  { id: "one-off-scheduled", label: "One-Off", sub: "Scheduled" },
+  { id: "master-route", labelKey: "scheduling.masterRoute", subKey: "scheduling.fixedPath" },
+  { id: "weekly", labelKey: "scheduling.weekly", subKey: "scheduling.repeatingCycle" },
+  { id: "custom-route", labelKey: "scheduling.customRoute", subKey: "scheduling.onDemand" },
+  { id: "one-off-scheduled", labelKey: "scheduling.oneOff", subKey: "scheduling.scheduled" },
 ] as const;
 
 const makeStop = (): TripStop => ({
@@ -45,6 +46,10 @@ const makeStop = (): TripStop => ({
 export default function CreateTripPage() {
   const { isDark } = useTheme();
   const router = useRouter();
+  const params = useParams();
+  const t = useTranslations("pages.tripMaster.detail");
+  const id = String(params?.id || "0");
+  const isEditMode = id !== "0";
 
   const [tripName, setTripName] = useState("");
   const [driverName, setDriverName] = useState("");
@@ -131,18 +136,19 @@ export default function CreateTripPage() {
   };
 
   const routeLabel = useMemo(() => {
-    if (routeMode === "weekly") return "Weekly Cycle";
+    if (routeMode === "weekly") return t("labels.weeklyCycle");
     if (routeMode === "master-route") return masterRoute;
-    if (routeMode === "custom-route") return customRouteName || "Custom Route";
-    return "One-off Scheduled";
-  }, [customRouteName, masterRoute, routeMode]);
+    if (routeMode === "custom-route")
+      return customRouteName || t("labels.customRoute");
+    return t("labels.oneOffScheduled");
+  }, [customRouteName, masterRoute, routeMode, t]);
 
   const mapQuery = useMemo(() => {
     const source = stops[0]?.location?.trim();
     const destination = stops[stops.length - 1]?.location?.trim();
     if (source && destination) return `${source} to ${destination}`;
     if (source) return source;
-    return "Delhi";
+    return t("labels.defaultMapQuery");
   }, [stops]);
 
   const showWeeklyRotation = routeMode === "weekly";
@@ -216,12 +222,17 @@ export default function CreateTripPage() {
             <h1
               className={`text-base font-black tracking-tight ${isDark ? "text-foreground" : "text-gray-900"}`}
             >
-              MISSION ARCHITECT
+              {t("title")}
             </h1>
             <p
               className={`text-xs ${isDark ? "text-gray-500" : "text-gray-400"}`}
             >
-              Trip Master Configuration
+              {t("subtitle")}
+            </p>
+            <p
+              className={`text-[11px] mt-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+            >
+              {`${t("breadcrumbs.fleet")} / ${t("breadcrumbs.master")} / ${isEditMode ? t("breadcrumbs.edit") : t("breadcrumbs.create")}`}
             </p>
           </div>
         </div>
@@ -235,7 +246,7 @@ export default function CreateTripPage() {
                 : "border-gray-200 text-gray-700 hover:bg-gray-50"
             }`}
           >
-            Discard
+            {t("buttons.discard")}
           </button>
           <button
             onClick={handleDeploy}
@@ -247,7 +258,7 @@ export default function CreateTripPage() {
             ) : (
               <Save className="w-4 h-4" />
             )}
-            DEPLOY MISSION
+            {t("buttons.deployMission")}
           </button>
         </div>
       </header>
@@ -264,7 +275,7 @@ export default function CreateTripPage() {
                 >
                   01
                 </span>
-                <h3 className={sectionTitleCls}>MISSION IDENTITY</h3>
+                <h3 className={sectionTitleCls}>{t("sections.missionIdentity")}</h3>
                 <div
                   className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
                 />
@@ -272,22 +283,22 @@ export default function CreateTripPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>TRIP NAME</label>
+                  <label className={labelCls}>{t("fields.tripName")}</label>
                   <input
                     value={tripName}
                     onChange={(e) => setTripName(e.target.value)}
                     className={inputCls}
-                    placeholder="e.g. Metro Daily Supply"
+                    placeholder={t("fields.tripNamePlaceholder")}
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>ASSIGNED OPERATOR</label>
+                  <label className={labelCls}>{t("fields.assignedOperator")}</label>
                   <select
                     value={driverName}
                     onChange={(e) => setDriverName(e.target.value)}
                     className={inputCls}
                   >
-                    <option value="">Select driver</option>
+                    <option value="">{t("fields.selectDriver")}</option>
                     {DRIVERS.map((driver) => (
                       <option key={driver} value={driver}>
                         {driver}
@@ -296,13 +307,13 @@ export default function CreateTripPage() {
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>VEHICLE</label>
+                  <label className={labelCls}>{t("fields.vehicle")}</label>
                   <select
                     value={vehicleId}
                     onChange={(e) => setVehicleId(e.target.value)}
                     className={inputCls}
                   >
-                    <option value="">Select vehicle</option>
+                    <option value="">{t("fields.selectVehicle")}</option>
                     {VEHICLES.map((vehicle) => (
                       <option key={vehicle.id} value={vehicle.id}>
                         {VEHICLE_ICON[vehicle.type]} {vehicle.id}
@@ -311,12 +322,12 @@ export default function CreateTripPage() {
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>CONSIGNEE</label>
+                  <label className={labelCls}>{t("fields.consignee")}</label>
                   <input
                     value={consigneeName}
                     onChange={(e) => setConsigneeName(e.target.value)}
                     className={inputCls}
-                    placeholder="e.g. Sharma Traders"
+                    placeholder={t("fields.consigneePlaceholder")}
                   />
                 </div>
               </div>
@@ -329,23 +340,23 @@ export default function CreateTripPage() {
                 >
                   02
                 </span>
-                <h3 className={sectionTitleCls}>FLEET STRATEGY</h3>
+                <h3 className={sectionTitleCls}>{t("sections.fleetStrategy")}</h3>
                 <div
                   className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
                 />
               </div>
 
-              <label className={labelCls}>VEHICLE ASSIGNMENT</label>
+              <label className={labelCls}>{t("fields.vehicleAssignment")}</label>
               <div className="grid grid-cols-3 gap-3 mb-5">
                 {(
                   [
-                    { id: "truck", title: "Truck", sub: "Freight Titan" },
+                    { id: "truck", title: t("vehicleClass.truck"), sub: t("vehicleClass.truckSub") },
                     {
                       id: "traveller",
-                      title: "Traveller",
-                      sub: "Transit Crew Van",
+                      title: t("vehicleClass.traveller"),
+                      sub: t("vehicleClass.travellerSub"),
                     },
-                    { id: "bus", title: "Bus", sub: "Shuttle Prime" },
+                    { id: "bus", title: t("vehicleClass.bus"), sub: t("vehicleClass.busSub") },
                   ] as const
                 ).map((opt) => (
                   <button
@@ -380,13 +391,13 @@ export default function CreateTripPage() {
                 >
                   03
                 </span>
-                <h3 className={sectionTitleCls}>TRIP CYCLE & TIMELINE</h3>
+                <h3 className={sectionTitleCls}>{t("sections.tripCycleTimeline")}</h3>
                 <div
                   className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
                 />
               </div>
 
-              <label className={labelCls}>TRIP TYPE</label>
+              <label className={labelCls}>{t("fields.tripType")}</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
                 {SCHEDULING_OPTIONS.map((opt) => (
                   <button
@@ -409,10 +420,10 @@ export default function CreateTripPage() {
                     <p
                       className={`text-xs font-bold ${routeMode === opt.id ? "text-indigo-600 dark:text-indigo-300" : isDark ? "text-foreground" : "text-gray-800"}`}
                     >
-                      {opt.label}
+                      {t(opt.labelKey)}
                     </p>
                     <p className="text-[10px] text-gray-400 mt-0.5">
-                      {opt.sub}
+                      {t(opt.subKey)}
                     </p>
                   </button>
                 ))}
@@ -420,7 +431,7 @@ export default function CreateTripPage() {
 
               {showWeeklyRotation && (
                 <>
-                  <label className={labelCls}>WEEKLY ROTATION</label>
+                  <label className={labelCls}>{t("fields.weeklyRotation")}</label>
                   <div className="grid grid-cols-7 gap-2 mb-5">
                     {WEEK_DAYS.map((day) => (
                       <button
@@ -444,7 +455,7 @@ export default function CreateTripPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label className={labelCls}>DEPARTURE ETD</label>
+                  <label className={labelCls}>{t("fields.departureEtd")}</label>
                   <input
                     type="datetime-local"
                     value={departure}
@@ -453,7 +464,7 @@ export default function CreateTripPage() {
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>EXPECTED ARRIVAL</label>
+                  <label className={labelCls}>{t("fields.expectedArrival")}</label>
                   <input
                     type="datetime-local"
                     value={arrival}
@@ -467,7 +478,7 @@ export default function CreateTripPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {showMasterRoute && (
                     <div>
-                      <label className={labelCls}>SELECT MASTER PIPELINE</label>
+                      <label className={labelCls}>{t("fields.selectMasterPipeline")}</label>
                       <select
                         value={masterRoute}
                         onChange={(e) => setMasterRoute(e.target.value)}
@@ -483,12 +494,12 @@ export default function CreateTripPage() {
                   )}
                   {showCustomRoute && (
                     <div>
-                      <label className={labelCls}>CUSTOM ROUTE NAME</label>
+                      <label className={labelCls}>{t("fields.customRouteName")}</label>
                       <input
                         value={customRouteName}
                         onChange={(e) => setCustomRouteName(e.target.value)}
                         className={inputCls}
-                        placeholder="Enter custom route"
+                        placeholder={t("fields.customRoutePlaceholder")}
                       />
                     </div>
                   )}
@@ -503,7 +514,7 @@ export default function CreateTripPage() {
                 >
                   04
                 </span>
-                <h3 className={sectionTitleCls}>TIMELINE & ROUTE</h3>
+                <h3 className={sectionTitleCls}>{t("sections.timelineRoute")}</h3>
                 <div
                   className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
                 />
@@ -521,10 +532,10 @@ export default function CreateTripPage() {
                       <div className="flex items-center justify-between mb-3">
                         <p className="text-xs font-bold tracking-wider text-indigo-500">
                           {isFirst
-                            ? "SOURCE LOCATION"
+                            ? t("labels.sourceLocation")
                             : isLast
-                              ? "DESTINATION LOCATION"
-                              : `STOP ${idx}`}
+                              ? t("labels.destinationLocation")
+                              : t("labels.stop", { number: idx })}
                         </p>
                         {!isFirst && !isLast && (
                           <button
@@ -532,7 +543,7 @@ export default function CreateTripPage() {
                             onClick={() => removeStop(idx)}
                             className="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1"
                           >
-                            <Trash2 className="w-3 h-3" /> Remove
+                            <Trash2 className="w-3 h-3" /> {t("buttons.remove")}
                           </button>
                         )}
                       </div>
@@ -545,10 +556,10 @@ export default function CreateTripPage() {
                         className={`${inputCls} mb-3`}
                         placeholder={
                           isFirst
-                            ? "Enter source location"
+                            ? t("fields.sourcePlaceholder")
                             : isLast
-                              ? "Enter destination location"
-                              : "Enter stop location"
+                              ? t("fields.destinationPlaceholder")
+                              : t("fields.stopPlaceholder")
                         }
                       />
 
@@ -584,7 +595,7 @@ export default function CreateTripPage() {
                     : "border-gray-200 text-indigo-600 hover:border-indigo-300"
                 }`}
               >
-                <Plus className="w-3.5 h-3.5" /> Add Stop
+                <Plus className="w-3.5 h-3.5" /> {t("buttons.addStop")}
               </button>
             </section>
 
@@ -595,7 +606,7 @@ export default function CreateTripPage() {
                 >
                   05
                 </span>
-                <h3 className={sectionTitleCls}>NOTIFICATIONS</h3>
+                <h3 className={sectionTitleCls}>{t("sections.notifications")}</h3>
                 <div
                   className={`flex-1 h-px ${isDark ? "bg-gray-800" : "bg-gray-100"}`}
                 />
@@ -621,12 +632,12 @@ export default function CreateTripPage() {
                     <p
                       className={`text-sm font-semibold ${isDark ? "text-foreground" : "text-gray-900"}`}
                     >
-                      Enable OTP Notification
+                      {t("notifications.enableOtp")}
                     </p>
                     <p
                       className={`text-xs ${isDark ? "text-gray-500" : "text-gray-500"}`}
                     >
-                      OTP on hone par niche multiple mobile numbers add karein.
+                      {t("notifications.otpHelp")}
                     </p>
                   </div>
                 </label>
@@ -643,14 +654,14 @@ export default function CreateTripPage() {
                           value={number}
                           onChange={(e) => updateOtpNumber(idx, e.target.value)}
                           className={inputCls}
-                          placeholder="Enter mobile number"
+                          placeholder={t("notifications.mobilePlaceholder")}
                         />
                         {otpNumbers.length > 1 && (
                           <button
                             type="button"
                             onClick={() => removeOtpNumber(idx)}
                             className={`p-2 rounded-lg border ${isDark ? "border-gray-700 text-gray-400 hover:text-red-400" : "border-gray-200 text-gray-500 hover:text-red-500"}`}
-                            aria-label="Remove number"
+                            aria-label={t("notifications.removeNumberAria")}
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -668,7 +679,7 @@ export default function CreateTripPage() {
                       }`}
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      Add Number
+                      {t("buttons.addNumber")}
                     </button>
                   </div>
                 )}
@@ -684,7 +695,7 @@ export default function CreateTripPage() {
                 <p
                   className={`text-[10px] font-bold tracking-widest mb-2 ${isDark ? "text-gray-400" : "text-gray-500"}`}
                 >
-                  LIVE MAP PREVIEW
+                  {t("sections.liveMapPreview")}
                 </p>
                 <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
                   <iframe
@@ -702,47 +713,47 @@ export default function CreateTripPage() {
                 <p
                   className={`text-[10px] font-bold tracking-widest mb-3 ${isDark ? "text-gray-400" : "text-gray-500"}`}
                 >
-                  MISSION SUMMARY
+                  {t("sections.missionSummary")}
                 </p>
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between gap-3">
-                    <span className="text-gray-400">Trip</span>
+                    <span className="text-gray-400">{t("summary.trip")}</span>
                     <span className="font-semibold text-right">
                       {tripName || "-"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span className="text-gray-400">Driver</span>
+                    <span className="text-gray-400">{t("summary.driver")}</span>
                     <span className="font-semibold text-right">
                       {driverName || "-"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span className="text-gray-400">Vehicle</span>
+                    <span className="text-gray-400">{t("summary.vehicle")}</span>
                     <span className="font-semibold text-right">
                       {vehicleId || "-"}
                     </span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span className="text-gray-400">Assignment</span>
+                    <span className="text-gray-400">{t("summary.assignment")}</span>
                     <span className="font-semibold capitalize text-right">
                       {vehicleClass}
                     </span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span className="text-gray-400">Cycle</span>
+                    <span className="text-gray-400">{t("summary.cycle")}</span>
                     <span className="font-semibold uppercase text-right">
                       {cycle}
                     </span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span className="text-gray-400">Route Mode</span>
+                    <span className="text-gray-400">{t("summary.routeMode")}</span>
                     <span className="font-semibold text-right">
                       {routeMode}
                     </span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span className="text-gray-400">Route</span>
+                    <span className="text-gray-400">{t("summary.route")}</span>
                     <span className="font-semibold text-right">
                       {routeLabel}
                     </span>
@@ -754,7 +765,7 @@ export default function CreateTripPage() {
                   disabled={!isValid || saving}
                   className="w-full mt-4 py-3 rounded-xl font-bold text-sm bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  {saving ? "Deploying..." : "DEPLOY MASTER MISSION"}
+                  {saving ? t("buttons.deploying") : t("buttons.deployMasterMission")}
                 </button>
               </div>
             </div>

@@ -232,9 +232,7 @@ export default function GeofencePage() {
     return (
       <div className={`${isDark ? "dark" : ""} mt-10`}>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <p className="text-foreground">
-            {t("noReadPermission")}
-          </p>
+          <p className="text-foreground">{t("noReadPermission")}</p>
         </div>
       </div>
     );
