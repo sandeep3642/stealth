@@ -331,7 +331,7 @@ const RouteMasterPage: React.FC = () => {
           }}
           onConfirm={confirmDelete}
           title={t("deleteDialog.title")}
-          message={t("deleteDialog.message", { name: selectedRoute?.routeName })}
+          message={t("deleteDialog.message", { name: selectedRoute?.routeName??'' })}
           confirmText={t("deleteDialog.confirm")}
           cancelText={t("deleteDialog.cancel")}
           type="danger"
