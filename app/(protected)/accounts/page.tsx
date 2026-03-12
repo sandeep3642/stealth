@@ -255,7 +255,7 @@ const Accounts: React.FC = () => {
           onConfirm={confirmDelete}
           title={t("delete.title")}
           message={t("delete.message", {
-            instance: accountToDelete?.instance || "",
+            instance: accountToDelete?.instance?.main || "",
           })}
           confirmText={t("delete.confirm")}
           cancelText={t("delete.cancel")}
