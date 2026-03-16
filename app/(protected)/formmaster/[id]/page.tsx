@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { FileText } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { FileText } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
-import { useTheme } from "@/context/ThemeContext";
 import { useColor } from "@/context/ColorContext";
-import { createForm, getFormById, updateForm } from "@/services/formService";
+import { useTheme } from "@/context/ThemeContext";
 import { FormMasterPayload } from "@/interfaces/form.interface";
+import { createForm, getFormById, updateForm } from "@/services/formService";
 
 const defaultFormData: FormMasterPayload = {
   formCode: "",
@@ -19,8 +19,11 @@ const defaultFormData: FormMasterPayload = {
   iconName: "",
   sortOrder: 0,
   isMenu: true,
+  isBulk: true,
   isVisible: true,
   isActive: true,
+  formModuleId: 0,
+  filterConfigJson: "",
 };
 
 const AddEditFormMasterPage: React.FC = () => {
@@ -51,8 +54,11 @@ const AddEditFormMasterPage: React.FC = () => {
           iconName: data.iconName || "",
           sortOrder: Number(data.sortOrder || 0),
           isMenu: data.isMenu ?? true,
+          isBulk: data.isBulk ?? true,
           isVisible: data.isVisible ?? true,
           isActive: data.isActive ?? true,
+          formModuleId: Number(data.formModuleId || 0),
+          filterConfigJson: String(data.filterConfigJson || ""),
         });
       } else {
         toast.error(response?.message || t("toast.fetchFailed"));
@@ -88,7 +94,10 @@ const AddEditFormMasterPage: React.FC = () => {
 
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]:
+        name === "sortOrder" || name === "formModuleId"
+          ? Number(value || 0)
+          : value,
     }));
   };
 
@@ -109,6 +118,14 @@ const AddEditFormMasterPage: React.FC = () => {
       toast.error(t("toast.pageUrlRequired"));
       return;
     }
+    if (formData.filterConfigJson.trim()) {
+      try {
+        JSON.parse(formData.filterConfigJson);
+      } catch {
+        toast.error(t("toast.filterConfigInvalid"));
+        return;
+      }
+    }
 
     const payload: FormMasterPayload = {
       ...formData,
@@ -118,6 +135,8 @@ const AddEditFormMasterPage: React.FC = () => {
       pageUrl: formData.pageUrl.trim(),
       iconName: formData.iconName.trim(),
       sortOrder: Number(formData.sortOrder) || 0,
+      formModuleId: Number(formData.formModuleId) || 0,
+      filterConfigJson: formData.filterConfigJson.trim(),
     };
 
     try {
@@ -129,9 +148,7 @@ const AddEditFormMasterPage: React.FC = () => {
       if (response?.success || response?.statusCode === 200) {
         toast.success(
           response?.message ||
-            (isEditMode
-              ? t("toast.updated")
-              : t("toast.created")),
+            (isEditMode ? t("toast.updated") : t("toast.created")),
         );
         router.push("/formmaster");
       } else {
@@ -155,9 +172,11 @@ const AddEditFormMasterPage: React.FC = () => {
   }
 
   return (
-    <div className={`${isDark ? "dark" : ""}`}>
-      <div className="min-h-screen bg-background p-2">
-        <div className="w-full max-w-4xl mx-auto">
+    <div className={`${isDark ? "dark" : ""} mt-10`}>
+      <div
+        className={`min-h-screen ${isDark ? "bg-background" : ""} p-3 sm:p-4 md:p-6`}
+      >
+        <div className="w-full">
           <PageHeader
             title={isEditMode ? t("title.edit") : t("title.create")}
             subtitle={t("section.subtitle")}
@@ -180,10 +199,16 @@ const AddEditFormMasterPage: React.FC = () => {
           />
 
           <div
-            className="bg-card rounded-2xl shadow-lg border-t-4 border-border overflow-hidden"
+            className={`rounded-2xl shadow-lg border-t-4 overflow-hidden ${
+              isDark
+                ? "bg-card border border-gray-800"
+                : "bg-white border border-gray-200"
+            }`}
             style={{ borderTopColor: selectedColor }}
           >
-            <div className="p-8 bg-white">
+            <div
+              className={`p-4 sm:p-6 md:p-8 ${isDark ? "bg-card" : "bg-white"}`}
+            >
               <div className="flex items-start gap-3 mb-6">
                 <div
                   className="p-2 rounded-lg"
@@ -207,7 +232,8 @@ const AddEditFormMasterPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    {t("fields.formCode")} <span className="text-red-500">*</span>
+                    {t("fields.formCode")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -226,7 +252,8 @@ const AddEditFormMasterPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    {t("fields.formName")} <span className="text-red-500">*</span>
+                    {t("fields.formName")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -245,7 +272,8 @@ const AddEditFormMasterPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    {t("fields.moduleName")} <span className="text-red-500">*</span>
+                    {t("fields.moduleName")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -264,7 +292,8 @@ const AddEditFormMasterPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-foreground mb-2">
-                    {t("fields.pageUrl")} <span className="text-red-500">*</span>
+                    {t("fields.pageUrl")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -318,6 +347,44 @@ const AddEditFormMasterPage: React.FC = () => {
                     disabled={loading}
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    {t("fields.formModuleId")}
+                  </label>
+                  <input
+                    type="number"
+                    name="formModuleId"
+                    value={formData.formModuleId}
+                    onChange={handleInputChange}
+                    placeholder={t("fields.formModuleIdPlaceholder")}
+                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
+                      isDark
+                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-foreground mb-2">
+                    {t("fields.filterConfigJson")}
+                  </label>
+                  <textarea
+                    name="filterConfigJson"
+                    value={formData.filterConfigJson}
+                    onChange={handleInputChange}
+                    placeholder={t("fields.filterConfigJsonPlaceholder")}
+                    rows={4}
+                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors resize-none ${
+                      isDark
+                        ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                    disabled={loading}
+                  />
+                </div>
               </div>
 
               <div className="bg-background rounded-lg p-6 mb-6 space-y-4">
@@ -334,6 +401,26 @@ const AddEditFormMasterPage: React.FC = () => {
                     type="checkbox"
                     name="isMenu"
                     checked={formData.isMenu}
+                    onChange={handleInputChange}
+                    className="w-5 h-5"
+                    style={{ accentColor: selectedColor }}
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-bold text-foreground mb-1">
+                      {t("toggles.isBulk.title")}
+                    </h3>
+                    <p className="text-sm text-foreground opacity-60">
+                      {t("toggles.isBulk.description")}
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    name="isBulk"
+                    checked={formData.isBulk}
                     onChange={handleInputChange}
                     className="w-5 h-5"
                     style={{ accentColor: selectedColor }}

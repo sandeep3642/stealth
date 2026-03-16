@@ -164,21 +164,31 @@ const AddSubscriptionPage = () => {
   }, []);
 
   return (
-    <div className={`${isDark ? "dark" : ""} mt-10`}>
+    <div className={`${isDark ? "dark" : ""}`}>
       <div
-        className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 sm:p-0 md:p-2`}
+        className={`min-h-screen ${isDark ? "bg-background" : "bg-gray-50"} p-6`}
       >
-        <div className="mb-4 sm:mb-6">
+        <div className="max-w-7xl mx-auto mb-6">
           <PageHeader
             title={isAddMode ? t("title.add") : t("title.edit")}
             subtitle={t("subtitle")}
-            breadcrumbs={[{ label: t("breadcrumbs.billing") }, { label: t("breadcrumbs.current") }]}
-            showButton={false}
+            breadcrumbs={[
+              { label: t("breadcrumbs.billing") },
+              { label: t("breadcrumbs.current"), href: "/subscriptions" },
+              { label: isAddMode ? t("title.add") : t("title.edit") },
+            ]}
+            showButton
+            buttonText={loading ? t("buttons.saving") : t("buttons.submit")}
+            onButtonClick={() => {
+              if (!loading && !loadingDropdowns) {
+                handleSubmit();
+              }
+            }}
           />
         </div>
 
         <div
-          className={`rounded-xl border p-4 sm:p-6 max-w-4xl ${
+          className={`rounded-xl border p-4 sm:p-6 max-w-7xl mx-auto ${
             isDark ? "border-gray-700 bg-gray-900" : "border-gray-200 bg-white"
           }`}
         >
@@ -336,13 +346,6 @@ const AddSubscriptionPage = () => {
               }`}
             >
               {t("buttons.cancel")}
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={loading || loadingDropdowns}
-              className="px-5 py-2.5 rounded-lg bg-purple-600 text-white disabled:opacity-50"
-            >
-              {loading ? t("buttons.saving") : t("buttons.submit")}
             </button>
           </div>
         </div>

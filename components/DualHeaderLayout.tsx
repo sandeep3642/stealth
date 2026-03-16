@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useLocale } from "next-intl";
 import React, { useEffect, useState } from "react";
 import {
   HeaderClasses,
@@ -86,6 +87,7 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const pathname = usePathname();
+  const activeLocale = useLocale();
   const { layout: menuLayout, setLayout: setMenuLayout } = useLayout();
   const { selectedColor, colorBlock, handleColorChange } = useColor();
   const { isDark } = useTheme();
@@ -109,6 +111,33 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
   const [brandName, setBrandName] = useState<string>("Agentix");
   const [brandLogoUrl, setBrandLogoUrl] = useState<string>("");
   const [isBrandLogoError, setIsBrandLogoError] = useState(false);
+  const [locale, setLocale] = useState(activeLocale);
+
+  useEffect(() => {
+    setLocale(activeLocale);
+  }, [activeLocale]);
+
+  const handleLocaleChange = (nextLocale: string) => {
+    setLocale(nextLocale);
+    Cookies.set("locale", nextLocale, {
+      expires: 365,
+      path: "/",
+      sameSite: "lax",
+    });
+    const currentPath = window.location.pathname || "/";
+    const segments = currentPath.split("/").filter(Boolean);
+    const firstSegment = segments[0]?.toLowerCase();
+    const isPrefixed = firstSegment === "en" || firstSegment === "hi";
+    const restPath = isPrefixed
+      ? `/${segments.slice(1).join("/")}`
+      : currentPath;
+    const normalizedRest = restPath === "/" ? "" : restPath;
+    const nextPath =
+      nextLocale === "en"
+        ? normalizedRest || "/"
+        : `/${nextLocale}${normalizedRest}`;
+    window.location.href = `${nextPath}${window.location.search}`;
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -143,7 +172,9 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const resolvedBrandName = String(
-        whiteLabelData?.brandName || parsedUser?.whiteLabel?.brandName || "Agentix",
+        whiteLabelData?.brandName ||
+          parsedUser?.whiteLabel?.brandName ||
+          "Agentix",
       ).trim();
       const resolvedLogo = resolveAssetUrl(
         whiteLabelData?.logoUrl ||
@@ -486,7 +517,26 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
         },
       ],
     },
-
+    {
+      title: "Master Data",
+      items: [
+        {
+          id: "Master Data",
+          label: "Master Data",
+          icon: Briefcase,
+          active: false,
+          expandable: true,
+          children: [
+            {
+              id: "device-categories",
+              label: "Device Categories",
+              icon: List,
+              path: "/device-categories",
+            },
+          ],
+        },
+      ],
+    },
     {
       title: "SYSTEM SETUP",
       items: [
@@ -702,12 +752,22 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
               </div>
 
               {/* Language */}
-              <button
-                className={`hidden md:flex items-center gap-2 text-sm ${headerClasses.textSecondary} ${headerClasses.hover}`}
-              >
-                <Globe className="w-4 h-4" />
-                <span className="hidden xl:inline">English</span>
-              </button>
+              <div className="hidden md:flex items-center gap-2">
+                <Globe className="w-4 h-4 text-inherit" />
+                <select
+                  value={locale}
+                  onChange={(e) => handleLocaleChange(e.target.value)}
+                  className={`text-sm border rounded-lg px-2 py-1.5 focus:outline-none ${
+                    isDark
+                      ? "bg-card border-border text-foreground"
+                      : "bg-white border-gray-200 text-gray-900"
+                  }`}
+                  aria-label="Select language"
+                >
+                  <option value="en">English</option>
+                  <option value="hi">Hindi</option>
+                </select>
+              </div>
 
               {/* Notification */}
               <button
@@ -879,12 +939,22 @@ const DualHeaderLayout: React.FC<{ children: React.ReactNode }> = ({
             </div>
 
             {/* Language */}
-            <button
-              className={`hidden md:flex items-center gap-2 text-sm ${headerTextSecondary} ${headerHoverBg}`}
-            >
+            <div className="hidden md:flex items-center gap-2">
               <Globe className={`w-4 h-4 ${headerIconColor}`} />
-              <span>English</span>
-            </button>
+              <select
+                value={locale}
+                onChange={(e) => handleLocaleChange(e.target.value)}
+                className={`text-sm border rounded-lg px-2 py-1.5 focus:outline-none ${
+                  isDark
+                    ? "bg-card border-border text-foreground"
+                    : "bg-white border-gray-200 text-gray-900"
+                }`}
+                aria-label="Select language"
+              >
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+              </select>
+            </div>
 
             {/* Notification */}
             <button className={`relative p-2 ${headerHoverBg} rounded-lg`}>

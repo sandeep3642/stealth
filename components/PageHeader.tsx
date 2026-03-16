@@ -1,13 +1,12 @@
 "use client";
 
-import React from "react";
-import { useEffect, useState } from "react";
-import { Home, Filter, Download } from "lucide-react";
-import { useTheme } from "@/context/ThemeContext";
-import { useColor } from "@/context/ColorContext";
+import { Download, Filter, Home } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { PageHeaderProps } from "@/interfaces/header.interface";
+import React, { useEffect, useState } from "react";
 import BulkUploadControls from "@/components/BulkUploadControls";
+import { useColor } from "@/context/ColorContext";
+import { useTheme } from "@/context/ThemeContext";
+import { PageHeaderProps } from "@/interfaces/header.interface";
 import {
   getFormRightForPath,
   getPermissionPathFromPathname,
@@ -236,7 +235,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                 style={{ background: selectedColor }}
                 className="cursor-pointer hover:opacity-90 text-white px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium transition-opacity ml-auto"
               >
-                {buttonIcon || <span className="text-lg sm:text-xl">+</span>}
                 <span className="whitespace-nowrap">{buttonText}</span>
               </button>
             )}

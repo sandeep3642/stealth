@@ -35,6 +35,7 @@ import {
   Currency,
   FormModule,
 } from "@/interfaces/plan.interface";
+import PageHeader from "@/components/PageHeader";
 
 // Mock Theme and Color Contexts
 const useTheme = () => ({ isDark: false });
@@ -56,6 +57,7 @@ const PlansManagement = () => {
   const router = useRouter();
   const params = useParams();
   const t = useTranslations("pages.managePlans.detail");
+  const tList = useTranslations("pages.managePlans.list");
   const id = params?.id;
   const isEditMode = id && id !== "0";
   const { isDark } = useTheme();
@@ -490,81 +492,49 @@ const PlansManagement = () => {
 
   return (
     <div className={`${isDark ? "dark" : ""}`}>
-      <div className={`min-h-screen ${isDark ? "bg-background" : ""}`}>
-        {/* Sticky Header */}
-        <div className={` ${isDark ? "bg-background" : ""} pt-6 px-6 pb-4`}>
-          <div className="max-w-[1600px] mx-auto">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1
-                  className={`text-3xl font-bold ${
-                    isDark ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  {isEditMode ? t("title.edit") : t("title.create")}
-                </h1>
-                <p
-                  className={`mt-2 text-sm ${
-                    isDark ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  {t("subtitle")}
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => router.push("/manage-plans")}
-                  className={`px-6 py-2.5 rounded-lg border ${
-                    isDark
-                      ? "border-gray-700 text-gray-300 hover:bg-gray-800"
-                      : "border-gray-300 text-gray-700 hover:bg-gray-50"
-                  } font-medium transition-colors`}
-                >
-                  {t("buttons.cancel")}
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={loading || loadingDropdowns}
-                  style={{ backgroundColor: selectedColor }}
-                  className="px-6 py-2.5 rounded-lg text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      {t("buttons.saving")}
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4" />
-                      {isEditMode ? t("buttons.update") : t("buttons.create")}
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Status Messages */}
-            {submitStatus.type && (
-              <div
-                className={`mt-4 p-4 rounded-lg flex items-center gap-3 ${
-                  submitStatus.type === "success"
-                    ? "bg-green-50 text-green-800 border border-green-200"
-                    : "bg-red-50 text-red-800 border border-red-200"
-                }`}
-              >
-                {submitStatus.type === "success" ? (
-                  <CheckCircle className="w-5 h-5" />
-                ) : (
-                  <AlertCircle className="w-5 h-5" />
-                )}
-                <span className="font-medium">{submitStatus.message}</span>
-              </div>
-            )}
-          </div>
+      <div
+        className={`min-h-screen ${isDark ? "bg-background" : "bg-gray-50"} p-6`}
+      >
+        <div className="max-w-7xl mx-auto mb-6">
+          <PageHeader
+            title={isEditMode ? t("title.edit") : t("title.create")}
+            breadcrumbs={[
+              { label: tList("breadcrumbs.billing") },
+              { label: tList("breadcrumbs.current"), href: "/manage-plans" },
+              { label: isEditMode ? t("title.edit") : t("title.create") },
+            ]}
+            showButton
+            buttonText={
+              loading ? t("buttons.saving") : isEditMode ? t("buttons.update") : t("buttons.create")
+            }
+            onButtonClick={() => {
+              if (!loading && !loadingDropdowns) {
+                handleSubmit();
+              }
+            }}
+          />
         </div>
 
-        {/* Main Content with proper padding */}
-        <div className="max-w-[1600px] mx-auto px-6 py-6">
+        {/* Status Messages */}
+        {submitStatus.type && (
+          <div
+            className={`max-w-7xl mx-auto mb-4 p-4 rounded-lg flex items-center gap-3 ${
+              submitStatus.type === "success"
+                ? "bg-green-50 text-green-800 border border-green-200"
+                : "bg-red-50 text-red-800 border border-red-200"
+            }`}
+          >
+            {submitStatus.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="font-medium">{submitStatus.message}</span>
+          </div>
+        )}
+
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Form Fields (scrollable) */}
             <div className="lg:col-span-2 space-y-6">
@@ -1689,6 +1659,19 @@ const PlansManagement = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={() => router.push("/manage-plans")}
+              className={`px-6 py-2.5 rounded-lg border ${
+                isDark
+                  ? "border-gray-700 text-gray-300 hover:bg-gray-800"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+              } font-medium transition-colors`}
+            >
+              {t("buttons.cancel")}
+            </button>
           </div>
         </div>
       </div>

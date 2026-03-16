@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import CommonTable from "@/components/CommonTable";
-import ThemeCustomizer from "@/components/ThemeCustomizer";
-import PageHeader from "@/components/PageHeader";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
-import { useTheme } from "@/context/ThemeContext";
+import { AlertTriangle, CheckCircle, UserRound, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { FormRights } from "@/interfaces/account.interface";
+import { useTranslations } from "next-intl";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { deleteDriver, getDrivers } from "@/services/driverService";
 import { MetricCard } from "@/components/CommonCard";
-import { AlertTriangle, Building2, CheckCircle, UserRound } from "lucide-react";
+import CommonTable from "@/components/CommonTable";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
+import PageHeader from "@/components/PageHeader";
+import { useTheme } from "@/context/ThemeContext";
+import { FormRights } from "@/interfaces/account.interface";
+import { deleteDriver, getDrivers } from "@/services/driverService";
 
 interface DriverRow {
   driverId: number;
@@ -28,6 +28,7 @@ interface DriverRow {
 const Drivers: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
+  const t = useTranslations("pages.driver.list");
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,8 +39,8 @@ const Drivers: React.FC = () => {
   const [cardCounts, setCardCounts] = useState({
     totalDrivers: 0,
     activeDrivers: 0,
-    licenceIssues: 0,
-    multiTenantOrgs: 0,
+    inactiveDrivers: 0,
+    licenseExpiringSoon: 0,
   });
 
   // Confirmation dialog state
@@ -51,37 +52,36 @@ const Drivers: React.FC = () => {
   const columns = [
     {
       key: "driverId",
-      label: "DRIVER ID",
+      label: t("table.driverId"),
       visible: true,
     },
     {
       key: "name",
-      label: "DRIVER NAME",
+      label: t("table.driverName"),
       visible: true,
     },
     {
       key: "mobile",
-      label: "MOBILE",
+      label: t("table.mobile"),
       visible: true,
     },
     {
       key: "licenseNumber",
-      label: "LICENCE NO.",
+      label: t("table.licenceNo"),
       visible: true,
     },
     {
       key: "licenseExpiry",
-      label: "LICENCE EXPIRY",
+      label: t("table.licenceExpiry"),
       visible: true,
       render: (value: string) =>
         value ? new Date(value).toLocaleDateString() : "-",
     },
     {
       key: "isActive",
-      label: "STATUS",
+      label: t("table.status"),
       type: "badge" as const,
       visible: true,
-      render: (value: boolean) => (value ? "Active" : "Inactive"),
     },
   ];
 
@@ -103,22 +103,16 @@ const Drivers: React.FC = () => {
         const activeDrivers =
           summary?.active ??
           driverList.filter((driver: DriverRow) => driver?.isActive).length;
-        const licenceIssues =
-          summary?.licenseExpiringSoon ??
-          summary?.licenseIssues ??
-          summary?.licenceIssues ??
-          0;
-        const multiTenantOrgs = new Set(
-          driverList
-            .map((driver: DriverRow) => driver?.accountId)
-            .filter(Boolean),
-        ).size;
+        const inactiveDrivers =
+          summary?.inactive ??
+          driverList.filter((driver: DriverRow) => !driver?.isActive).length;
+        const licenseExpiringSoon = summary?.licenseExpiringSoon ?? 0;
 
         setCardCounts({
           totalDrivers,
           activeDrivers,
-          licenceIssues,
-          multiTenantOrgs,
+          inactiveDrivers,
+          licenseExpiringSoon,
         });
       } else {
         console.error("Failed to fetch categories:", response.message);
@@ -147,13 +141,13 @@ const Drivers: React.FC = () => {
     try {
       const response = await deleteDriver(categoryToDelete.driverId);
       if (response.success) {
-        toast.success("Driver deleted successfully!");
+        toast.success(t("toast.deleted"));
         fetchCategories(); // Refresh list
       } else {
-        toast.error(`Failed to delete: ${response.message}`);
+        toast.error(`${t("toast.deleteFailed")}: ${response.message}`);
       }
     } catch (error) {
-      toast.error("Error deleting driver");
+      toast.error(t("toast.deleteError"));
       console.error("Error deleting driver:", error);
     } finally {
       setCategoryToDelete(null);
@@ -206,18 +200,21 @@ const Drivers: React.FC = () => {
     <div className={`${isDark ? "dark" : ""} mt-10`}>
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
         <PageHeader
-          title="Personnal Registry"
-          subtitle="Register Drivers"
-          breadcrumbs={[{ label: "fleet" }, { label: "driver" }]}
+          title={t("title")}
+          subtitle={t("subtitle")}
+          breadcrumbs={[
+            { label: t("breadcrumbs.fleet") },
+            { label: t("breadcrumbs.current") },
+          ]}
           showButton={true}
-          buttonText="Add Driver"
+          buttonText={t("addButton")}
           buttonRoute="/driver/0"
           // showWriteButton={driverRights?.canWrite || false}
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <MetricCard
             icon={UserRound}
-            label="TOTAL DRIVERS"
+            label={t("metrics.totalDrivers")}
             value={cardCounts.totalDrivers}
             iconBgColor="bg-purple-100 dark:bg-purple-900/30"
             iconColor="text-purple-600 dark:text-purple-400"
@@ -225,24 +222,24 @@ const Drivers: React.FC = () => {
           />
           <MetricCard
             icon={CheckCircle}
-            label="ACTIVE STATUS"
+            label={t("metrics.activeDrivers")}
             value={cardCounts.activeDrivers}
             iconBgColor="bg-green-100 dark:bg-green-900/30"
             iconColor="text-green-600 dark:text-green-400"
             isDark={isDark}
           />
           <MetricCard
-            icon={AlertTriangle}
-            label="LICENCE ISSUES"
-            value={cardCounts.licenceIssues}
+            icon={XCircle}
+            label={t("metrics.inactiveDrivers")}
+            value={cardCounts.inactiveDrivers}
             iconBgColor="bg-red-100 dark:bg-red-900/30"
             iconColor="text-red-600 dark:text-red-400"
             isDark={isDark}
           />
           <MetricCard
-            icon={Building2}
-            label="MULTI-TENANT ORG"
-            value={cardCounts.multiTenantOrgs}
+            icon={AlertTriangle}
+            label={t("metrics.licenseExpiringSoon")}
+            value={cardCounts.licenseExpiringSoon}
             iconBgColor="bg-indigo-100 dark:bg-indigo-900/30"
             iconColor="text-indigo-600 dark:text-indigo-400"
             isDark={isDark}
@@ -251,7 +248,7 @@ const Drivers: React.FC = () => {
         {/* Table */}
         {loading ? (
           <div className="flex items-center justify-center p-8">
-            <p>Loading drivers...</p>
+            <p>{t("loading")}</p>
           </div>
         ) : (
           <CommonTable
@@ -260,7 +257,7 @@ const Drivers: React.FC = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             showActions={true}
-            searchPlaceholder="Search drivers..."
+            searchPlaceholder={t("searchPlaceholder")}
             rowsPerPageOptions={[10, 25, 50, 100]}
             defaultRowsPerPage={10}
             pageNo={pageNo}
@@ -282,10 +279,12 @@ const Drivers: React.FC = () => {
             setCategoryToDelete(null);
           }}
           onConfirm={confirmDelete}
-          title="Delete Driver"
-          message={`Are you sure you want to delete the driver "${categoryToDelete?.name || "-"}"? This action cannot be undone.`}
-          confirmText="Delete"
-          cancelText="Cancel"
+          title={t("deleteDialog.title")}
+          message={t("deleteDialog.message", {
+            name: categoryToDelete?.name || "-",
+          })}
+          confirmText={t("deleteDialog.confirm")}
+          cancelText={t("deleteDialog.cancel")}
           type="danger"
           isDark={isDark}
         />

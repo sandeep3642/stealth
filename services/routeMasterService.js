@@ -81,9 +81,7 @@ export const getRouteMasters = async ({
         summary: {
           totalRoutes: Number(summaryData?.totalRoutes || 0),
           totalActiveRoutes: Number(summaryData?.totalActiveRoutes || 0),
-          totalInactiveRoutes: Number(
-            summaryData?.totalInactiveRoutes || 0,
-          ),
+          totalInactiveRoutes: Number(summaryData?.totalInactiveRoutes || 0),
         },
         routes: {
           page: Number(assignmentData?.page || page),
@@ -129,8 +127,12 @@ export const getRouteMasterById = async (id) => {
         routePath: String(route?.routePath || ""),
         routeType: String(route?.routeType || "fixed"),
         accountId: Number(route?.accountId || 0),
+        startGeoId: Number(route?.startGeoId || 0),
+        endGeoId: Number(route?.endGeoId || 0),
         startGeofenceId: Number(route?.startGeoId || 0),
         endGeofenceId: Number(route?.endGeoId || 0),
+        startGeoName: String(route?.startGeoName || ""),
+        endGeoName: String(route?.endGeoName || ""),
         /** Total route distance in metres (stored as string) */
         totalDistance: String(route?.totalDistance || "0"),
         /** Total route duration in seconds (stored as string) */
@@ -230,10 +232,14 @@ export const saveRouteMaster = async (payload) => {
     };
 
     const res = await tmsApi.post(`/api/Route`, requestBody);
-    console.log(res);
-    if (res.status === 201) {
-      return res.data;
-    }
+    return (
+      res?.data || {
+        success: res?.status >= 200 && res?.status < 300,
+        statusCode: res?.status || 200,
+        message: "Route saved successfully",
+        data: null,
+      }
+    );
   } catch (error) {
     console.error("API Error in saveRouteMaster:", error);
     return buildErrorResponse(error, "Failed to save route master");

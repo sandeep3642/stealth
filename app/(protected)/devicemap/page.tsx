@@ -1,6 +1,5 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   Building2,
@@ -9,16 +8,17 @@ import {
   Plus,
   ShieldCheck,
 } from "lucide-react";
-import { useTranslations } from "next-intl";
-import CommonTable from "@/components/CommonTable";
-import PageHeader from "@/components/PageHeader";
-import { MetricCard } from "@/components/CommonCard";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
-import { useTheme } from "@/context/ThemeContext";
-import { deleteDeviceMap, getDeviceMaps } from "@/services/devicemapService";
-import { getAllAccounts, getFormRightForPath } from "@/services/commonServie";
-import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
+import { MetricCard } from "@/components/CommonCard";
+import CommonTable from "@/components/CommonTable";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
+import PageHeader from "@/components/PageHeader";
+import { useTheme } from "@/context/ThemeContext";
+import { getAllAccounts, getFormRightForPath } from "@/services/commonServie";
+import { deleteDeviceMap, getDeviceMaps } from "@/services/devicemapService";
 
 interface DeviceMapRow {
   id: number;
@@ -233,9 +233,7 @@ const DeviceMap: React.FC = () => {
     try {
       const response = await deleteDeviceMap(selectedRow.id);
       if (response?.success || response?.statusCode === 200) {
-        toast.success(
-          response?.message || t("toast.deleted"),
-        );
+        toast.success(response?.message || t("toast.deleted"));
         fetchDeviceMaps();
       } else {
         toast.error(response?.message || t("toast.deleteFailed"));
@@ -252,9 +250,7 @@ const DeviceMap: React.FC = () => {
     return (
       <div className={`${isDark ? "dark" : ""} mt-10`}>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <p className="text-foreground">
-            {t("noReadPermission")}
-          </p>
+          <p className="text-foreground">{t("noReadPermission")}</p>
         </div>
       </div>
     );

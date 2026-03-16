@@ -1,6 +1,5 @@
 "use client";
 
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { GoogleMap, MarkerF, PolylineF } from "@react-google-maps/api";
 import {
   Activity,
@@ -21,17 +20,21 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import PageHeader from "@/components/PageHeader";
+import { useTheme } from "@/context/ThemeContext";
 import { useGoogleMapsSdk } from "@/hooks/useGoogleMapsSdk";
 import {
   DEFAULT_FLEET_VEHICLES,
   getLiveTrackingBatch,
   getLiveTrackingByKey,
 } from "@/services/liveTrackingService";
-import { useRouter } from "next/navigation";
 import { getCarMarkerSvg } from "@/utils/carMarkerIcon";
 
 const POLL_MS = 15000;
-const VEHICLE_LIST = DEFAULT_FLEET_VEHICLES.slice(0, 3);
+const SEARCH_DEBOUNCE_MS = 350;
+const BATCH_FETCH_THROTTLE_MS = 4000;
 
 const STATUS_META = {
   ALL: { color: "#4f46e5", icon: CarFront },
@@ -46,81 +49,102 @@ const STATUS_META = {
 export default function FleetDashboard() {
   const mapRef = useRef(null);
   const router = useRouter();
+  const { isDark } = useTheme();
   const [fleetData, setFleetData] = useState([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [popupVehicleId, setPopupVehicleId] = useState(null);
   const [filterStatus, setFilterStatus] = useState("ALL");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [isFleetLoading, setIsFleetLoading] = useState(true);
   const [fleetError, setFleetError] = useState("");
   const [vehicleTrails, setVehicleTrails] = useState({});
   const { isLoaded, loadError, hasApiKey } = useGoogleMapsSdk();
+  const lastBatchFetchAtRef = useRef(0);
+  const isBatchFetchInProgressRef = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchInput);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
-    const loadFleet = async () => {
-      try {
-        setFleetError("");
-        let vehicles = await getLiveTrackingBatch(VEHICLE_LIST);
+  const loadFleet = useCallback(async (cancelledRef, force = false) => {
+    const now = Date.now();
+    const shouldSkip =
+      !force &&
+      (isBatchFetchInProgressRef.current ||
+        now - lastBatchFetchAtRef.current < BATCH_FETCH_THROTTLE_MS);
+    if (shouldSkip) return;
 
-        if (!vehicles.length) {
-          const fallback = await Promise.all(
-            VEHICLE_LIST.map((vehicleNo) =>
-              getLiveTrackingByKey(vehicleNo).catch(() => null),
-            ),
-          );
-          vehicles = fallback.filter(Boolean);
-        }
+    isBatchFetchInProgressRef.current = true;
+    try {
+      setFleetError("");
+      let vehicles = await getLiveTrackingBatch();
 
-        if (!vehicles.length) {
-          throw new Error("No live vehicle data received");
-        }
-
-        if (!cancelled) {
-          setFleetData(vehicles);
-          setSelectedVehicleId((prev) => {
-            if (prev && vehicles.some((v) => v.id === prev)) return prev;
-            return null;
-          });
-          setPopupVehicleId((prev) => {
-            if (prev && vehicles.some((v) => v.id === prev)) return prev;
-            return null;
-          });
-          setVehicleTrails((prev) => {
-            const next = { ...prev };
-            vehicles.forEach((vehicle) => {
-              const point = {
-                lat: vehicle.position[0],
-                lng: vehicle.position[1],
-              };
-              const trail = next[vehicle.id] ? [...next[vehicle.id]] : [];
-              const last = trail[trail.length - 1];
-              if (!last || last.lat !== point.lat || last.lng !== point.lng) {
-                trail.push(point);
-              }
-              next[vehicle.id] = trail.slice(-40);
-            });
-            return next;
-          });
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setFleetError(error?.message || "Unable to fetch live tracking data");
-        }
-      } finally {
-        if (!cancelled) setIsFleetLoading(false);
+      if (!vehicles.length) {
+        const fallback = await Promise.all(
+          DEFAULT_FLEET_VEHICLES.map((vehicleNo) =>
+            getLiveTrackingByKey(vehicleNo).catch(() => null),
+          ),
+        );
+        vehicles = fallback.filter(Boolean);
       }
-    };
 
-    loadFleet();
-    const timer = setInterval(loadFleet, POLL_MS);
+      if (!vehicles.length) {
+        throw new Error("No live vehicle data received");
+      }
+
+      if (!cancelledRef.current) {
+        setFleetData(vehicles);
+        setSelectedVehicleId((prev) => {
+          if (prev && vehicles.some((v) => v.id === prev)) return prev;
+          return null;
+        });
+        setPopupVehicleId((prev) => {
+          if (prev && vehicles.some((v) => v.id === prev)) return prev;
+          return null;
+        });
+        setVehicleTrails((prev) => {
+          const next = { ...prev };
+          vehicles.forEach((vehicle) => {
+            const point = {
+              lat: vehicle.position[0],
+              lng: vehicle.position[1],
+            };
+            const trail = next[vehicle.id] ? [...next[vehicle.id]] : [];
+            const last = trail[trail.length - 1];
+            if (!last || last.lat !== point.lat || last.lng !== point.lng) {
+              trail.push(point);
+            }
+            next[vehicle.id] = trail.slice(-40);
+          });
+          return next;
+        });
+      }
+    } catch (error) {
+      if (!cancelledRef.current) {
+        setFleetError(error?.message || "Unable to fetch live tracking data");
+      }
+    } finally {
+      lastBatchFetchAtRef.current = Date.now();
+      isBatchFetchInProgressRef.current = false;
+      if (!cancelledRef.current) setIsFleetLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const cancelledRef = { current: false };
+
+    loadFleet(cancelledRef, true);
+    const timer = setInterval(() => loadFleet(cancelledRef), POLL_MS);
 
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
       clearInterval(timer);
     };
-  }, []);
+  }, [loadFleet]);
 
   const statusCounts = useMemo(
     () =>
@@ -145,7 +169,7 @@ export default function FleetDashboard() {
   );
 
   const filteredFleet = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase();
+    const term = debouncedSearchTerm.trim().toLowerCase();
     return fleetData.filter((vehicle) => {
       const byStatus =
         filterStatus === "ALL" || vehicle.status === filterStatus;
@@ -155,7 +179,7 @@ export default function FleetDashboard() {
         vehicle.vehicleNumber?.toLowerCase().includes(term);
       return byStatus && bySearch;
     });
-  }, [fleetData, filterStatus, searchTerm]);
+  }, [fleetData, filterStatus, debouncedSearchTerm]);
 
   const selectedVehicle =
     fleetData.find((vehicle) => vehicle.id === selectedVehicleId) || null;
@@ -197,69 +221,78 @@ export default function FleetDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f4f6] p-3 md:p-4">
-      <header className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-[#0f172a]">
-            FLEET INTELLIGENCE
-          </h1>
-          <div className="mt-1 flex items-center gap-2 text-sm font-medium text-slate-500">
-            <span>Operations</span>
-            <span className="text-slate-300">›</span>
-            <span className="text-slate-700">Live Fleet Hub</span>
-          </div>
+    <div className={`${isDark ? "dark" : ""}`}>
+      <div
+        className={`min-h-screen ${isDark ? "bg-background" : "bg-[#f3f4f6]"} p-3 md:p-4`}
+      >
+        <div className="mx-auto mb-4 max-w-7xl">
+          <PageHeader
+            title="Fleet Intelligence"
+            subtitle="Track, monitor, and manage your fleet in real time."
+            breadcrumbs={[
+              { label: "Operations" },
+              { label: "Live Fleet Hub" },
+            ]}
+            showButton={false}
+            showExportButton={false}
+            showFilterButton={false}
+            showBulkUpload={false}
+          />
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative w-full max-w-[280px]">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              type="text"
-              placeholder="Search plate or ID..."
-              className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
-            />
+
+        <div className="mx-auto max-w-7xl">
+          <header className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-end">
+            <div className="flex items-center gap-2">
+              <div className="relative w-full max-w-[280px]">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={searchInput}
+                  onChange={(event) => setSearchInput(event.target.value)}
+                  type="text"
+                  placeholder="Search plate or ID..."
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                />
+              </div>
+              <button
+                type="button"
+                className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700"
+              >
+                <Filter className="h-4 w-4" />
+                Filter
+              </button>
+            </div>
+          </header>
+
+          <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">
+            {stats.map((stat) => {
+              const active = filterStatus === stat.label;
+              const Icon = STATUS_META[stat.label]?.icon || CircleDotDashed;
+              return (
+                <button
+                  key={stat.label}
+                  type="button"
+                  onClick={() => setFilterStatus(stat.label)}
+                  className={`rounded-2xl border px-4 py-3 text-left transition ${
+                    active
+                      ? "border-indigo-200 bg-white shadow-sm"
+                      : "border-transparent bg-[#ededf0] hover:bg-[#e8e9ed]"
+                  }`}
+                >
+                  <div className="mb-1 flex items-center gap-2">
+                    <Icon className="h-4 w-4 text-slate-400" />
+                    <span className="text-[12px] font-bold tracking-widest text-slate-600">
+                      {stat.label}
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black text-slate-800">
+                    {stat.count}
+                  </div>
+                </button>
+              );
+            })}
           </div>
-          <button
-            type="button"
-            className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700"
-          >
-            <Filter className="h-4 w-4" />
-            Filter
-          </button>
-        </div>
-      </header>
 
-      <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4 xl:grid-cols-7">
-        {stats.map((stat) => {
-          const active = filterStatus === stat.label;
-          const Icon = STATUS_META[stat.label]?.icon || CircleDotDashed;
-          return (
-            <button
-              key={stat.label}
-              type="button"
-              onClick={() => setFilterStatus(stat.label)}
-              className={`rounded-2xl border px-4 py-3 text-left transition ${
-                active
-                  ? "border-indigo-200 bg-white shadow-sm"
-                  : "border-transparent bg-[#ededf0] hover:bg-[#e8e9ed]"
-              }`}
-            >
-              <div className="mb-1 flex items-center gap-2">
-                <Icon className="h-4 w-4 text-slate-400" />
-                <span className="text-[12px] font-bold tracking-widest text-slate-600">
-                  {stat.label}
-                </span>
-              </div>
-              <div className="text-2xl font-black text-slate-800">
-                {stat.count}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="grid min-h-[68vh] grid-cols-1 gap-3 lg:grid-cols-[320px_1fr]">
+          <div className="grid min-h-[68vh] grid-cols-1 gap-3 lg:grid-cols-[320px_1fr]">
         <aside className="rounded-2xl bg-transparent">
           <div className="max-h-[68vh] space-y-3 overflow-y-auto pr-1">
             {isFleetLoading && (
@@ -541,6 +574,8 @@ export default function FleetDashboard() {
             </>
           )}
         </main>
+          </div>
+        </div>
       </div>
     </div>
   );

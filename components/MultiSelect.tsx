@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 export interface OptionType {
   label: string;

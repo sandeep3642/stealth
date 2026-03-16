@@ -37,6 +37,12 @@
             "inTransit": "In Transit",
             "completed": "Completed"
           }
+        },
+        "deleteDialog": {
+          "title": "Delete Trip Plan",
+          "message": "Are you sure you want to delete {name}?",
+          "confirm": "Delete",
+          "cancel": "Cancel"
         }
       },
       "detail": {
@@ -50,8 +56,11 @@
         },
         "buttons": {
           "discard": "Discard",
+          "cancel": "Cancel",
           "deployMission": "DEPLOY MISSION",
           "remove": "Remove",
+          "prev": "Previous",
+          "next": "Next",
           "addStop": "Add Stop",
           "addNumber": "Add Number",
           "deploying": "Deploying...",
@@ -71,16 +80,25 @@
           "tripNamePlaceholder": "e.g. Metro Daily Supply",
           "assignedOperator": "ASSIGNED OPERATOR",
           "selectDriver": "Select driver",
+          "account": "ACCOUNT",
+          "selectAccount": "Select account",
           "vehicle": "VEHICLE",
           "selectVehicle": "Select vehicle",
+          "vehicleType": "VEHICLE TYPE",
+          "selectVehicleType": "Select vehicle type",
           "consignee": "CONSIGNEE",
           "consigneePlaceholder": "e.g. Sharma Traders",
           "vehicleAssignment": "VEHICLE ASSIGNMENT",
+          "vehicleTypePageInfo": "Vehicle types page {page}/{total}",
+          "noVehicleTypes": "No vehicle types found",
           "tripType": "TRIP TYPE",
           "weeklyRotation": "WEEKLY ROTATION",
           "departureEtd": "DEPARTURE ETD",
           "expectedArrival": "EXPECTED ARRIVAL",
           "selectMasterPipeline": "SELECT MASTER PIPELINE",
+          "selectSourceGeofence": "Select source geofence",
+          "selectDestinationGeofence": "Select destination geofence",
+          "selectStopGeofence": "Select stop geofence",
           "customRouteName": "CUSTOM ROUTE NAME",
           "customRoutePlaceholder": "Enter custom route",
           "sourcePlaceholder": "Enter source location",
@@ -96,8 +114,10 @@
         "summary": {
           "trip": "Trip",
           "driver": "Driver",
+          "account": "Account",
           "vehicle": "Vehicle",
           "assignment": "Assignment",
+          "vehicleType": "Vehicle Type",
           "cycle": "Cycle",
           "routeMode": "Route Mode",
           "route": "Route"

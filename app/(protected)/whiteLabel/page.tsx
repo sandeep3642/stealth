@@ -104,7 +104,7 @@ const WhiteLabelPage: React.FC = () => {
   }, [searchQuery]);
 
   const handleEdit = (row: WhiteLabel) => {
-    router.push(`/provisionBranding?id=${row.whiteLabelId}`);
+    router.push(`/whiteLabel/${row.whiteLabelId}`);
   };
 
   // Open confirmation dialog
@@ -152,7 +152,7 @@ const WhiteLabelPage: React.FC = () => {
           ]}
           showButton={true}
           buttonText={t("addButton")}
-          buttonRoute="/provisionBranding"
+          buttonRoute="/whiteLabel/0"
         />
 
         {/* Table */}

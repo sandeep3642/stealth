@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
 import { Link2, MapPin } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import PageHeader from "@/components/PageHeader";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
-import { useRouter, useParams } from "next/navigation";
-import { toast } from "react-toastify";
 import {
   getAllAccounts,
+  getFormRightForPath,
   getGeofenceDropdownByAccount,
   getVehicleDropdown,
-  getFormRightForPath,
 } from "@/services/commonServie";
 import {
   getVehicleGeofenceById,
@@ -207,9 +207,7 @@ const AddEditVehicleGeofence: React.FC = () => {
   const handleSubmit = async () => {
     if (!canSubmit) {
       toast.error(
-        isEditMode
-          ? t("toast.noUpdatePermission")
-          : t("toast.noAddPermission"),
+        isEditMode ? t("toast.noUpdatePermission") : t("toast.noAddPermission"),
       );
       return;
     }
@@ -247,9 +245,7 @@ const AddEditVehicleGeofence: React.FC = () => {
       if (response?.success || response?.statusCode === 200) {
         toast.success(
           response?.message ||
-            (isEditMode
-              ? t("toast.updated")
-              : t("toast.created")),
+            (isEditMode ? t("toast.updated") : t("toast.created")),
         );
         router.push("/vehicle-geofence");
       } else {
@@ -277,230 +273,218 @@ const AddEditVehicleGeofence: React.FC = () => {
     return (
       <div className={`${isDark ? "dark" : ""}`}>
         <div className="min-h-screen bg-background flex items-center justify-center">
-          <p className="text-foreground">
-            {t("noReadPermission")}
-          </p>
+          <p className="text-foreground">{t("noReadPermission")}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`${isDark ? "dark" : ""}`}>
-      <div className="min-h-screen bg-background flex justify-center p-2">
-        <div className="w-full max-w-4xl">
-          <PageHeader
-            title={isEditMode ? t("editTitle") : t("createTitle")}
-            subtitle={
-              isEditMode
-                ? t("section.editDescription")
-                : t("section.createDescription")
-            }
-            breadcrumbs={[
-              { label: tList("breadcrumbs.fleet") },
-              { label: tList("breadcrumbs.current"), href: "/vehicle-geofence" },
-              { label: isEditMode ? t("editTitle") : t("createTitle") },
-            ]}
-            showButton
-            buttonText={
-              loading
-                ? isEditMode
-                  ? t("buttons.updating")
-                  : t("buttons.creating")
-                : isEditMode
-                  ? t("buttons.update")
-                  : t("buttons.create")
-            }
-            onButtonClick={handleSubmit}
-          />
+    <div className={`${isDark ? "dark" : ""} mt-10`}>
+      <div
+        className={`min-h-screen ${isDark ? "bg-background" : ""} p-3 sm:p-4 md:p-6`}
+      >
+        <PageHeader
+          title={isEditMode ? t("editTitle") : t("createTitle")}
+          subtitle={
+            isEditMode
+              ? t("section.editDescription")
+              : t("section.createDescription")
+          }
+          breadcrumbs={[
+            { label: tList("breadcrumbs.fleet") },
+            { label: tList("breadcrumbs.current"), href: "/vehicle-geofence" },
+            { label: isEditMode ? t("editTitle") : t("createTitle") },
+          ]}
+          showButton
+          buttonText={
+            loading
+              ? isEditMode
+                ? t("buttons.updating")
+                : t("buttons.creating")
+              : isEditMode
+                ? t("buttons.update")
+                : t("buttons.create")
+          }
+          onButtonClick={handleSubmit}
+        />
 
+        <div
+          className={`rounded-2xl shadow-lg border-t-4 overflow-hidden ${
+            isDark
+              ? "bg-card border border-gray-800"
+              : "bg-white border border-gray-200"
+          }`}
+          style={{ borderTopColor: selectedColor }}
+        >
           <div
-            className="bg-card rounded-2xl shadow-lg border-t-4 border-border overflow-hidden"
-            style={{ borderTopColor: selectedColor }}
+            className={`p-4 sm:p-6 md:p-8 ${isDark ? "bg-card" : "bg-white"}`}
           >
-            <div className="p-8 bg-white">
-              <div className="flex items-start gap-3 mb-6">
-                <div
-                  className="p-2 rounded-lg"
-                  style={{ backgroundColor: `${selectedColor}20` }}
-                >
-                  <Link2 className="w-5 h-5" style={{ color: selectedColor }} />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-foreground mb-1">
-                    {t("section.assignmentParameters")}
-                  </h2>
-                  <p className="text-sm text-foreground opacity-60">
-                    {isEditMode
-                      ? t("section.editDescription")
-                      : t("section.createDescription")}
-                  </p>
-                </div>
+            <div className="flex items-start gap-3 mb-6">
+              <div
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: `${selectedColor}20` }}
+              >
+                <Link2 className="w-5 h-5" style={{ color: selectedColor }} />
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">
-                    {t("fields.account")} <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="accountId"
-                    value={formData.accountId}
-                    onChange={handleChange}
-                    disabled={isEditMode || loading}
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                      isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground"
-                        : "bg-white border-gray-300 text-gray-900"
-                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                  >
-                    <option value={0}>{t("fields.selectAccount")}</option>
-                    {accounts.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.value}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">
-                    {t("fields.vehicle")} <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="vehicleId"
-                    value={formData.vehicleId}
-                    onChange={handleChange}
-                    disabled={loading}
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                      isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground"
-                        : "bg-white border-gray-300 text-gray-900"
-                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                  >
-                    <option value={0}>{t("fields.selectVehicle")}</option>
-                    {vehicles.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.value}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-foreground mb-2">
-                    {t("fields.geofence")} <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    name="geofenceId"
-                    value={formData.geofenceId}
-                    onChange={handleChange}
-                    disabled={loading}
-                    className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                      isDark
-                        ? "bg-gray-800 border-gray-700 text-foreground"
-                        : "bg-white border-gray-300 text-gray-900"
-                    } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                  >
-                    <option value={0}>{t("fields.selectGeofence")}</option>
-                    {geofences.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.value}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <h2 className="text-xl font-bold text-foreground mb-1">
+                  {t("section.assignmentParameters")}
+                </h2>
+                <p className="text-sm text-foreground opacity-60">
+                  {isEditMode
+                    ? t("section.editDescription")
+                    : t("section.createDescription")}
+                </p>
               </div>
+            </div>
 
-              <div className="mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
                 <label className="block text-sm font-semibold text-foreground mb-2">
-                  {t("fields.remarks")}
+                  {t("fields.account")} <span className="text-red-500">*</span>
                 </label>
-                <textarea
-                  name="remarks"
-                  placeholder={t("fields.remarksPlaceholder")}
-                  value={formData.remarks}
+                <select
+                  name="accountId"
+                  value={formData.accountId}
                   onChange={handleChange}
-                  rows={4}
-                  disabled={loading}
-                  className={`w-full px-4 py-2.5 rounded-lg border transition-colors resize-none ${
+                  disabled={isEditMode || loading}
+                  className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
                     isDark
-                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                      ? "bg-gray-800 border-gray-700 text-foreground"
+                      : "bg-white border-gray-300 text-gray-900"
                   } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                />
+                >
+                  <option value={0}>{t("fields.selectAccount")}</option>
+                  {accounts.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.value}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {isEditMode && (
-                <div className="bg-background rounded-lg p-6 mb-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-base font-bold text-foreground mb-1">
-                        {t("section.statusTitle")}
-                      </h3>
-                      <p className="text-sm text-foreground opacity-60">
-                        {t("section.statusDescription")}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <MapPin
-                        className={`w-4 h-4 ${formData.isActive ? "text-green-500" : "text-gray-400"}`}
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  {t("fields.vehicle")} <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="vehicleId"
+                  value={formData.vehicleId}
+                  onChange={handleChange}
+                  disabled={loading}
+                  className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
+                    isDark
+                      ? "bg-gray-800 border-gray-700 text-foreground"
+                      : "bg-white border-gray-300 text-gray-900"
+                  } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                >
+                  <option value={0}>{t("fields.selectVehicle")}</option>
+                  {vehicles.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.value}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-foreground mb-2">
+                  {t("fields.geofence")} <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="geofenceId"
+                  value={formData.geofenceId}
+                  onChange={handleChange}
+                  disabled={loading}
+                  className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
+                    isDark
+                      ? "bg-gray-800 border-gray-700 text-foreground"
+                      : "bg-white border-gray-300 text-gray-900"
+                  } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                >
+                  <option value={0}>{t("fields.selectGeofence")}</option>
+                  {geofences.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.value}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-foreground mb-2">
+                {t("fields.remarks")}
+              </label>
+              <textarea
+                name="remarks"
+                placeholder={t("fields.remarksPlaceholder")}
+                value={formData.remarks}
+                onChange={handleChange}
+                rows={4}
+                disabled={loading}
+                className={`w-full px-4 py-2.5 rounded-lg border transition-colors resize-none ${
+                  isDark
+                    ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+              />
+            </div>
+
+            {isEditMode && (
+              <div className="bg-background rounded-lg p-6 mb-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-base font-bold text-foreground mb-1">
+                      {t("section.statusTitle")}
+                    </h3>
+                    <p className="text-sm text-foreground opacity-60">
+                      {t("section.statusDescription")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <MapPin
+                      className={`w-4 h-4 ${formData.isActive ? "text-green-500" : "text-gray-400"}`}
+                    />
+                    <button
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          isActive: !prev.isActive,
+                        }))
+                      }
+                      disabled={loading}
+                      className="relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
+                      style={{
+                        backgroundColor: formData.isActive
+                          ? selectedColor
+                          : "#cbd5e1",
+                      }}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                          formData.isActive ? "translate-x-8" : "translate-x-1"
+                        }`}
                       />
-                      <button
-                        onClick={() =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            isActive: !prev.isActive,
-                          }))
-                        }
-                        disabled={loading}
-                        className="relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
-                        style={{
-                          backgroundColor: formData.isActive
-                            ? selectedColor
-                            : "#cbd5e1",
-                        }}
-                      >
-                        <span
-                          className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                            formData.isActive
-                              ? "translate-x-8"
-                              : "translate-x-1"
-                          }`}
-                        />
-                      </button>
-                    </div>
+                    </button>
                   </div>
                 </div>
-              )}
-
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={handleSubmit}
-                  disabled={loading || !canSubmit}
-                  className="px-8 py-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
-                  style={{ backgroundColor: selectedColor }}
-                >
-                  {loading
-                    ? isEditMode
-                      ? t("buttons.updating")
-                      : t("buttons.creating")
-                    : isEditMode
-                      ? t("buttons.update")
-                      : t("buttons.create")}
-                </button>
-                <button
-                  onClick={() => router.push("/vehicle-geofence")}
-                  disabled={loading}
-                  className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                    isDark
-                      ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                      : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-                  }`}
-                >
-                  {t("buttons.cancel")}
-                </button>
               </div>
+            )}
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => router.push("/vehicle-geofence")}
+                disabled={loading}
+                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                  isDark
+                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+                }`}
+              >
+                {t("buttons.cancel")}
+              </button>
             </div>
           </div>
         </div>

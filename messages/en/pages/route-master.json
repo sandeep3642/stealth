@@ -63,6 +63,7 @@
           "edit": "Edit"
         },
         "buttons": {
+          "cancel": "Cancel",
           "saving": "Saving...",
           "createRoute": "Create Route",
           "updateRoute": "Update Route",

@@ -1,8 +1,8 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { Card } from "@/components/CommonCard";
 import PageHeader from "@/components/PageHeader";
@@ -83,7 +83,8 @@ const EditAccount: React.FC = () => {
   const tList = useTranslations("pages.accounts.list");
   const router = useRouter();
   const params = useParams();
-  const id = params?.id;
+  const id = String(params?.id || "");
+  const isCreateMode = id === "0";
 
   const [formData, setFormData] = useState<FormData>({
     accountName: "",
@@ -121,7 +122,7 @@ const EditAccount: React.FC = () => {
   const [countries, setCountries] = useState<Country[]>([]);
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!isCreateMode);
 
   const handleInputChange = async (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -237,9 +238,13 @@ const EditAccount: React.FC = () => {
         return;
       }
 
+      const generateAccountCode = () =>
+        "ACC-" + Date.now().toString(36).toUpperCase();
+
       const payload = {
         accountName: formData.accountName,
-        accountCode: formData.accountCode,
+        accountCode:
+          formData.accountCode || (isCreateMode ? generateAccountCode() : ""),
         categoryId: Number(formData.categoryId),
         primaryDomain: formData.primaryDomain,
         countryId: Number(formData.countryId),
@@ -273,10 +278,17 @@ const EditAccount: React.FC = () => {
           .join(","),
       };
 
-      const response = await updateAccount(payload, id);
+      const response = isCreateMode
+        ? await saveAccount(payload)
+        : await updateAccount(payload, id);
 
       if (response && response.statusCode === 200) {
-        toast.success(response.message || t("toast.updatedSuccess"));
+        toast.success(
+          response.message ||
+            (isCreateMode
+              ? t("toast.createdSuccess")
+              : t("toast.updatedSuccess")),
+        );
         router.push("/accounts");
       } else if (response && response.statusCode === 409) {
         toast.error(response.message || t("toast.alreadyExists"));
@@ -324,6 +336,10 @@ const EditAccount: React.FC = () => {
 
   const fetchAccount = async () => {
     try {
+      if (isCreateMode || !id) {
+        setLoading(false);
+        return;
+      }
       const res = await getAccountById(id);
       if (res?.statusCode === 200 && res?.data) {
         const data = res.data;
@@ -392,13 +408,19 @@ const EditAccount: React.FC = () => {
   };
 
   useEffect(() => {
+    fetchCategories();
+    fetchAccounts();
+    fetchCountries();
+
+    if (isCreateMode) {
+      setLoading(false);
+      return;
+    }
+
     if (id) {
-      fetchCategories();
-      fetchAccounts();
-      fetchCountries();
       fetchAccount();
     }
-  }, [id]);
+  }, [id, isCreateMode]);
   useEffect(() => {
     if (
       formData.countryId &&
@@ -438,11 +460,11 @@ const EditAccount: React.FC = () => {
       <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-6`}>
         <div className="max-w-7xl mx-auto mb-6">
           <PageHeader
-            title={t("title.edit")}
+            title={isCreateMode ? t("title.create") : t("title.edit")}
             breadcrumbs={[
               { label: tList("breadcrumbs.accounts") },
               { label: tList("breadcrumbs.current"), href: "/accounts" },
-              { label: t("title.edit") },
+              { label: isCreateMode ? t("title.create") : t("title.edit") },
             ]}
             showButton
             buttonText={t("buttons.submit")}
@@ -1067,28 +1089,21 @@ const EditAccount: React.FC = () => {
                 </div>
               </div>
             </div>
+            <div className="flex justify-end gap-4">
+              <button
+                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                  isDark
+                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+                }`}
+                onClick={() => router.back()}
+              >
+                {t("buttons.cancel")}
+              </button>
+            </div>
           </Card>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-4">
-            <button
-              className="text-white px-8 py-3 rounded-lg font-medium transition-colors"
-              style={{ background: selectedColor }}
-              onClick={handleSubmit}
-            >
-              {t("buttons.submit")}
-            </button>
-            <button
-              className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                isDark
-                  ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-              }`}
-              onClick={() => router.back()}
-            >
-              {t("buttons.cancel")}
-            </button>
-          </div>
         </div>
       </div>
     </div>

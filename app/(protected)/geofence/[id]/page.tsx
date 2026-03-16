@@ -86,6 +86,9 @@ export default function GeofenceDetailPage() {
       : Boolean(pageRight.canUpdate)
     : true;
   const returnTo = searchParams.get("returnTo");
+  const safeReturnPath =
+    returnTo && returnTo.startsWith("/") ? returnTo : "/geofence";
+  const isFromRouteMaster = safeReturnPath.startsWith("/route-master");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -410,11 +413,7 @@ export default function GeofenceDetailPage() {
             ? t("toast.created")
             : t("toast.updated"),
         );
-        if (returnTo && returnTo.startsWith("/")) {
-          router.push(returnTo);
-        } else {
-          router.push("/geofence");
-        }
+        router.push(safeReturnPath);
       } else {
         toast.error(response?.message || t("toast.saveFailed"));
       }
@@ -462,6 +461,25 @@ export default function GeofenceDetailPage() {
   }
 
   const showDrawingTool = isRedrawing && map;
+  const breadcrumbs = isFromRouteMaster
+    ? [
+        { label: t("breadcrumbs.fleet") },
+        { label: t("breadcrumbs.routeMaster"), href: safeReturnPath },
+        {
+          label: isCreateMode
+            ? t("breadcrumbs.create")
+            : code || t("breadcrumbs.edit"),
+        },
+      ]
+    : [
+        { label: t("breadcrumbs.configurations") },
+        { label: t("breadcrumbs.library"), href: "/geofence" },
+        {
+          label: isCreateMode
+            ? t("breadcrumbs.create")
+            : code || t("breadcrumbs.edit"),
+        },
+      ];
 
   return (
     <div className={`${isDark ? "dark" : ""} mt-10`}>
@@ -473,11 +491,7 @@ export default function GeofenceDetailPage() {
               ? t("subtitleCreate")
               : t("subtitleEdit")
           }
-          breadcrumbs={[
-            { label: t("breadcrumbs.configurations") },
-            { label: t("breadcrumbs.library"), href: "/geofence" },
-            { label: isCreateMode ? t("breadcrumbs.create") : code || t("breadcrumbs.edit") },
-          ]}
+          breadcrumbs={breadcrumbs}
           showButton={true}
           buttonText={
             saving
@@ -829,6 +843,24 @@ export default function GeofenceDetailPage() {
           isDark={isDark}
           googleMapsApiKey={getGoogleMapsApiKey()}
         />
+
+        <div
+          className={`mt-4 flex justify-end ${
+            isDark ? "border-t border-gray-800" : "border-t border-gray-200"
+          } pt-4`}
+        >
+          <button
+            type="button"
+            onClick={() => router.push(safeReturnPath)}
+            className={`px-4 py-2.5 rounded-lg border text-sm font-semibold transition-colors ${
+              isDark
+                ? "border-gray-700 text-gray-300 hover:bg-gray-800"
+                : "border-gray-300 text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            {t("buttons.cancel")}
+          </button>
+        </div>
       </div>
     </div>
   );

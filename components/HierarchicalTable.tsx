@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
-  Search,
   Edit2,
   Network,
+  Search,
 } from "lucide-react";
+import React, { useState } from "react";
 import { useColor } from "@/context/ColorContext";
 import {
   HierarchicalTableProps,
@@ -193,7 +193,7 @@ const HierarchicalTable: React.FC<HierarchicalTableProps> = ({
   const filteredData = filterNodes(data);
 
   return (
-    <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
+    <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-gray-200 dark:border-border overflow-hidden">
       {/* Header */}
       <div className="p-2 border-b border-border flex justify-between items-center">
         <div className="flex items-start gap-3 mb-4">

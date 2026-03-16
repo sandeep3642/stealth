@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { Card } from "@/components/CommonCard";
+import PageHeader from "@/components/PageHeader";
 import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
@@ -50,8 +51,10 @@ const CreateUser: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
   const t = useTranslations("pages.users.detail");
+  const tList = useTranslations("pages.users.list");
   const params = useParams();
   const id = params?.id;
+  const isCreateMode = String(id || "0") === "0";
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   const [isEditMode, setIsEditMode] = useState(false);
@@ -474,7 +477,7 @@ const CreateUser: React.FC = () => {
     return (
       <div className={`${isDark ? "dark" : ""}  sm:`}>
         <div
-          className={`min-h-screen ${isDark ? "bg-background" : ""} p-3 sm:p-4 md:p-6 flex items-center justify-center`}
+          className={`min-h-screen ${isDark ? "bg-background" : "bg-gray-50"} p-3 sm:p-4 md:p-6 flex items-center justify-center`}
         >
           <div className="text-center">
             <div
@@ -493,78 +496,60 @@ const CreateUser: React.FC = () => {
   return (
     <div className={`${isDark ? "dark" : ""}  sm:`}>
       <div
-        className={`min-h-screen ${isDark ? "bg-background" : ""} p-3 sm:p-4 md:p-6`}
+        className={`min-h-screen ${isDark ? "bg-background" : "bg-gray-50"} p-3 sm:p-4 md:p-6`}
       >
-        <div className="mb-4 sm:mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-            <div>
-              <h1
-                className={`text-xl sm:text-2xl md:text-3xl font-bold ${isDark ? "text-foreground" : "text-gray-900"}`}
-              >
-                {isEditMode ? t("title.edit") : t("title.create")}
-              </h1>
-              <p
-                className={`text-xs sm:text-sm mt-1 ${isDark ? "text-gray-400" : "text-gray-600"}`}
-              >
-                {t("subtitle")}
-              </p>
-            </div>
-            <div className="flex gap-2 sm:gap-3">
-              <button
-                onClick={() => router.push("/users")}
-                className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm sm:text-base rounded-lg font-medium transition-colors ${
-                  isDark
-                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
-                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
-                }`}
-              >
-                {t("buttons.cancel")}
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="flex-1 sm:flex-none px-3 sm:px-4 py-2 text-sm sm:text-base rounded-lg font-medium text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ backgroundColor: selectedColor }}
-              >
-                {loading
-                  ? t("buttons.saving")
-                  : isEditMode
-                    ? t("buttons.update")
-                    : t("buttons.create")}
-              </button>
-            </div>
-          </div>
+        <div className="max-w-7xl mx-auto mb-4 sm:mb-6">
+          <PageHeader
+            title={isCreateMode ? t("title.create") : t("title.edit")}
+            breadcrumbs={[
+              { label: tList("breadcrumbs.users"), href: "/users" },
+              { label: tList("breadcrumbs.current"), href: "/users" },
+              { label: isCreateMode ? t("title.create") : t("title.edit") },
+            ]}
+            showButton
+            buttonText={
+              loading
+                ? t("buttons.saving")
+                : isCreateMode
+                  ? t("buttons.create")
+                  : t("buttons.update")
+            }
+            onButtonClick={handleSubmit}
+          />
         </div>
 
         <div
-          className={`border-b ${isDark ? "border-gray-700" : "border-gray-200"} mb-4 sm:mb-6`}
+          className="max-w-7xl mx-auto"
         >
-          <div className="flex gap-1 sm:gap-2 overflow-x-auto scrollbar-hide">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border-b-2`}
-                style={{
-                  borderBottomColor:
-                    activeTab === tab.id ? selectedColor : "transparent",
-                  color:
-                    activeTab === tab.id
-                      ? selectedColor
-                      : isDark
-                        ? "#9CA3AF"
-                        : "#6B7280",
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
+          <div
+          className={`border-b ${isDark ? "border-gray-700" : "border-gray-200"} mb-4 sm:mb-6`}
+          >
+            <div className="flex gap-1 sm:gap-2 overflow-x-auto scrollbar-hide">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors border-b-2`}
+                  style={{
+                    borderBottomColor:
+                      activeTab === tab.id ? selectedColor : "transparent",
+                    color:
+                      activeTab === tab.id
+                        ? selectedColor
+                        : isDark
+                          ? "#9CA3AF"
+                          : "#6B7280",
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div>
-          {activeTab === "profile" && (
-            <Card isDark={isDark}>
+          <div>
+            {activeTab === "profile" && (
+              <Card isDark={isDark}>
               <div className="p-4 sm:p-6">
                 <div className="flex items-center gap-2 mb-1">
                   <User
@@ -775,11 +760,11 @@ const CreateUser: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </Card>
-          )}
+              </Card>
+            )}
 
-          {activeTab === "access" && (
-            <Card isDark={isDark}>
+            {activeTab === "access" && (
+              <Card isDark={isDark}>
               <div className="p-4 sm:p-6">
                 <div className="flex items-center gap-2 mb-1">
                   <Building2
@@ -1027,11 +1012,11 @@ const CreateUser: React.FC = () => {
                   )}
                 </div>
               </div>
-            </Card>
-          )}
+              </Card>
+            )}
 
-          {activeTab === "security" && (
-            <Card isDark={isDark}>
+            {activeTab === "security" && (
+              <Card isDark={isDark}>
               <div className="p-4 sm:p-6">
                 <div className="flex items-center gap-2 mb-1">
                   <Shield
@@ -1166,8 +1151,22 @@ const CreateUser: React.FC = () => {
                   )}
                 </div>
               </div>
-            </Card>
-          )}
+              </Card>
+            )}
+          </div>
+
+          <div className="mt-4 sm:mt-6 flex justify-end">
+            <button
+              onClick={() => router.push("/users")}
+              className={`px-4 sm:px-6 py-2.5 rounded-lg font-medium transition-colors ${
+                isDark
+                  ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+              }`}
+            >
+              {t("buttons.cancel")}
+            </button>
+          </div>
         </div>
       </div>
     </div>

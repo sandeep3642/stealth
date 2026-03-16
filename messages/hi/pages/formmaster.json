@@ -57,12 +57,20 @@
           "iconName": "आइकन नाम",
           "iconNamePlaceholder": "उदा. Shield",
           "sortOrder": "क्रम क्रमांक",
-          "sortOrderPlaceholder": "0"
+          "sortOrderPlaceholder": "0",
+          "formModuleId": "फॉर्म मॉड्यूल आईडी",
+          "formModuleIdPlaceholder": "0",
+          "filterConfigJson": "फ़िल्टर कॉन्फ़िग JSON",
+          "filterConfigJsonPlaceholder": "उदा. JSON ऑब्जेक्ट स्ट्रिंग"
         },
         "toggles": {
           "isMenu": {
             "title": "मेनू में दिखाएं",
             "description": "इसे सक्षम करने पर यह फॉर्म मेनू में दिखाई देगा।"
+          },
+          "isBulk": {
+            "title": "बल्क अपलोड सक्षम",
+            "description": "यदि यह फॉर्म बल्क अपलोड सपोर्ट करता है तो सक्षम करें।"
           },
           "isVisible": {
             "title": "दृश्यमान",
@@ -87,6 +95,7 @@
           "formNameRequired": "फॉर्म नाम आवश्यक है",
           "moduleNameRequired": "मॉड्यूल नाम आवश्यक है",
           "pageUrlRequired": "पेज URL आवश्यक है",
+          "filterConfigInvalid": "फ़िल्टर कॉन्फ़िग JSON वैध JSON होना चाहिए",
           "created": "फॉर्म सफलतापूर्वक बनाया गया",
           "updated": "फॉर्म सफलतापूर्वक अपडेट हुआ",
           "saveFailed": "फॉर्म सेव करने में विफल"

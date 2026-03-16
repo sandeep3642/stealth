@@ -109,25 +109,13 @@ const DeviceRegistry: React.FC = () => {
         key: "status",
         label: t("table.status"),
         visible: true,
+        type: "badge" as const,
         render: (value: string) => {
           const normalized = String(value || "OUT OF SERVICE").toUpperCase();
-          const map: Record<string, string> = {
-            ACTIVE: "bg-green-100 text-green-700",
-            "IN SERVICE": "bg-blue-100 text-blue-700",
-            "OUT OF SERVICE": "bg-red-100 text-red-700",
-          };
-
-          return (
-            <span
-              className={`text-xs font-semibold px-2 py-0.5 rounded ${map[normalized] || map["OUT OF SERVICE"]}`}
-            >
-              {normalized === "ACTIVE"
-                ? t("status.active")
-                : normalized === "IN SERVICE"
-                  ? t("status.inService")
-                  : t("status.outOfService")}
-            </span>
-          );
+          if (normalized === "ACTIVE") return t("status.active");
+          if (normalized === "IN SERVICE") return t("status.inService");
+          if (normalized === "OUT OF SERVICE") return "Inactive";
+          return normalized;
         },
       },
 

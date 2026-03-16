@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
-import { Card } from "@/components/CommonCard";
-import { useTheme } from "@/context/ThemeContext";
-import { Shield, Users, Lock } from "lucide-react";
-import { useColor } from "@/context/ColorContext";
-import ThemeCustomizer from "@/components/ThemeCustomizer";
+import { Lock, Shield } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { Card } from "@/components/CommonCard";
+import PageHeader from "@/components/PageHeader";
+import { useColor } from "@/context/ColorContext";
+import { useTheme } from "@/context/ThemeContext";
+import { Permission, RoleFormData } from "@/interfaces/permission.interface";
 import { getAllAccounts } from "@/services/commonServie";
 import { getAllForms } from "@/services/formService";
-import { Permission, RoleFormData } from "@/interfaces/permission.interface";
 import {
   createRole,
   getRoleById,
@@ -23,9 +23,12 @@ const AddRole: React.FC = () => {
   const { isDark } = useTheme();
   const { selectedColor } = useColor();
   const t = useTranslations("pages.rolesPermissions.detail");
+  const tList = useTranslations("pages.rolesPermissions.list");
   const router = useRouter();
   const params = useParams();
   const roleId = params?.id;
+  const roleIdNumber = Number(roleId || 0);
+  const isCreateMode = String(roleId || "0") === "0";
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -37,6 +40,18 @@ const AddRole: React.FC = () => {
   });
 
   const [accounts, setAccounts] = useState([]);
+
+  const getStoredAccountId = () => {
+    if (typeof window === "undefined") return "";
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const userAccountId = String(user?.accountId || "").trim();
+      if (userAccountId) return userAccountId;
+    } catch {
+      // Ignore and try direct accountId key fallback
+    }
+    return String(localStorage.getItem("accountId") || "").trim();
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -172,7 +187,7 @@ const AddRole: React.FC = () => {
       setLoading(true);
 
       // Get accountId from localStorage
-      const accountId = localStorage.getItem("accountId");
+      const accountId = getStoredAccountId();
       if (accountId) {
         const response = await getRoleById(id, accountId);
         if (response && response.statusCode === 200) {
@@ -318,6 +333,15 @@ const AddRole: React.FC = () => {
     const response = await getAllAccounts();
     if (response && response.statusCode === 200) {
       setAccounts(response.data);
+      if (isCreateMode) {
+        const defaultAccountId = getStoredAccountId();
+        if (defaultAccountId) {
+          setFormData((prev) => ({
+            ...prev,
+            account: prev.account || defaultAccountId,
+          }));
+        }
+      }
     }
   }
 
@@ -350,7 +374,7 @@ const AddRole: React.FC = () => {
         }));
 
         // If in edit mode, fetch role data after forms are loaded
-        if (roleId) {
+        if (roleIdNumber > 0) {
           await fetchRoleData(roleId as string);
         }
       } else {
@@ -371,7 +395,7 @@ const AddRole: React.FC = () => {
     return (
       <div className={`${isDark ? "dark" : ""} `}>
         <div
-          className={`min-h-screen ${isDark ? "bg-background" : ""} p-2 flex items-center justify-center`}
+          className={`min-h-screen ${isDark ? "bg-background" : "bg-gray-50"} p-6 flex items-center justify-center`}
         >
           <div className="text-center">
             <div
@@ -389,59 +413,36 @@ const AddRole: React.FC = () => {
 
   return (
     <div className={`${isDark ? "dark" : ""} `}>
-      <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
-        {/* Header */}
-        <div className="mx-auto mb-6 sm:mb-8">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-            <div>
-              <h1
-                className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2 ${isDark ? "text-foreground" : "text-gray-900"}`}
-              >
-                {isEditMode ? t("title.edit") : t("title.create")}
-              </h1>
-              <p
-                className={`text-xs sm:text-sm md:text-base ${isDark ? "text-gray-400" : "text-gray-600"}`}
-              >
-                {t("subtitle")}
-              </p>
-            </div>
-            <div className="flex gap-2 sm:gap-3 sm:flex-shrink-0">
-              <button
-                className={`flex-1 sm:flex-none px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg text-sm sm:text-base font-medium transition-colors ${
-                  isDark
-                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-                }`}
-                onClick={() => router.back()}
-                disabled={loading}
-              >
-                {t("buttons.cancel")}
-              </button>
-              <button
-                className="flex-1 sm:flex-none text-white px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-lg flex items-center justify-center gap-2 text-sm sm:text-base font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: selectedColor }}
-                onClick={handleSubmit}
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span className="whitespace-nowrap">
-                      {isEditMode ? t("buttons.updating") : t("buttons.saving")}
-                    </span>
-                  </>
-                ) : (
-                  <span className="whitespace-nowrap">
-                    {isEditMode ? t("buttons.updateRole") : t("buttons.saveRole")}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
+      <div
+        className={`min-h-screen ${isDark ? "bg-background" : "bg-gray-50"} p-6`}
+      >
+        <div className="max-w-7xl mx-auto mb-6">
+          <PageHeader
+            title={isCreateMode ? t("title.create") : t("title.edit")}
+            breadcrumbs={[
+              { label: tList("breadcrumbs.users") },
+              {
+                label: tList("breadcrumbs.current"),
+                href: "/users/roles-permissions",
+              },
+              { label: isCreateMode ? t("title.create") : t("title.edit") },
+            ]}
+            showButton
+            buttonText={
+              loading
+                ? isCreateMode
+                  ? t("buttons.saving")
+                  : t("buttons.updating")
+                : isCreateMode
+                  ? t("buttons.saveRole")
+                  : t("buttons.updateRole")
+            }
+            onButtonClick={handleSubmit}
+          />
         </div>
 
         {/* Main Content */}
-        <div className="mx-auto space-y-6">
+        <div className="max-w-7xl mx-auto space-y-6">
           {/* Role Information Card */}
           <Card isDark={isDark}>
             <div>
@@ -767,6 +768,20 @@ const AddRole: React.FC = () => {
               </div>
             </div>
           </Card>
+
+          <div className="flex justify-end">
+            <button
+              className={`px-6 py-3 rounded-lg text-sm font-medium transition-colors ${
+                isDark
+                  ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+              }`}
+              onClick={() => router.back()}
+              disabled={loading}
+            >
+              {t("buttons.cancel")}
+            </button>
+          </div>
         </div>
       </div>
     </div>

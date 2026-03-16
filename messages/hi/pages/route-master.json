@@ -63,6 +63,7 @@
           "edit": "संपादित करें"
         },
         "buttons": {
+          "cancel": "रद्द करें",
           "saving": "सेव हो रहा है...",
           "createRoute": "रूट बनाएं",
           "updateRoute": "रूट अपडेट करें",

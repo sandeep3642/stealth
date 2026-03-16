@@ -43,8 +43,6 @@ const FormMasterPage: React.FC = () => {
       label: t("table.status"),
       type: "badge" as const,
       visible: true,
-      render: (value: boolean) =>
-        value ? t("status.active") : t("status.inactive"),
     },
   ];
 

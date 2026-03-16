@@ -3,11 +3,15 @@
 import { CalendarClock, Route, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import React, { useMemo, useState } from "react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "react-toastify";
 import { MetricCard } from "@/components/CommonCard";
 import CommonTable from "@/components/CommonTable";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 import PageHeader from "@/components/PageHeader";
 import { useTheme } from "@/context/ThemeContext";
+import { deleteTripPlan, getTripPlans } from "@/services/tripMasterService";
 
 type TripListRow = {
   id: number;
@@ -20,67 +24,131 @@ type TripListRow = {
   startTime: string;
 };
 
-const STATIC_TRIPS: TripListRow[] = [
-  {
-    id: 101,
-    tripName: "Delhi North Milk Run",
-    routeName: "Narela - Panipat - Karnal",
-    vehicleNo: "DL01AB5541",
-    driverName: "Rajan Kumar",
-    cycle: "Weekly",
-    status: "Active",
-    startTime: "2026-03-05T06:00:00",
-  },
-  {
-    id: 102,
-    tripName: "Mumbai Pune Express",
-    routeName: "Andheri Hub - Talegaon - Pune Yard",
-    vehicleNo: "MH12PQ8890",
-    driverName: "Amit Singh",
-    cycle: "Monthly",
-    status: "In Transit",
-    startTime: "2026-03-07T07:30:00",
-  },
-  {
-    id: 103,
-    tripName: "Jaipur Retail Drop",
-    routeName: "Gurugram DC - Neemrana - Jaipur",
-    vehicleNo: "RJ14CD1203",
-    driverName: "Vijay Tomar",
-    cycle: "One-Off",
-    status: "Pending",
-    startTime: "2026-03-08T09:15:00",
-  },
-  {
-    id: 104,
-    tripName: "Shimla Mountain Supply",
-    routeName: "Delhi WH - Chandigarh Relay - Shimla",
-    vehicleNo: "HP01AA4001",
-    driverName: "Mohit Rana",
-    cycle: "Monthly",
-    status: "Completed",
-    startTime: "2026-03-02T05:30:00",
-  },
-];
+type TripPlanApiItem = {
+  planId?: number;
+  routeName?: string;
+  vehicleNo?: string;
+  driverId?: number;
+  tripTypeLabel?: TripListRow["cycle"];
+  isActive?: boolean;
+  startTime?: string;
+  createdDatetime?: string;
+};
 
 const TripMasterPage: React.FC = () => {
   const { isDark } = useTheme();
   const router = useRouter();
   const t = useTranslations("pages.tripMaster.list");
 
-  const [rows, setRows] = useState<TripListRow[]>(STATIC_TRIPS);
+  const [rows, setRows] = useState<TripListRow[]>([]);
   const [pageNo, setPageNo] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [summary, setSummary] = useState({
+    totalTrips: 0,
+    activeTrips: 0,
+    inTransitTrips: 0,
+  });
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [rowToDelete, setRowToDelete] = useState<TripListRow | null>(null);
 
-  const summary = useMemo(() => {
-    const totalTrips = rows.length;
-    const activeTrips = rows.filter((row) => row.status === "Active").length;
-    const inTransitTrips = rows.filter(
-      (row) => row.status === "In Transit",
-    ).length;
-    return { totalTrips, activeTrips, inTransitTrips };
-  }, [rows]);
+  const filteredRows = useMemo(() => {
+    if (!searchQuery.trim()) return rows;
+    const q = searchQuery.toLowerCase();
+    return rows.filter((row) =>
+      [
+        row.tripName,
+        row.routeName,
+        row.vehicleNo,
+        row.driverName,
+        row.cycle,
+        row.status,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(q),
+    );
+  }, [rows, searchQuery]);
+
+  const mapRow = useCallback(
+    (item: TripPlanApiItem): TripListRow => ({
+      id: Number(item?.planId || 0),
+      tripName: `Trip Plan #${Number(item?.planId || 0)}`,
+      routeName: String(item?.routeName || "-"),
+      vehicleNo: String(item?.vehicleNo || "-"),
+      driverName: item?.driverId ? `Driver #${item.driverId}` : "-",
+      cycle: item?.tripTypeLabel || "One-Off",
+      status: item?.isActive ? "Active" : "Completed",
+      startTime: String(item?.startTime || item?.createdDatetime || ""),
+    }),
+    [],
+  );
+
+  const fetchTripPlans = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await getTripPlans({
+        page: pageNo,
+        pageSize,
+      });
+
+      const listData = response?.data?.trips || {};
+      const items = Array.isArray(listData?.items) ? listData.items : [];
+      const summaryData = response?.data?.summary || {};
+
+      setRows(items.map(mapRow));
+      setTotalRecords(Number(listData?.totalRecords || items.length));
+      setSummary({
+        totalTrips: Number(summaryData?.totalRecords || items.length),
+        activeTrips: Number(summaryData?.totalActive || 0),
+        inTransitTrips: Number(summaryData?.totalInactive || 0),
+      });
+    } catch (error) {
+      console.error("Error fetching trip plans:", error);
+      toast.error("Failed to fetch trip plans");
+      setRows([]);
+      setTotalRecords(0);
+      setSummary({
+        totalTrips: 0,
+        activeTrips: 0,
+        inTransitTrips: 0,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [mapRow, pageNo, pageSize]);
+
+  const handleDelete = (row: TripListRow) => {
+    setRowToDelete(row);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!rowToDelete) return;
+    try {
+      const response = await deleteTripPlan(rowToDelete.id);
+      if (response?.success || Number(response?.statusCode || 0) === 200) {
+        toast.success(response?.message || "Trip plan deleted successfully");
+        fetchTripPlans();
+        setIsDeleteDialogOpen(false);
+        setRowToDelete(null);
+        return;
+      }
+      toast.error(response?.message || "Failed to delete trip plan");
+    } catch (error) {
+      console.error("Error deleting trip plan:", error);
+      toast.error("Failed to delete trip plan");
+    } finally {
+      setIsDeleteDialogOpen(false);
+      setRowToDelete(null);
+    }
+  };
+
+  useEffect(() => {
+    fetchTripPlans();
+  }, [fetchTripPlans]);
 
   const columns = useMemo(
     () => [
@@ -115,27 +183,7 @@ const TripMasterPage: React.FC = () => {
         key: "status",
         label: t("table.status"),
         visible: true,
-        render: (value: TripListRow["status"]) => (
-          <span
-            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-md ${
-              value === "Active"
-                ? "bg-emerald-100 text-emerald-700"
-                : value === "In Transit"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : value === "Pending"
-                    ? "bg-orange-100 text-orange-700"
-                    : "bg-gray-100 text-gray-700"
-            }`}
-          >
-            {value === "Active"
-              ? t("labels.status.active")
-              : value === "In Transit"
-                ? t("labels.status.inTransit")
-                : value === "Pending"
-                  ? t("labels.status.pending")
-                  : t("labels.status.completed")}
-          </span>
-        ),
+        type: "badge" as const,
       },
       {
         key: "startTime",
@@ -156,7 +204,10 @@ const TripMasterPage: React.FC = () => {
         <PageHeader
           title={t("title")}
           subtitle={t("subtitle")}
-          breadcrumbs={[{ label: t("breadcrumbs.fleet") }, { label: t("breadcrumbs.current") }]}
+          breadcrumbs={[
+            { label: t("breadcrumbs.fleet") },
+            { label: t("breadcrumbs.current") },
+          ]}
           showButton={true}
           buttonText={t("addButton")}
           buttonRoute="/trip-master/0"
@@ -192,27 +243,48 @@ const TripMasterPage: React.FC = () => {
           />
         </div>
 
-        <CommonTable
-          columns={columns}
-          data={rows}
-          onEdit={(row) => router.push(`/trip-master/${row.id}`)}
-          onDelete={(row) =>
-            setRows((prev) => prev.filter((item) => item.id !== row.id))
-          }
-          showActions={true}
-          searchPlaceholder={t("searchPlaceholder")}
-          rowsPerPageOptions={[10, 25, 50, 100]}
-          pageNo={pageNo}
-          pageSize={pageSize}
-          onPageChange={setPageNo}
-          onPageSizeChange={(size) => {
-            setPageSize(size);
-            setPageNo(1);
+        {loading ? (
+          <div className="flex items-center justify-center p-8">
+            <p>{t("title")}...</p>
+          </div>
+        ) : (
+          <CommonTable
+            columns={columns}
+            data={filteredRows}
+            onEdit={(row) => router.push(`/trip-master/${row.id}`)}
+            onDelete={handleDelete}
+            showActions={true}
+            searchPlaceholder={t("searchPlaceholder")}
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            pageNo={pageNo}
+            pageSize={pageSize}
+            onPageChange={setPageNo}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setPageNo(1);
+            }}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            totalRecords={searchQuery ? filteredRows.length : totalRecords}
+            isServerSide={true}
+          />
+        )}
+
+        <ConfirmationDialog
+          isOpen={isDeleteDialogOpen}
+          onClose={() => {
+            setIsDeleteDialogOpen(false);
+            setRowToDelete(null);
           }}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          totalRecords={rows.length}
-          isServerSide={false}
+          onConfirm={confirmDelete}
+          title={t("deleteDialog.title")}
+          message={t("deleteDialog.message", {
+            name: rowToDelete?.tripName || "-",
+          })}
+          confirmText={t("deleteDialog.confirm")}
+          cancelText={t("deleteDialog.cancel")}
+          type="danger"
+          isDark={isDark}
         />
       </div>
     </div>

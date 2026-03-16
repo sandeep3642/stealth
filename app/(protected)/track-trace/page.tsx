@@ -3,7 +3,9 @@ import React, { Suspense, useState, useEffect, useMemo } from "react";
 import FleetMap from "@/components/maps/FleetMap";
 import type { Vehicle, RoutePoint } from "@/lib/mapTypes";
 import { getLiveTrackingData } from "@/services/liveTrackingService";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import PageHeader from "@/components/PageHeader";
+import { useTheme } from "@/context/ThemeContext";
 // ...existing code...
 // ...existing code...
 // ...existing code...
@@ -363,7 +365,7 @@ function getStatusCounts(vehicles: Vehicle[]) {
 
 function TrackTracePageContent() {
   // Use FleetMap and useVehiclesLive for live polling
-  const router = useRouter();
+  const { isDark } = useTheme();
   const searchParams = useSearchParams();
 
   // Get vehicleNo from query param
@@ -412,152 +414,137 @@ function TrackTracePageContent() {
   // No vehicles state in parent; FleetMap manages vehicles internally
 
   return (
-    <div style={{ padding: 24, fontFamily: "Inter, sans-serif" }}>
-      {/* Top: Breadcrumb, Title, Subtitle (match other pages) */}
-      <div style={{ marginBottom: 28 }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            fontSize: 14,
-            color: "#6B7280",
-            marginBottom: 8,
-            fontWeight: 400,
-          }}
-        >
-          <span style={{ fontSize: 16, color: "#6B7280" }}>🏠</span>
-          <span>Operations</span>
-          <span style={{ margin: "0 4px" }}>{">"}</span>
-          <span style={{ color: "#374151", fontWeight: 500 }}>
-            Live Fleet Hub
-          </span>
-        </div>
-        <div
-          style={{
-            fontSize: 32,
-            fontWeight: 700,
-            color: "#18181B",
-            marginBottom: 2,
-            letterSpacing: -0.5,
-          }}
-        >
-          Fleet Intelligence
-        </div>
-        <div style={{ fontSize: 16, color: "#6B7280", fontWeight: 400 }}>
-          Track, monitor, and manage your fleet in real time.
-        </div>
-      </div>
-      {/* Status Cards and Filter/Search Row */}
+    <div className={`${isDark ? "dark" : ""}`}>
       <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 16,
-          marginBottom: 24,
-          flexWrap: "wrap",
-        }}
+        className={`min-h-screen ${isDark ? "bg-background" : "bg-gray-50"} p-6`}
       >
-        <div style={{ flex: 1, minWidth: 300, display: "flex", gap: 12 }}>
-          {[
-            { label: "ALL", value: 7, color: "#F4F4F6" },
-            { label: "MOVING", value: 2, color: "#E6F7F2" },
-            { label: "IDLING", value: 1, color: "#FFF7E6" },
-            { label: "PARKED", value: 1, color: "#F4F4F6" },
-            { label: "OFFLINE", value: 1, color: "#F4F4F6" },
-            { label: "BREAKDOWN", value: 1, color: "#F4F4F6" },
-            {
-              label: "EXPIRED",
-              value: 1,
-              color: "#F3E6FF",
-              border: "2px solid #B37DFF",
-            },
-          ].map((card, idx) => (
-            <div
-              key={card.label}
-              style={{
-                background: card.color,
-                borderRadius: 12,
-                padding: "10px 22px",
-                minWidth: 80,
-                textAlign: "center",
-                fontWeight: 600,
-                fontSize: 15,
-                color: card.label === "EXPIRED" ? "#B37DFF" : "#222",
-                border: card.border || "none",
-                boxShadow:
-                  card.label === "EXPIRED" ? "0 0 0 2px #F3E6FF" : "none",
-              }}
-            >
-              <div style={{ fontSize: 18, fontWeight: 700 }}>{card.value}</div>
-              <div>{card.label}</div>
-            </div>
-          ))}
-        </div>
-        <div
-          style={{
-            minWidth: 220,
-            maxWidth: 320,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            marginTop: 8,
-          }}
-        >
-          <input
-            type="text"
-            placeholder="Search plate or ID..."
-            style={{
-              flex: 1,
-              padding: "8px 10px",
-              borderRadius: 8,
-              border: "1px solid #E0E0E0",
-              fontSize: 15,
-              outline: "none",
-            }}
+        <div className="max-w-7xl mx-auto mb-6">
+          <PageHeader
+            title="Track & Trace"
+            subtitle="Track, monitor, and manage your fleet in real time."
+            breadcrumbs={[
+              { label: "Operations" },
+              { label: "Track & Trace" },
+            ]}
+            showButton={false}
+            showExportButton={false}
+            showFilterButton={false}
+            showBulkUpload={false}
           />
-          <button
-            style={{
-              background: "#fff",
-              border: "1px solid #E0E0E0",
-              borderRadius: 8,
-              padding: "8px 14px",
-              fontWeight: 600,
-              fontSize: 15,
-              color: "#222",
-              cursor: "pointer",
-            }}
-          >
-            Filter
-          </button>
         </div>
-      </div>
-      {/* Main Content: Info Card & Map */}
-      <div style={{ display: "flex", gap: 24 }}>
-        {/* Left: Info Card */}
-        <LeftInfoCard fetchVehicles={fetchVehicles} vehicleNo={vehicleNo} />
-        {/* Right: Map Section */}
-        <div style={{ flex: 1, position: "relative" }}>
+        <div className="max-w-7xl mx-auto" style={{ fontFamily: "Inter, sans-serif" }}>
+          {/* Status Cards and Filter/Search Row */}
           <div
             style={{
-              borderRadius: 16,
-              overflow: "hidden",
-              boxShadow: "0 2px 12px #0001",
-              position: "relative",
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 16,
+              marginBottom: 24,
+              flexWrap: "wrap",
             }}
           >
-            {/* Google Maps Button Overlay */}
-            <GoogleMapsButton
-              vehicleNo={vehicleNo}
-              fetchVehicles={fetchVehicles}
-            />
-            <FleetMap
-              fetchVehicles={fetchVehicles}
-              fetchRoute={fetchRoute}
-              pollMs={3000}
-              height="60vh"
-            />
+            <div style={{ flex: 1, minWidth: 300, display: "flex", gap: 12 }}>
+              {[
+                { label: "ALL", value: 7, color: "#F4F4F6" },
+                { label: "MOVING", value: 2, color: "#E6F7F2" },
+                { label: "IDLING", value: 1, color: "#FFF7E6" },
+                { label: "PARKED", value: 1, color: "#F4F4F6" },
+                { label: "OFFLINE", value: 1, color: "#F4F4F6" },
+                { label: "BREAKDOWN", value: 1, color: "#F4F4F6" },
+                {
+                  label: "EXPIRED",
+                  value: 1,
+                  color: "#F3E6FF",
+                  border: "2px solid #B37DFF",
+                },
+              ].map((card, idx) => (
+                <div
+                  key={card.label}
+                  style={{
+                    background: card.color,
+                    borderRadius: 12,
+                    padding: "10px 22px",
+                    minWidth: 80,
+                    textAlign: "center",
+                    fontWeight: 600,
+                    fontSize: 15,
+                    color: card.label === "EXPIRED" ? "#B37DFF" : "#222",
+                    border: card.border || "none",
+                    boxShadow:
+                      card.label === "EXPIRED" ? "0 0 0 2px #F3E6FF" : "none",
+                  }}
+                >
+                  <div style={{ fontSize: 18, fontWeight: 700 }}>{card.value}</div>
+                  <div>{card.label}</div>
+                </div>
+              ))}
+            </div>
+            <div
+              style={{
+                minWidth: 220,
+                maxWidth: 320,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginTop: 8,
+              }}
+            >
+              <input
+                type="text"
+                placeholder="Search plate or ID..."
+                style={{
+                  flex: 1,
+                  padding: "8px 10px",
+                  borderRadius: 8,
+                  border: "1px solid #E0E0E0",
+                  fontSize: 15,
+                  outline: "none",
+                }}
+              />
+              <button
+                style={{
+                  background: "#fff",
+                  border: "1px solid #E0E0E0",
+                  borderRadius: 8,
+                  padding: "8px 14px",
+                  fontWeight: 600,
+                  fontSize: 15,
+                  color: "#222",
+                  cursor: "pointer",
+                }}
+              >
+                Filter
+              </button>
+            </div>
+          </div>
+          {/* Main Content: Info Card & Map */}
+          <div style={{ display: "flex", gap: 24 }}>
+            {/* Left: Info Card */}
+            <LeftInfoCard fetchVehicles={fetchVehicles} vehicleNo={vehicleNo} />
+            {/* Right: Map Section */}
+            <div style={{ flex: 1, position: "relative" }}>
+              <div
+                style={{
+                  borderRadius: 16,
+                  overflow: "hidden",
+                  boxShadow: "0 2px 12px #0001",
+                  position: "relative",
+                }}
+              >
+                {/* Google Maps Button Overlay */}
+                <GoogleMapsButton
+                  vehicleNo={vehicleNo}
+                  fetchVehicles={fetchVehicles}
+                />
+                <FleetMap
+                  fetchVehicles={fetchVehicles}
+                  fetchRoute={fetchRoute}
+                  pollMs={3000}
+                  height="60vh"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

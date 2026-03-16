@@ -93,9 +93,7 @@ const AddEditCategory: React.FC = () => {
       }
 
       if (response.success) {
-        toast.success(
-          isEditMode ? t("toast.updated") : t("toast.created"),
-        );
+        toast.success(isEditMode ? t("toast.updated") : t("toast.created"));
         router.push("/categories");
       } else {
         toast.error(t("toast.saveFailed", { message: response.message }));
@@ -123,162 +121,148 @@ const AddEditCategory: React.FC = () => {
   }
 
   return (
-    <div className={`${isDark ? "dark" : ""} `}>
-      <div className="min-h-screen bg-background flex justify-center p-2">
-        <div className="w-full max-w-4xl">
-          <PageHeader
-            title={isEditMode ? t("title.edit") : t("title.create")}
-            subtitle={
-              isEditMode
-                ? t("section.subtitleEdit")
-                : t("section.subtitleCreate")
-            }
-            breadcrumbs={[
-              { label: tList("breadcrumbs.accounts") },
-              { label: tList("breadcrumbs.current"), href: "/categories" },
-              { label: isEditMode ? t("title.edit") : t("title.create") },
-            ]}
-            showButton
-            buttonText={
-              loading
-                ? isEditMode
-                  ? t("buttons.updating")
-                  : t("buttons.creating")
-                : isEditMode
-                  ? t("buttons.update")
-                  : t("buttons.create")
-            }
-            onButtonClick={handleSubmit}
-          />
+    <div className={`${isDark ? "dark" : ""} mt-10`}>
+      <div
+        className={`min-h-screen ${isDark ? "bg-background" : ""} p-3 sm:p-4 md:p-6`}
+      >
+        <PageHeader
+          title={isEditMode ? t("title.edit") : t("title.create")}
+          subtitle={
+            isEditMode ? t("section.subtitleEdit") : t("section.subtitleCreate")
+          }
+          breadcrumbs={[
+            { label: tList("breadcrumbs.accounts") },
+            { label: tList("breadcrumbs.current"), href: "/categories" },
+            { label: isEditMode ? t("title.edit") : t("title.create") },
+          ]}
+          showButton
+          buttonText={
+            loading
+              ? isEditMode
+                ? t("buttons.updating")
+                : t("buttons.creating")
+              : isEditMode
+                ? t("buttons.update")
+                : t("buttons.create")
+          }
+          onButtonClick={handleSubmit}
+        />
 
-          {/* Form Card */}
+        {/* Form Card */}
+        <div
+          className={`rounded-2xl shadow-lg border-t-4 overflow-hidden ${
+            isDark
+              ? "bg-card border border-gray-800"
+              : "bg-white border border-gray-200"
+          }`}
+          style={{ borderTopColor: selectedColor }}
+        >
           <div
-            className="bg-card rounded-2xl shadow-lg border-t-4 border-border overflow-hidden"
-            style={{ borderTopColor: selectedColor }}
+            className={`p-4 sm:p-6 md:p-8 ${isDark ? "bg-card" : "bg-white"}`}
           >
-            <div className="p-8 bg-white">
-              {/* Section Header */}
-              <div className="flex items-start gap-3 mb-6">
-                <div
-                  className="p-2 rounded-lg"
-                  style={{ backgroundColor: `${selectedColor}20` }}
-                >
-                  <Layers
-                    className="w-5 h-5"
-                    style={{ color: selectedColor }}
-                  />
-                </div>
+            {/* Section Header */}
+            <div className="flex items-start gap-3 mb-6">
+              <div
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: `${selectedColor}20` }}
+              >
+                <Layers className="w-5 h-5" style={{ color: selectedColor }} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-foreground mb-1">
+                  {t("section.title")}
+                </h2>
+                <p className="text-sm text-foreground opacity-60">
+                  {isEditMode
+                    ? t("section.subtitleEdit")
+                    : t("section.subtitleCreate")}
+                </p>
+              </div>
+            </div>
+
+            {/* Label Name Field */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-foreground mb-2">
+                {t("fields.labelName")} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder={t("fields.labelPlaceholder")}
+                value={labelName}
+                onChange={(e) => setLabelName(e.target.value)}
+                className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
+                  isDark
+                    ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                onFocus={(e) => (e.target.style.borderColor = selectedColor)}
+                onBlur={(e) => (e.target.style.borderColor = "")}
+                disabled={loading}
+              />
+            </div>
+
+            {/* Description Field */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-foreground mb-2">
+                {t("fields.description")}
+              </label>
+              <textarea
+                placeholder={t("fields.descriptionPlaceholder")}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={5}
+                className={`w-full px-4 py-2.5 rounded-lg border transition-colors resize-none ${
+                  isDark
+                    ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
+                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
+                onFocus={(e) => (e.target.style.borderColor = selectedColor)}
+                onBlur={(e) => (e.target.style.borderColor = "")}
+                disabled={loading}
+              />
+            </div>
+
+            {/* Category Status Toggle */}
+            <div className="bg-background rounded-lg p-6 mb-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-foreground mb-1">
-                    {t("section.title")}
-                  </h2>
+                  <h3 className="text-base font-bold text-foreground mb-1">
+                    {t("status.title")}
+                  </h3>
                   <p className="text-sm text-foreground opacity-60">
-                    {isEditMode
-                      ? t("section.subtitleEdit")
-                      : t("section.subtitleCreate")}
+                    {t("status.subtitle")}
                   </p>
                 </div>
-              </div>
-
-              {/* Label Name Field */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  {t("fields.labelName")} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder={t("fields.labelPlaceholder")}
-                  value={labelName}
-                  onChange={(e) => setLabelName(e.target.value)}
-                  className={`w-full px-4 py-2.5 rounded-lg border transition-colors ${
-                    isDark
-                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                  } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                  onFocus={(e) => (e.target.style.borderColor = selectedColor)}
-                  onBlur={(e) => (e.target.style.borderColor = "")}
-                  disabled={loading}
-                />
-              </div>
-
-              {/* Description Field */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-foreground mb-2">
-                  {t("fields.description")}
-                </label>
-                <textarea
-                  placeholder={t("fields.descriptionPlaceholder")}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={5}
-                  className={`w-full px-4 py-2.5 rounded-lg border transition-colors resize-none ${
-                    isDark
-                      ? "bg-gray-800 border-gray-700 text-foreground placeholder-gray-500"
-                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                  } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
-                  onFocus={(e) => (e.target.style.borderColor = selectedColor)}
-                  onBlur={(e) => (e.target.style.borderColor = "")}
-                  disabled={loading}
-                />
-              </div>
-
-              {/* Category Status Toggle */}
-              <div className="bg-background rounded-lg p-6 mb-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-base font-bold text-foreground mb-1">
-                      {t("status.title")}
-                    </h3>
-                    <p className="text-sm text-foreground opacity-60">
-                      {t("status.subtitle")}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setIsActive(!isActive)}
-                    disabled={loading}
-                    className="relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
-                    style={{
-                      backgroundColor: isActive ? selectedColor : "#cbd5e1",
-                    }}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                        isActive ? "translate-x-8" : "translate-x-1"
-                      }`}
-                    />
-                  </button>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-end gap-3">
                 <button
-                  onClick={handleSubmit}
+                  onClick={() => setIsActive(!isActive)}
                   disabled={loading}
-                  className="px-8 py-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
-                  style={{ backgroundColor: selectedColor }}
+                  className="relative inline-flex h-7 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
+                  style={{
+                    backgroundColor: isActive ? selectedColor : "#cbd5e1",
+                  }}
                 >
-                  {loading ? (
-                    <>
-                      <span className="animate-spin">⏳</span>
-                      {isEditMode ? t("buttons.updating") : t("buttons.creating")}
-                    </>
-                  ) : (
-                    <>{isEditMode ? t("buttons.update") : t("buttons.create")}</>
-                  )}
-                </button>
-                <button
-                  onClick={handleCancel}
-                  disabled={loading}
-                  className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-                    isDark
-                      ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                      : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
-                  }`}
-                >
-                  {t("buttons.cancel")}
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                      isActive ? "translate-x-8" : "translate-x-1"
+                    }`}
+                  />
                 </button>
               </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={handleCancel}
+                disabled={loading}
+                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                  isDark
+                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                    : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-300"
+                }`}
+              >
+                {t("buttons.cancel")}
+              </button>
             </div>
           </div>
         </div>

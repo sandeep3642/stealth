@@ -390,9 +390,10 @@ const AddEditDeviceMap: React.FC = () => {
   }
 
   return (
-    <div className={`${isDark ? "dark" : ""} `}>
-      <div className="min-h-screen bg-background flex justify-center p-2">
-        <div className="w-full max-w-4xl">
+    <div className={`${isDark ? "dark" : ""} mt-10`}>
+      <div
+        className={`min-h-screen ${isDark ? "bg-background" : ""} p-3 sm:p-4 md:p-6`}
+      >
           <PageHeader
             title={isEditMode ? t("editTitle") : t("createTitle")}
             subtitle={
@@ -420,10 +421,12 @@ const AddEditDeviceMap: React.FC = () => {
 
           {/* Form Card */}
           <div
-            className="bg-card rounded-2xl shadow-lg border-t-4 border-border overflow-hidden"
+            className={`rounded-2xl shadow-lg border-t-4 overflow-hidden ${
+              isDark ? "bg-card border border-gray-800" : "bg-white border border-gray-200"
+            }`}
             style={{ borderTopColor: selectedColor }}
           >
-            <div className="p-8 bg-white">
+            <div className={`p-4 sm:p-6 md:p-8 ${isDark ? "bg-card" : "bg-white"}`}>
               {/* Section Header */}
               <div className="flex items-start gap-3 mb-6">
                 <div
@@ -680,21 +683,6 @@ const AddEditDeviceMap: React.FC = () => {
               {/* Submit Button */}
               <div className="flex justify-end gap-3">
                 <button
-                  onClick={handleSubmit}
-                  disabled={loading || !canSubmit}
-                  className="px-8 py-3 rounded-lg text-white font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
-                  style={{ backgroundColor: selectedColor }}
-                >
-                  {loading ? (
-                    <>
-                      <span className="animate-spin">⏳</span>
-                      {isEditMode ? t("buttons.updating") : t("buttons.creating")}
-                    </>
-                  ) : (
-                    <>{isEditMode ? t("buttons.update") : t("buttons.create")}</>
-                  )}
-                </button>
-                <button
                   onClick={handleCancel}
                   disabled={loading}
                   className={`px-6 py-3 rounded-lg font-medium transition-colors ${
@@ -708,7 +696,6 @@ const AddEditDeviceMap: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
       </div>
     </div>
   );

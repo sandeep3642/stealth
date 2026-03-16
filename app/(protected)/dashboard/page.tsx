@@ -1,35 +1,46 @@
 "use client";
 
-import React from "react";
-import Image, { StaticImageData } from "next/image";
-import { AlertTriangle, AlertCircle, Info } from "lucide-react";
+import { AlertCircle, AlertTriangle, Info } from "lucide-react";
+import { useTranslations } from "next-intl";
+import type React from "react";
 import {
-  LineChart,
+  CartesianGrid,
+  Cell,
   Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 
-import usersImg from "@/assets/customers.png";
 import subscriptionImg from "@/assets/activesubscription.png";
+import usersImg from "@/assets/customers.png";
 import dealersImg from "@/assets/dealers.png";
 import deviceImg from "@/assets/devices.png";
 
-import { useTheme } from "@/context/ThemeContext";
-import ThemeCustomizer from "@/components/ThemeCustomizer";
-import {
-  CardProps,
-  AlertItemProps,
-  MetricCardProps,
-  ServerStatusItemProps,
-} from "@/interfaces/dashboard.interface";
 import { Card, MetricCard } from "@/components/CommonCard";
+import { useTheme } from "@/context/ThemeContext";
+
+interface AlertItemProps {
+  icon: React.ElementType;
+  title: string;
+  time: string;
+  severity: string;
+  iconBg: string;
+  iconColor: string;
+  isDark: boolean;
+}
+
+interface ServerStatusItemProps {
+  name: string;
+  status: "Operational" | "Outage";
+  operationalLabel: string;
+  outageLabel: string;
+  isDark: boolean;
+}
 
 const AlertItem: React.FC<AlertItemProps> = ({
   icon: Icon,
@@ -62,6 +73,8 @@ const AlertItem: React.FC<AlertItemProps> = ({
 const ServerStatusItem: React.FC<ServerStatusItemProps> = ({
   name,
   status,
+  operationalLabel,
+  outageLabel,
   isDark,
 }) => (
   <div className="flex items-center justify-between py-3">
@@ -75,7 +88,7 @@ const ServerStatusItem: React.FC<ServerStatusItemProps> = ({
           : "bg-red-100 text-red-700"
       }`}
     >
-      {status}
+      {status === "Operational" ? operationalLabel : outageLabel}
     </span>
   </div>
 );
@@ -83,22 +96,23 @@ const ServerStatusItem: React.FC<ServerStatusItemProps> = ({
 // ==================== Dashboard Component ==================== //
 const Dashboard: React.FC = () => {
   const { isDark } = useTheme();
+  const t = useTranslations("pages.dashboard");
 
   const revenueData = [
-    { month: "Jan", value: 12000 },
-    { month: "Feb", value: 15000 },
-    { month: "Mar", value: 13000 },
-    { month: "Apr", value: 18000 },
-    { month: "May", value: 21000 },
-    { month: "Jun", value: 24000 },
-    { month: "Jul", value: 23000 },
+    { month: t("revenue.months.jan"), value: 12000 },
+    { month: t("revenue.months.feb"), value: 15000 },
+    { month: t("revenue.months.mar"), value: 13000 },
+    { month: t("revenue.months.apr"), value: 18000 },
+    { month: t("revenue.months.may"), value: 21000 },
+    { month: t("revenue.months.jun"), value: 24000 },
+    { month: t("revenue.months.jul"), value: 23000 },
   ];
 
   const deviceStatusData = [
-    { name: "Installed", value: 15000, color: "#6366f1" },
-    { name: "Available", value: 7000, color: "#10b981" },
-    { name: "Faulty", value: 2000, color: "#f59e0b" },
-    { name: "Returned", value: 1480, color: "#ef4444" },
+    { name: t("deviceStatus.installed"), value: 15000, color: "#6366f1" },
+    { name: t("deviceStatus.available"), value: 7000, color: "#10b981" },
+    { name: t("deviceStatus.faulty"), value: 2000, color: "#f59e0b" },
+    { name: t("deviceStatus.returned"), value: 1480, color: "#ef4444" },
   ];
 
   return (
@@ -109,7 +123,7 @@ const Dashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <MetricCard
               icon={usersImg}
-              label="Total Customers"
+              label={t("metrics.totalCustomers")}
               value={1250}
               iconBgColor="bg-indigo-50"
               iconColor="text-indigo-600"
@@ -117,7 +131,7 @@ const Dashboard: React.FC = () => {
             />
             <MetricCard
               icon={dealersImg}
-              label="Dealers Distributors"
+              label={t("metrics.dealersDistributors")}
               value={85}
               iconBgColor="bg-emerald-50"
               iconColor="text-emerald-600"
@@ -125,7 +139,7 @@ const Dashboard: React.FC = () => {
             />
             <MetricCard
               icon={deviceImg}
-              label="Total Devices"
+              label={t("metrics.totalDevices")}
               value={25480}
               iconBgColor="bg-blue-50"
               iconColor="text-blue-600"
@@ -133,7 +147,7 @@ const Dashboard: React.FC = () => {
             />
             <MetricCard
               icon={subscriptionImg}
-              label="Active Subscriptions"
+              label={t("metrics.activeSubscriptions")}
               value={22150}
               iconBgColor="bg-yellow-50"
               iconColor="text-yellow-600"
@@ -150,7 +164,7 @@ const Dashboard: React.FC = () => {
                   isDark ? "text-foreground" : "text-gray-900"
                 } mb-4`}
               >
-                Revenue Summary
+                {t("sections.revenueSummary")}
               </h3>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={revenueData}>
@@ -202,7 +216,7 @@ const Dashboard: React.FC = () => {
                   isDark ? "text-foreground" : "text-gray-900"
                 } mb-4`}
               >
-                Device Status
+                {t("sections.deviceStatus")}
               </h3>
               <div className="flex flex-col items-center">
                 <ResponsiveContainer width="100%" height={260}>
@@ -216,15 +230,15 @@ const Dashboard: React.FC = () => {
                       paddingAngle={2}
                       dataKey="value"
                     >
-                      {deviceStatusData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      {deviceStatusData.map((entry) => (
+                        <Cell key={entry.name} fill={entry.color} />
                       ))}
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="flex flex-wrap justify-center gap-4 mt-2">
-                  {deviceStatusData.map((item, index) => (
-                    <div key={index} className="flex items-center gap-2">
+                  {deviceStatusData.map((item) => (
+                    <div key={item.name} className="flex items-center gap-2">
                       <div
                         className="w-3 h-3 rounded-sm"
                         style={{ backgroundColor: item.color }}
@@ -252,7 +266,7 @@ const Dashboard: React.FC = () => {
                   isDark ? "text-foreground" : "text-gray-900"
                 } mb-2`}
               >
-                Recent Alerts
+                {t("sections.recentAlerts")}
               </h3>
               <div
                 className={`divide-y ${
@@ -261,27 +275,27 @@ const Dashboard: React.FC = () => {
               >
                 <AlertItem
                   icon={AlertTriangle}
-                  title="High CPU Usage on Server-01"
-                  time="2 mins ago"
-                  severity="Critical"
+                  title={t("alerts.cpuHigh.title")}
+                  time={t("alerts.cpuHigh.time")}
+                  severity={t("alerts.cpuHigh.severity")}
                   iconBg="bg-red-50"
                   iconColor="text-red-600"
                   isDark={isDark}
                 />
                 <AlertItem
                   icon={AlertCircle}
-                  title="Database connection limit nearing"
-                  time="15 mins ago"
-                  severity="Warning"
+                  title={t("alerts.dbLimit.title")}
+                  time={t("alerts.dbLimit.time")}
+                  severity={t("alerts.dbLimit.severity")}
                   iconBg="bg-yellow-50"
                   iconColor="text-yellow-600"
                   isDark={isDark}
                 />
                 <AlertItem
                   icon={Info}
-                  title="15 devices reported offline"
-                  time="30 mins ago"
-                  severity="Informational"
+                  title={t("alerts.devicesOffline.title")}
+                  time={t("alerts.devicesOffline.time")}
+                  severity={t("alerts.devicesOffline.severity")}
                   iconBg="bg-blue-50"
                   iconColor="text-blue-600"
                   isDark={isDark}
@@ -296,7 +310,7 @@ const Dashboard: React.FC = () => {
                   isDark ? "text-foreground" : "text-gray-900"
                 } mb-2`}
               >
-                Server Health
+                {t("sections.serverHealth")}
               </h3>
               <div
                 className={`divide-y ${
@@ -304,23 +318,31 @@ const Dashboard: React.FC = () => {
                 }`}
               >
                 <ServerStatusItem
-                  name="API Server"
+                  name={t("serverHealth.services.apiServer")}
                   status="Operational"
+                  operationalLabel={t("serverHealth.status.operational")}
+                  outageLabel={t("serverHealth.status.outage")}
                   isDark={isDark}
                 />
                 <ServerStatusItem
-                  name="Database Cluster"
+                  name={t("serverHealth.services.databaseCluster")}
                   status="Operational"
+                  operationalLabel={t("serverHealth.status.operational")}
+                  outageLabel={t("serverHealth.status.outage")}
                   isDark={isDark}
                 />
                 <ServerStatusItem
-                  name="Telemetry Ingestion"
+                  name={t("serverHealth.services.telemetryIngestion")}
                   status="Operational"
+                  operationalLabel={t("serverHealth.status.operational")}
+                  outageLabel={t("serverHealth.status.outage")}
                   isDark={isDark}
                 />
                 <ServerStatusItem
-                  name="Forwarding Service"
+                  name={t("serverHealth.services.forwardingService")}
                   status="Outage"
+                  operationalLabel={t("serverHealth.status.operational")}
+                  outageLabel={t("serverHealth.status.outage")}
                   isDark={isDark}
                 />
               </div>

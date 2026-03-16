@@ -39,7 +39,9 @@
         "subtitleCreate": "Create new geofence with identity and geometry rules.",
         "subtitleEdit": "Update geofence identity and operational settings.",
         "breadcrumbs": {
+          "fleet": "Fleet",
           "configurations": "Configurations",
+          "routeMaster": "Route Master",
           "library": "Geofence Library",
           "create": "Create",
           "edit": "Edit"
@@ -48,6 +50,7 @@
           "saving": "Saving...",
           "create": "Create Geofence",
           "saveChanges": "Save Changes",
+          "cancel": "Cancel",
           "pickOnMap": "Pick on Map"
         },
         "section": {

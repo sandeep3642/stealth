@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "react-toastify";
 import { useTheme } from "@/context/ThemeContext";
@@ -13,6 +14,7 @@ interface AccountHierarchyApiNode {
   accountId?: number;
   accountName?: string;
   accountCode?: string;
+  categoryName?: string;
   status?: boolean;
   children?: AccountHierarchyApiNode[];
 }
@@ -39,7 +41,10 @@ const toHierarchyNodes = (
     return {
       id,
       name,
-      type: TYPE_BY_LEVEL[Math.min(level, TYPE_BY_LEVEL.length - 1)],
+      type: String(
+        node?.categoryName ||
+          TYPE_BY_LEVEL[Math.min(level, TYPE_BY_LEVEL.length - 1)],
+      ),
       code,
       status: node?.status ? "Active" : "Suspended",
       managed: `${children.length} Child ${children.length === 1 ? "Account" : "Accounts"}`,
@@ -59,6 +64,7 @@ const toHierarchyNodes = (
 const Hierarchy: React.FC = () => {
   const t = useTranslations("pages.hierarchy");
   const { isDark } = useTheme();
+  const router = useRouter();
   const [hierarchyData, setHierarchyData] = useState<HierarchyNode[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -83,35 +89,45 @@ const Hierarchy: React.FC = () => {
     fetchHierarchy();
   }, []);
 
-  const handleEdit = (node: any) => {
-    console.log("Edit node:", node);
-    alert(`Editing ${node.name}`);
+  const handleEdit = (node: HierarchyNode) => {
+    const accountId = String(node?.id || "").trim();
+    if (!accountId) return;
+    router.push(`/accounts/${accountId}`);
   };
 
   return (
-    <div className={`${isDark ? "dark" : ""} mt-10`}>
-      <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
-        <PageHeader
-          title={t("title")}
-          subtitle={t("subtitle")}
-          breadcrumbs={[{ label: t("breadcrumbs.accounts") }, { label: t("breadcrumbs.current") }]}
-          showButton={false}
-          showBulkUpload={false}
-        />
-
-        {loading ? (
-          <div className="flex items-center justify-center p-8">
-            <p>{t("loading")}</p>
-          </div>
-        ) : (
-          <HierarchicalTable
-            title={t("table.title")}
-            subtitle={t("table.subtitle")}
-            data={hierarchyData}
-            onEdit={handleEdit}
-            showSearch={true}
+    <div className={`${isDark ? "dark" : ""}`}>
+      <div
+        className={`min-h-screen ${isDark ? "bg-background" : ""} p-6`}
+      >
+        <div className="max-w-7xl mx-auto mb-6">
+          <PageHeader
+            title={t("title")}
+            subtitle={t("subtitle")}
+            breadcrumbs={[
+              { label: t("breadcrumbs.accounts") },
+              { label: t("breadcrumbs.current") },
+            ]}
+            showButton={false}
+            showBulkUpload={false}
           />
-        )}
+        </div>
+
+        <div className="max-w-7xl mx-auto">
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <p>{t("loading")}</p>
+            </div>
+          ) : (
+            <HierarchicalTable
+              title={t("table.title")}
+              subtitle={t("table.subtitle")}
+              data={hierarchyData}
+              onEdit={handleEdit}
+              showSearch={true}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

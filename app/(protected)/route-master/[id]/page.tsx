@@ -735,32 +735,36 @@ const AddEditRouteMasterPage: React.FC = () => {
   }
 
   return (
-    <div className={`${isDark ? "dark" : ""} mt-10`}>
-      <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
-        <PageHeader
-          title={isEditMode ? t("editTitle") : t("createTitle")}
-          subtitle={t("subtitle")}
-          breadcrumbs={[
-            { label: t("breadcrumbs.fleet") },
-            { label: t("breadcrumbs.master"), href: "/route-master" },
-            { label: isEditMode ? t("breadcrumbs.edit") : t("breadcrumbs.create") },
-          ]}
-          showButton={true}
-          buttonText={
-            loading
-              ? t("buttons.saving")
-              : isEditMode
-                ? t("buttons.updateRoute")
-                : t("buttons.createRoute")
-          }
-          buttonIcon={loading ? undefined : <Save className="w-4 h-4" />}
-          onButtonClick={handleSave}
-          showExportButton={false}
-          showFilterButton={false}
-          showBulkUpload={false}
-        />
+    <div className={`${isDark ? "dark" : ""}`}>
+      <div
+        className={`min-h-screen ${isDark ? "bg-background" : "bg-gray-50"} p-6`}
+      >
+        <div className="max-w-7xl mx-auto mb-6">
+          <PageHeader
+            title={isEditMode ? t("editTitle") : t("createTitle")}
+            subtitle={t("subtitle")}
+            breadcrumbs={[
+              { label: t("breadcrumbs.fleet") },
+              { label: t("breadcrumbs.master"), href: "/route-master" },
+              { label: isEditMode ? t("breadcrumbs.edit") : t("breadcrumbs.create") },
+            ]}
+            showButton={true}
+            buttonText={
+              loading
+                ? t("buttons.saving")
+                : isEditMode
+                  ? t("buttons.updateRoute")
+                  : t("buttons.createRoute")
+            }
+            buttonIcon={loading ? undefined : <Save className="w-4 h-4" />}
+            onButtonClick={handleSave}
+            showExportButton={false}
+            showFilterButton={false}
+            showBulkUpload={false}
+          />
+        </div>
 
-        <div className="flex flex-col gap-5">
+        <div className="max-w-7xl mx-auto flex flex-col gap-5">
           <section className={`${cardCls} space-y-4`}>
             <div>
               <label className={labelCls}>{t("fields.account")}</label>
@@ -1137,6 +1141,20 @@ const AddEditRouteMasterPage: React.FC = () => {
               </>
             )}
           </section>
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => router.push("/route-master")}
+              className={`px-6 py-2.5 rounded-lg border ${
+                isDark
+                  ? "border-gray-700 text-gray-300 hover:bg-gray-800"
+                  : "border-gray-300 text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              {t("buttons.cancel")}
+            </button>
+          </div>
         </div>
       </div>
     </div>

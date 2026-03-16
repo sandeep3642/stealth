@@ -7,8 +7,11 @@ export interface FormMasterItem {
   iconName?: string;
   sortOrder?: number;
   isMenu?: boolean;
+  isBulk?: boolean;
   isVisible?: boolean;
   isActive: boolean;
+  formModuleId?: number;
+  filterConfigJson?: string;
 }
 
 export interface FormMasterPayload {
@@ -19,6 +22,9 @@ export interface FormMasterPayload {
   iconName: string;
   sortOrder: number;
   isMenu: boolean;
+  isBulk: boolean;
   isVisible: boolean;
   isActive: boolean;
+  formModuleId: number;
+  filterConfigJson: string;
 }

@@ -128,11 +128,9 @@ function getStoredAccountId() {
 }
 
 export async function getLiveTrackingBatch(orgId) {
-  // const list = vehicleNos.filter(Boolean);
-  // if (!list.length) return [];
-  const resolvedOrgId = Number(getStoredAccountId() || 1);
+  const resolvedOrgId =
+    Number(orgId || 0) > 0 ? Number(orgId) : Number(getStoredAccountId() || 1);
   const { data } = await api.get("/api/live-tracking/batch", {
-    // params: { vehicleNos: list.join(",") },
     params: { orgId: resolvedOrgId },
   });
   const rows = Array.isArray(data)
@@ -144,9 +142,7 @@ export async function getLiveTrackingBatch(orgId) {
         : [];
 
   return rows
-    .map((row, index) =>
-      normalizeLiveTrackingRecord(row, list[index] || "", index),
-    )
+    .map((row, index) => normalizeLiveTrackingRecord(row, "", index))
     .filter(Boolean);
 }
 

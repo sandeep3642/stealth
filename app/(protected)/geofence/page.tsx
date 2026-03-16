@@ -12,11 +12,6 @@ import type { GeofenceZone, ZoneStatus } from "@/interfaces/geofence.interface";
 import { getFormRightForPath } from "@/services/commonServie";
 import { deleteGeofence, getGeofences } from "@/services/geofenceService";
 
-const STATUS_STYLE: Record<ZoneStatus, string> = {
-  enabled: "bg-emerald-100 text-emerald-700",
-  disabled: "bg-red-100 text-red-700",
-};
-
 type ApiZone = {
   id?: string | number;
   uniqueCode?: string;
@@ -126,7 +121,7 @@ export default function GeofencePage() {
   }, [searchQuery]);
 
   const handleEdit = (row: GeofenceZone) => {
-    router.push(`/geofence/${row.id}`);
+    router.push(`/geofence/${row.id}?returnTo=${encodeURIComponent("/geofence")}`);
   };
 
   const handleDelete = (row: GeofenceZone) => {
@@ -218,13 +213,9 @@ export default function GeofencePage() {
       key: "status",
       label: t("table.status"),
       visible: true,
-      render: (value: ZoneStatus) => (
-        <span
-          className={`text-[10px] font-bold px-2 py-1 rounded ${STATUS_STYLE[value]}`}
-        >
-          {value.toUpperCase()}
-        </span>
-      ),
+      type: "badge" as const,
+      render: (value: ZoneStatus) =>
+        value === "enabled" ? "Active" : "Inactive",
     },
   ];
 
@@ -253,7 +244,7 @@ export default function GeofencePage() {
             ]}
             showButton={true}
             buttonText={t("addButton")}
-            buttonRoute="/geofence/0"
+            buttonRoute={`/geofence/0?returnTo=${encodeURIComponent("/geofence")}`}
             showExportButton={false}
             showFilterButton={false}
           />

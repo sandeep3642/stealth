@@ -518,21 +518,21 @@ const ProvisionSim: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => router.push("/sim-master")}
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
+                  isDark
+                    ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
+                    : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                }`}
+              >
+                {t("buttons.discard")}
+              </button>
+            </div>
           </div>
         </Card>
-
-        <div className="flex justify-end mt-6">
-          <button
-            onClick={() => router.push("/sim-master")}
-            className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
-              isDark
-                ? "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"
-                : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
-            }`}
-          >
-            {t("buttons.discard")}
-          </button>
-        </div>
       </div>
     </div>
   );

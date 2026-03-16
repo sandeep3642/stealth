@@ -97,9 +97,7 @@ export const getStoredFormRights = () => {
 };
 
 export const getPermissionPathFromPathname = (pathname = "") => {
-  const segments = String(pathname)
-    .split("/")
-    .filter(Boolean);
+  const segments = String(pathname).split("/").filter(Boolean);
   if (!segments.length) return "";
 
   if (segments[0] === "users" && segments[1] === "roles-permissions") {
@@ -178,6 +176,14 @@ export const getVehicleDropdown = async (accountId) => {
   const endpoint = accountId
     ? `/api/common/dropdowns/vehicles/${accountId}`
     : `/api/common/dropdowns/vehicles`;
+  const res = await api.get(endpoint);
+  return res.data;
+};
+
+export const getDriverDropdown = async (accountId) => {
+  const endpoint = accountId
+    ? `/api/common/dropdowns/drivers/${accountId}`
+    : `/api/common/dropdowns/drivers`;
   const res = await api.get(endpoint);
   return res.data;
 };

@@ -1,12 +1,6 @@
 "use client";
 
-import { Globe, Languages, Map, Plus, X } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import React, { useEffect, useState } from "react";
-import { toast } from "react-toastify";
 import PageHeader from "@/components/PageHeader";
-import ThemeCustomizer from "@/components/ThemeCustomizer";
 import { useColor } from "@/context/ColorContext";
 import { useTheme } from "@/context/ThemeContext";
 import { getAllAccounts } from "@/services/commonServie";
@@ -15,6 +9,11 @@ import {
   saveConfiguration,
   updateConfiguration,
 } from "@/services/configurationService";
+import { Globe, Languages, Map, Plus, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { useParams, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 const Card = ({
   children,
@@ -84,7 +83,7 @@ const NewConfiguration: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching configuration:", error);
-      alert(t("toast.loadFailed"));
+      toast.error(t("toast.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -154,18 +153,14 @@ const NewConfiguration: React.FC = () => {
       }
 
       if (response.success) {
-        alert(
-          isEditMode
-            ? t("toast.updated")
-            : t("toast.created"),
-        );
+        toast.success(isEditMode ? t("toast.updated") : t("toast.created"));
         router.push("/configuration");
       } else {
-        alert(t("toast.saveFailed", { message: response.message }));
+        toast.error(t("toast.saveFailed", { message: response.message }));
       }
     } catch (error) {
       console.error("Error saving configuration:", error);
-      alert(t("toast.saveError"));
+      toast.error(t("toast.saveError"));
     } finally {
       setLoading(false);
     }
@@ -187,9 +182,11 @@ const NewConfiguration: React.FC = () => {
   }, [id, isEditMode, t]);
 
   return (
-    <div className={`${isDark ? "dark" : ""} `}>
-      <div className={`min-h-screen ${isDark ? "bg-background" : ""} p-2`}>
-        <div className="max-w-6xl mx-auto mb-8 px-4">
+    <div className={`${isDark ? "dark" : ""} mt-10`}>
+      <div
+        className={`min-h-screen ${isDark ? "bg-background" : ""} p-3 sm:p-4 md:p-6`}
+      >
+        <div className="mb-6">
           <PageHeader
             title={isEditMode ? t("title.edit") : t("title.create")}
             breadcrumbs={[
@@ -214,14 +211,15 @@ const NewConfiguration: React.FC = () => {
             <p>{t("loading.edit")}</p>
           </div>
         ) : (
-          <div className="max-w-6xl mx-auto space-y-6">
+          <div className="space-y-6">
             {/* Account Selection */}
             <Card isDark={isDark}>
               <div>
                 <label
                   className={`block text-sm font-medium mb-2 ${isDark ? "text-gray-300" : "text-gray-700"}`}
                 >
-                  {t("fields.accountId")} <span className="text-red-500">*</span>
+                  {t("fields.accountId")}{" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="accountId"
@@ -507,8 +505,12 @@ const NewConfiguration: React.FC = () => {
                           : "bg-white border-gray-300 text-gray-900 focus:border-purple-500"
                       } focus:outline-none focus:ring-2 focus:ring-purple-500/20`}
                     >
-                      <option value="SHOW">{t("options.addressDisplay.show")}</option>
-                      <option value="HIDE">{t("options.addressDisplay.hide")}</option>
+                      <option value="SHOW">
+                        {t("options.addressDisplay.show")}
+                      </option>
+                      <option value="HIDE">
+                        {t("options.addressDisplay.hide")}
+                      </option>
                     </select>
                   </div>
                 </div>
@@ -619,18 +621,6 @@ const NewConfiguration: React.FC = () => {
 
             {/* Save Button */}
             <div className="flex justify-end gap-4">
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="text-white px-8 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ background: selectedColor }}
-              >
-                {loading
-                  ? t("buttons.saving")
-                  : isEditMode
-                    ? t("buttons.update")
-                    : t("buttons.create")}
-              </button>
               <button
                 className={`px-4 sm:px-6 py-2 rounded-lg font-medium transition-colors ${
                   isDark

@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
-import CommonTable from "@/components/CommonTable";
-import PageHeader from "@/components/PageHeader";
-import { MetricCard } from "@/components/CommonCard";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
-import { useTheme } from "@/context/ThemeContext";
-import { deleteAccount, getAccounts } from "@/services/accountService";
-import { AccountData, FormRights } from "@/interfaces/account.interface";
-import { Building2, CheckCircle, Clock, XCircle, MapPin } from "lucide-react";
-import { toast } from "react-toastify";
+import { Building2, CheckCircle, Clock, MapPin, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import { MetricCard } from "@/components/CommonCard";
+import CommonTable from "@/components/CommonTable";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
+import PageHeader from "@/components/PageHeader";
+import { useTheme } from "@/context/ThemeContext";
+import { AccountData, FormRights } from "@/interfaces/account.interface";
+import { deleteAccount, getAccounts } from "@/services/accountService";
 import { getUserRoleData } from "@/services/commonServie";
 
 const Accounts: React.FC = () => {
@@ -183,7 +183,7 @@ const Accounts: React.FC = () => {
             ]}
             showButton={true}
             buttonText={t("addButton")}
-            buttonRoute="/addAccount"
+            buttonRoute="/accounts/0"
             showWriteButton={accountsRight?.canWrite || false}
           />
         </div>
